@@ -1,0 +1,14 @@
+substitution: "Let's test substitution.
+\"Hello there,
+and welcome to the family,\" said
+the salamandar knight."
+
+multi-line1:
+"This is a multi-line string,
+where newlines are captured without special syntax
+and the only characters that need escaping are
+\"quotes\" and \$ signs."
+
+multi-line2:
+"Now let's try a multi-line string
+with a substitution: $(substitution)"

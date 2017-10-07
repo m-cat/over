@@ -1,0 +1,4 @@
+Multi-line string
+which should be included verbatim
+in another file. "Quotes" and $$$
+don't need to be escaped.

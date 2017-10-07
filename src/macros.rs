@@ -1,35 +1,86 @@
-//! Macros.
+//! Module containing macros.
 
-/// Returns the given field of the given Object as the given type.
+/// Given a type and an array of elements, converts each element to values with the type and return
+/// an Arr containing a vector of the elements. For a non-panicking version, see `try_arr_vec`.
 ///
-/// A set of one or more `obj` Objects can be provided. If `field` is not found in the first `obj`
-/// then an attempt will be made to retrieve it from the rest of the set. If it's still not found,
-/// we return an error.
+/// # Panics
+/// Panics if the types don't check out.
 #[macro_export]
-macro_rules! obj_get {
-    ( $type:ident, $field:expr, $( $obj:expr )=>+ ) => {
+macro_rules! arr_vec {
+    [] => {
+        $crate::arr::Arr::new()
+    };
+    [ $tok:ident; $( $obj:expr ),+ ] => {
+        try_arr_vec![$tok; $( $obj ),+].unwrap()
+    };
+}
+
+/// Given a type and an array of elements, converts each element to values with the type and return
+/// an Arr containing a vector of the values. Returns an `OverResult` instead of panicking on error.
+#[macro_export]
+macro_rules! try_arr_vec {
+    [ Bool; $( $obj:expr ),+ ] => {
         {
+            use $crate::arr::Arr;
             use $crate::value::Value;
 
-            let null = Value::Null;
-            let mut res = Ok(&null);
-            let mut temp = Err(Error::UnknownError);
-
-            $(
-                if let Err(_) = temp {
-                    res = match $obj.value($field) {
-                        Some(value) => Ok(value),
-                        None => Err(Error::FieldNotFound(String::from($field))),
-                    };
-                    temp = match res {
-                        Ok(&Value::$type(ref inner)) => Ok(inner.clone()),
-                        Ok(_) => Err(Error::WrongTypeFound(String::from($field))),
-                        Err(e) => Err(e),
-                    };
-                };
-            )+
-
-                temp
+            Arr::from_vec(vec![ $( Value::new_bool($obj) ),+ ])
         }
-    }
+    };
+    [ Int; $( $obj:expr ),+ ] => {
+        {
+            use $crate::arr::Arr;
+            use $crate::value::Value;
+
+            Arr::from_vec(vec![ $( Value::new_int($obj) ),+ ])
+        }
+    };
+    [ Frac; $( $obj:expr ),+ ] => {
+        {
+            use $crate::arr::Arr;
+            use $crate::value::Value;
+
+            Arr::from_vec(vec![ $( Value::new_frac($obj) ),+ ])
+        }
+    };
+    [ Char; $( $obj:expr ),+ ] => {
+        {
+            use $crate::arr::Arr;
+            use $crate::value::Value;
+
+            Arr::from_vec(vec![ $( Value::new_char($obj) ),+ ])
+        }
+    };
+    [ Str; $( $obj:expr ),+ ] => {
+        {
+            use $crate::arr::Arr;
+            use $crate::value::Value;
+
+            Arr::from_vec(vec![ $( Value::new_str($obj) ),+ ])
+        }
+    };
+    [ Arr; $( $obj:expr ),+ ] => {
+        {
+            use $crate::arr::Arr;
+            use $crate::value::Value;
+
+            Arr::from_vec(vec![ $( Value::new_arr($obj) ),+ ])
+        }
+    };
+    [ Tup; $( $obj:expr ),+ ] => {
+        {
+            use $crate::arr::Arr;
+            use $crate::value::Value;
+
+            Arr::from_vec(vec![ $( Value::new_tup($obj) ),+ ])
+        }
+    };
+    [ Obj; $( $obj:expr ),+ ] => {
+        {
+            use $crate::arr::Arr;
+            use $crate::value::Value;
+
+            Arr::from_vec(vec![ $( Value::new_obj($obj) ),+ ])
+        }
+    };
 }

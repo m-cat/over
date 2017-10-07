@@ -1,6 +1,6 @@
 [package]
 authors = ["Marcin S. <scatman@bu.edu>"]
-description = "Overman's Awesome Thing"
+description = "OVER: the best data format."
 license = "MIT"
 name = "over"
 readme = "README.md"

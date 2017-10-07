@@ -1,0 +1,10 @@
+@file = "includes/str.over"
+
+@include_priv: <Str "includes/str.over">
+include: <Str @file>
+
+include2: @include_priv
+
+substitution: "Woah $(@include_priv), a substitution!"
+
+include_arr: <Arr "includes/arr.over"
