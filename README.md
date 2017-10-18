@@ -8,29 +8,31 @@ OVER is a general-purpose data format like XML or JSON.
 
 OVER is designed to be easy for humans to read and write and for computers to parse. It is resilient to errors by design and has no weird behavior or syntax like YAML or TOML. It features simple yet well-chosen types which are sufficient to represent any data you'll ever run into.
 
-### Features
+## Features
 
-* Simple, error-resistent, flexible syntax.
+TODO
 
-### Examples
+## Examples
 
-### Types
+TODO
 
-#### Null
+## Types
+
+### Null
 
 A simple null value, represented by `null`.
 
-#### Bool
+### Bool
 
 `true`, or `false`. Take your pick.
 
-#### Int
+### Int
 
 A 64-bit signed integer type. Any token beginning with `-`, `+`, or a numeral will be either an `Int` or a `Frac` (see below).
 
 **Examples:** `1`, `-2`, `+4`
 
-#### Frac
+### Frac
 
 A sane representation of decimal values. Throw JSON's float types in the trash bin and use fractions instead.
 
@@ -40,25 +42,25 @@ Fracs can also be written as decimals, which get converted automatically to frac
 
 **Examples:** `2.5`, `-.0`
 
-#### Char
+### Char
 
 A type representing a single, unicode character.
 
 **Examples:** 'q', ' '
 
-#### Str
+### Str
 
 A unicode string type.
 
-#### Arr
+### Arr
 
 An array container which can hold an arbitrary number of elements of a single type.
 
-#### Tup
+### Tup
 
 A tuple container which can hold elements of different types.
 
-#### Obj
+### Obj
 
 The godfather of all types, the *object*. A hashmap of keys to values, where values can be any type, including other objects.
 
