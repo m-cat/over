@@ -39,23 +39,30 @@ impl Obj {
         }
     }
 
-    /// Returns a new `Obj` loaded from a file.
-    pub fn from_file(path: &str) -> OverResult<Obj> {
-        let mut obj = Self::new();
-        parse::load_file(&mut obj, path)?;
+    // /// Returns a new `Obj` loaded from a file.
+    // pub fn from_file(path: &str) -> OverResult<Obj> {
+    //     parse::load_file(path)
+    // }
 
-        Ok(obj)
-    }
-
-    /// Writes this `Obj` to given file in `.over` representation.
-    pub fn write_to_file(&self, path: &str) -> OverResult<()> {
-        parse::write_to_file(self, path)
-    }
+    // /// Writes this `Obj` to given file in `.over` representation.
+    // pub fn write_to_file(&self, path: &str) -> OverResult<()> {
+    //     parse::write_to_file(self, path)
+    // }
 
     /// Returns the number of fields for this `Obj` (children/parents not included).
     // TODO: test this
     pub fn len(&self) -> usize {
         self.inner.borrow().fields.len()
+    }
+
+    /// Returns whether this `Obj` is empty.
+    pub fn is_empty(&self) -> bool {
+        self.inner.borrow().fields.is_empty()
+    }
+
+    /// Returns whether this `Arr` and `other` point to the same data.
+    pub fn ptr_eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.inner, &other.inner)
     }
 
     /// Returns true iff the `Obj` contains `field`.
@@ -146,6 +153,12 @@ impl Obj {
     //         }
     //     }
     // }
+}
+
+impl Default for Obj {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl PartialEq for Obj {

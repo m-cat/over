@@ -34,14 +34,12 @@ impl Arr {
     pub fn from_vec(vec: Vec<Value>) -> OverResult<Arr> {
         let mut t = Type::Empty;
 
-        for value in vec.iter() {
+        for value in &vec {
             let tnew = value.get_type();
-            if t != tnew {
-                if let Type::Empty = t {
-                    t = tnew
-                } else {
-                    return Err(OverError::ArrTypeMismatch);
-                }
+            if let Type::Empty = t {
+                t = tnew.clone()
+            } else if t != tnew {
+                return Err(OverError::ArrTypeMismatch);
             }
         }
 
@@ -59,11 +57,21 @@ impl Arr {
         self.inner.borrow().vec.len()
     }
 
-    /// Adds a value to the `Arr`.
-    /// Returns an error if the new value is type-incompatible with the `Arr`.
+    /// Returns whether this `Arr` is empty.
+    pub fn is_empty(&self) -> bool {
+        self.inner.borrow().vec.is_empty()
+    }
+
+    /// Returns whether this `Arr` and `other` point to the same data.
+    pub fn ptr_eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.inner, &other.inner)
+    }
+
+    /// Adds a `Value` to the `Arr`.
+    /// Returns an error if the new `Value` is type-incompatible with the `Arr`.
     pub fn add(&mut self, value: Value) -> OverResult<()> {
         // Should be impossible to add an "Empty" value.
-        debug_assert!(value.get_type() != Type::Empty);
+        debug_assert_ne!(value.get_type(), Type::Empty);
 
         let mut inner = self.inner.borrow_mut();
 
@@ -82,8 +90,8 @@ impl Arr {
         }
     }
 
-    /// Inserts a value into the `Arr` at the given index.
-    /// Returns an error if the new value is type-incompatible with the `Arr`.
+    /// Inserts a `Value` into the `Arr` at the given index.
+    /// Returns an error if the new `Value` is type-incompatible with the `Arr`.
     // TODO: finish this, copy from `add` above
     pub fn insert(&mut self, index: usize, value: Value) -> OverResult<()> {
         let mut inner = self.inner.borrow_mut();
@@ -96,10 +104,17 @@ impl Arr {
         }
     }
 
-    /// Removes and returns a value from the `Arr` at the given index.
+    /// Removes and returns a `Value` from the `Arr` at the given index.
     /// Returns an error if the index is out of bounds.
+    // TODO: implement this
     pub fn remove() -> OverResult<Value> {
         unimplemented!()
+    }
+}
+
+impl Default for Arr {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -111,7 +126,17 @@ impl Arr {
 
 impl PartialEq for Arr {
     fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.inner, &other.inner)
+        let inner = self.inner.borrow();
+        let other_inner = other.inner.borrow();
+
+        if inner.vec.len() != other_inner.vec.len() {
+            return false;
+        }
+        if inner.t != other_inner.t {
+            return false;
+        }
+
+        inner.vec == other_inner.vec
     }
 }
 

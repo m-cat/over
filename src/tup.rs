@@ -44,6 +44,16 @@ impl Tup {
     pub fn len(&self) -> usize {
         self.inner.borrow().vec.len()
     }
+
+    /// Returns whether this `Tup` is empty.
+    pub fn is_empty(&self) -> bool {
+        self.inner.borrow().vec.is_empty()
+    }
+
+    /// Returns whether this `Arr` and `other` point to the same data.
+    pub fn ptr_eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.inner, &other.inner)
+    }
 }
 
 // impl Clone for Tup {

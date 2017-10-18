@@ -21,17 +21,17 @@ fn set_and_get() {
 
     // Bool
 
-    obj.set("bool", Value::new_bool(true));
+    obj.set("bool", true.into());
     assert_eq!(obj.get("bool").unwrap().get_bool(), Ok(true));
 
     // Int
 
-    obj.set("int", Value::new_int(-5));
-    assert_eq!(obj.get("int").unwrap().get_int(), Ok(-5));
+    // obj.set("int", -5.into());
+    // assert_eq!(obj.get("int").unwrap().get_int(), Ok(-5));
 
     // Frac
 
-    obj.set("frac", Value::new_frac(Fraction::new_neg(1u8, 1u8)));
+    obj.set("frac", Fraction::new_neg(1u8, 1u8).into());
     assert_eq!(
         obj.get("frac").unwrap().get_frac(),
         Ok(Fraction::new_neg(1u8, 1u8))
@@ -39,21 +39,21 @@ fn set_and_get() {
 
     // Char
 
-    obj.set("char", Value::new_char('x'));
+    obj.set("char", 'x'.into());
     assert_eq!(obj.get("char").unwrap().get_char(), Ok('x'));
 
     // String
 
-    obj.set("str1", Value::new_str("hello"));
-    obj.set("str2", Value::new_str("yo"));
+    obj.set("str1", "hello".into());
+    obj.set("str2", "yo".into());
 
     assert_eq!(obj.get("str1").unwrap(), "hello");
     assert_eq!(obj.get("str2").unwrap(), String::from("yo"));
 
     // Arr
 
-    let arr = arr_vec![Int; -5, 0, 1];
-    obj.set("arr", Value::new_arr(arr.clone()));
+    let arr = arr_vec![-5, 0, 1];
+    obj.set("arr", arr.clone().into());
     assert_eq!(obj.get("arr").unwrap(), arr);
 
     // Tup
@@ -85,13 +85,13 @@ fn parents() {
 
     // Bool
 
-    obj.set("bool1", Value::new_bool(true));
+    obj.set("bool1", true.into());
 
-    def1.set("bool1", Value::new_bool(true));
-    def1.set("bool2", Value::new_bool(false));
+    def1.set("bool1", true.into());
+    def1.set("bool2", false.into());
 
-    def2.set("bool2", Value::new_bool(true));
-    def2.set("bool3", Value::new_bool(true));
+    def2.set("bool2", true.into());
+    def2.set("bool3", true.into());
 
     assert_eq!(obj.get("bool1").unwrap().get_bool(), Ok(true));
     assert_eq!(obj.get("bool2").unwrap(), false);
@@ -102,9 +102,9 @@ fn parents() {
     let str1 = String::from("hi");
     let str2 = String::from("bye");
 
-    obj.set("test1", Value::new_str(&str1));
+    obj.set("test1", str1.clone().into());
 
-    def1.set("test2", Value::new_str(&str2));
+    def1.set("test2", str2.clone().into());
 
     assert_eq!(obj.get("test1").unwrap(), str1);
     assert_eq!(obj.get("test2").unwrap(), str2);
@@ -121,17 +121,17 @@ fn types() {
 
     // Bool
 
-    obj.set("bool", Value::new_bool(true));
+    obj.set("bool", true.into());
     assert_eq!(obj.get("bool").unwrap().get_type(), Type::Bool);
 
     // String
 
-    obj.set("str", Value::new_str(""));
+    obj.set("str", "".into());
     assert_eq!(obj.get("str").unwrap().get_type(), Type::Str);
 
     // Arr
 
-    obj.set("arr_char", Value::new_arr(arr_vec![Char; 'w', 'o', 'w']));
+    obj.set("arr_char", arr_vec!['w', 'o', 'w'].into());
     assert_eq!(
         obj.get("arr_char").unwrap().get_type(),
         Type::Arr(Box::new(Type::Char))
@@ -139,12 +139,9 @@ fn types() {
 
     obj.set(
         "arr_arr",
-        Value::new_arr(
-            try_arr_vec![Arr;
-                     arr_vec![],
-                     arr_vec![Bool; true, false]
-            ].unwrap(),
-        ),
+        try_arr_vec![arr_vec![], arr_vec![true, false]]
+            .unwrap()
+            .into(),
     );
     assert_eq!(
         obj.get("arr_arr").unwrap().get_type(),
@@ -160,15 +157,13 @@ fn types() {
     ]);
     obj.set(
         "tup",
-        Value::new_tup(Tup::from_vec(vec![
-            Value::new_char('!'),
-            Value::new_tup(Tup::from_vec(vec![])),
-            Value::new_arr(
-                Arr::from_vec(
-                    vec![Value::new_str("test"), Value::new_str("heya")],
-                ).unwrap()
-            ),
-        ])),
+        Tup::from_vec(vec![
+            '!'.into(),
+            Tup::from_vec(vec![]).into(),
+            Arr::from_vec(vec!["test".into(), "heya".into()])
+                .unwrap()
+                .into(),
+        ]).into(),
     );
     assert_eq!(obj.get("tup").unwrap().get_type(), tup_type);
 
@@ -178,4 +173,10 @@ fn types() {
         obj.get("not there"),
         Err(OverError::FieldNotFound("not there".into()))
     );
+
+    assert_ne!(obj.get("bool").unwrap().get_type(), null.get_type());
+    assert_ne!(
+        obj.get("bool").unwrap().get_type(),
+        obj.get("str").unwrap().get_type()
+    )
 }

@@ -10,77 +10,54 @@ macro_rules! arr_vec {
     [] => {
         $crate::arr::Arr::new()
     };
-    [ $tok:ident; $( $obj:expr ),+ ] => {
-        try_arr_vec![$tok; $( $obj ),+].unwrap()
+    [$( $obj:expr ),+ ] => {
+        try_arr_vec![$( $obj ),+].unwrap()
     };
 }
 
 /// Given a type and an array of elements, converts each element to values with the type and return
 /// an Arr containing a vector of the values. Returns an `OverResult` instead of panicking on error.
+/// To create an empty `Arr`, use `arr_vec` as it will never fail.
 #[macro_export]
 macro_rules! try_arr_vec {
-    [ Bool; $( $obj:expr ),+ ] => {
+    [ $( $obj:expr ),+ ] => {
         {
             use $crate::arr::Arr;
-            use $crate::value::Value;
 
-            Arr::from_vec(vec![ $( Value::new_bool($obj) ),+ ])
+            Arr::from_vec(vec![ $( $obj.into() ),+ ])
         }
     };
-    [ Int; $( $obj:expr ),+ ] => {
-        {
-            use $crate::arr::Arr;
-            use $crate::value::Value;
+}
 
-            Arr::from_vec(vec![ $( Value::new_int($obj) ),+ ])
-        }
-    };
-    [ Frac; $( $obj:expr ),+ ] => {
-        {
-            use $crate::arr::Arr;
-            use $crate::value::Value;
+#[cfg(test)]
+mod tests {
+    use OverError;
+    use value::Value;
 
-            Arr::from_vec(vec![ $( Value::new_frac($obj) ),+ ])
-        }
-    };
-    [ Char; $( $obj:expr ),+ ] => {
-        {
-            use $crate::arr::Arr;
-            use $crate::value::Value;
+    #[test]
+    fn arr_vec_basic() {
+        assert_eq!(
+            arr_vec![Value::Int(1), Value::Int(2)],
+            try_arr_vec![1, 2].unwrap()
+        );
 
-            Arr::from_vec(vec![ $( Value::new_char($obj) ),+ ])
-        }
-    };
-    [ Str; $( $obj:expr ),+ ] => {
-        {
-            use $crate::arr::Arr;
-            use $crate::value::Value;
+        assert_ne!(
+            arr_vec![-1, 2],
+            try_arr_vec![Value::Int(1), Value::Int(2)].unwrap()
+        );
+    }
 
-            Arr::from_vec(vec![ $( Value::new_str($obj) ),+ ])
-        }
-    };
-    [ Arr; $( $obj:expr ),+ ] => {
-        {
-            use $crate::arr::Arr;
-            use $crate::value::Value;
+    #[test]
+    #[should_panic]
+    fn arr_vec_mismatch() {
+        let _ = arr_vec![1, 'c'];
+    }
 
-            Arr::from_vec(vec![ $( Value::new_arr($obj) ),+ ])
-        }
-    };
-    [ Tup; $( $obj:expr ),+ ] => {
-        {
-            use $crate::arr::Arr;
-            use $crate::value::Value;
-
-            Arr::from_vec(vec![ $( Value::new_tup($obj) ),+ ])
-        }
-    };
-    [ Obj; $( $obj:expr ),+ ] => {
-        {
-            use $crate::arr::Arr;
-            use $crate::value::Value;
-
-            Arr::from_vec(vec![ $( Value::new_obj($obj) ),+ ])
-        }
-    };
+    #[test]
+    fn try_arr_vec_mismatch() {
+        assert_eq!(
+            try_arr_vec![arr_vec![1, 1], arr_vec!['c']],
+            Err(OverError::ArrTypeMismatch)
+        );
+    }
 }

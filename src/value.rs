@@ -41,46 +41,6 @@ impl Value {
         Value::Null
     }
 
-    /// Returns a new Bool value.
-    pub fn new_bool(inner: bool) -> Value {
-        Value::Bool(inner)
-    }
-
-    /// Returns a new Int value.
-    pub fn new_int(inner: i64) -> Value {
-        Value::Int(inner)
-    }
-
-    /// Returns a new Frac value.
-    pub fn new_frac(inner: Fraction) -> Value {
-        Value::Frac(inner)
-    }
-
-    /// Returns a new Char value.
-    pub fn new_char(inner: char) -> Value {
-        Value::Char(inner)
-    }
-
-    /// Returns a new Str value.
-    pub fn new_str(inner: &str) -> Value {
-        Value::Str(String::from(inner))
-    }
-
-    /// Returns a new Arr value.
-    pub fn new_arr(inner: arr::Arr) -> Value {
-        Value::Arr(inner)
-    }
-
-    /// Returns a new Tup value.
-    pub fn new_tup(inner: tup::Tup) -> Value {
-        Value::Tup(inner)
-    }
-
-    /// Returns a new Obj value.
-    pub fn new_obj(inner: obj::Obj) -> Value {
-        Value::Obj(inner)
-    }
-
     /// Returns true iff this `Value` is null.
     pub fn is_null(&self) -> bool {
         if let Value::Null = *self { true } else { false }
@@ -90,7 +50,7 @@ impl Value {
     pub fn get_type(&self) -> Type {
         use self::Value::*;
 
-        let res = match *self {
+        match *self {
             Null => Type::Null,
             Bool(_) => Type::Bool,
             Int(_) => Type::Int,
@@ -100,9 +60,7 @@ impl Value {
             Arr(ref arr) => Type::Arr(Box::new(arr.get_type())),
             Tup(ref tup) => Type::Tup(tup.get_type()),
             Obj(_) => Type::Obj,
-        };
-
-        res
+        }
     }
 
     /// Returns the `bool` contained in this `Value`.
@@ -186,10 +144,12 @@ impl Value {
     }
 }
 
+// Impl PartialEq
+
 macro_rules! impl_eq {
-    ($valtype:ident, $value:ty) => {
-        impl PartialEq<$value> for Value {
-            fn eq(&self, other: &$value) -> bool {
+    ($valtype:ident, $type:ty) => {
+        impl PartialEq<$type> for Value {
+            fn eq(&self, other: &$type) -> bool {
                 match *self {
                     Value::$valtype(ref value) => value == other,
                     _                         => false
@@ -197,7 +157,7 @@ macro_rules! impl_eq {
             }
         }
 
-        impl PartialEq<Value> for $value {
+        impl PartialEq<Value> for $type {
             fn eq(&self, other: &Value) -> bool {
                 match *other {
                     Value::$valtype(ref value) => value == self,
@@ -232,5 +192,32 @@ impl<'a> PartialEq<Value> for &'a str {
             Value::Str(ref value) => value == self,
             _ => false,
         }
+    }
+}
+
+// Impl From
+
+macro_rules! impl_from {
+    ( $type:ty, $fn:tt ) => {
+        impl From<$type> for Value {
+            fn from(inner: $type) -> Self {
+                Value::$fn(inner)
+            }
+        }
+    };
+}
+
+impl_from!(bool, Bool);
+impl_from!(i64, Int);
+impl_from!(Fraction, Frac);
+impl_from!(char, Char);
+impl_from!(String, Str);
+impl_from!(arr::Arr, Arr);
+impl_from!(tup::Tup, Tup);
+impl_from!(obj::Obj, Obj);
+
+impl<'a> From<&'a str> for Value {
+    fn from(inner: &str) -> Self {
+        Value::Str(inner.into())
     }
 }

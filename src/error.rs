@@ -1,7 +1,9 @@
 //! Error module.
 
 #![allow(missing_docs)]
+#![allow(dead_code)]
 
+use parse::error::ParseError;
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -57,10 +59,10 @@ impl Error for OverError {
             ArrTypeMismatch => "Arr inner types do not match",
             CircularParentReferences => "Circular references among parents are not allowed",
             FieldNotFound(_) => "Field not found: {}",
-            IoError(ref field) => field,
+            IoError(ref field) |
+            ParseError(ref field) => field,
             NoParentFound => "No parent found for this obj",
             NullError => "Tried to access a null value",
-            ParseError(ref field) => field,
             SyncError => "Tried to access two values at the same time",
             TupOutOfBounds(_) => "Tup index out of bounds",
             TupTypeMismatch => "Tup inner types do not match",
@@ -72,6 +74,12 @@ impl Error for OverError {
 
 impl From<io::Error> for OverError {
     fn from(e: io::Error) -> Self {
+        OverError::IoError(e.description().to_owned())
+    }
+}
+
+impl From<ParseError> for OverError {
+    fn from(e: ParseError) -> Self {
         OverError::IoError(e.description().to_owned())
     }
 }
