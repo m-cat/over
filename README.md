@@ -46,7 +46,7 @@ Fracs can also be written as decimals, which get converted automatically to frac
 
 A type representing a single, unicode character.
 
-**Examples:** 'q', ' '
+**Examples:** `'q'`, `' '`
 
 ### Str
 

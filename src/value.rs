@@ -144,7 +144,7 @@ impl Value {
     }
 }
 
-// Impl PartialEq
+// impl PartialEq
 
 macro_rules! impl_eq {
     ($valtype:ident, $type:ty) => {
@@ -195,7 +195,7 @@ impl<'a> PartialEq<Value> for &'a str {
     }
 }
 
-// Impl From
+// impl From
 
 macro_rules! impl_from {
     ( $type:ty, $fn:tt ) => {

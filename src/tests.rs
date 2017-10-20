@@ -1,10 +1,8 @@
 //! Tests.
 
-use arr::Arr;
 use error::OverError;
 use fraction::Fraction;
 use obj::Obj;
-use tup::Tup;
 use types::Type;
 use value::Value;
 
@@ -22,12 +20,13 @@ fn set_and_get() {
     // Bool
 
     obj.set("bool", true.into());
+    assert_eq!(obj.get("bool").unwrap(), true);
     assert_eq!(obj.get("bool").unwrap().get_bool(), Ok(true));
 
     // Int
 
-    // obj.set("int", -5.into());
-    // assert_eq!(obj.get("int").unwrap().get_int(), Ok(-5));
+    obj.set("int", (-5).into());
+    assert_eq!(obj.get("int").unwrap().get_int(), Ok(-5));
 
     // Frac
 
@@ -152,18 +151,12 @@ fn types() {
 
     let tup_type = Type::Tup(vec![
         Type::Char,
-        Type::Tup(vec![]),
+        Type::Tup(vec![Type::Int]),
         Type::Arr(Box::new(Type::Str)),
     ]);
     obj.set(
         "tup",
-        Tup::from_vec(vec![
-            '!'.into(),
-            Tup::from_vec(vec![]).into(),
-            Arr::from_vec(vec!["test".into(), "heya".into()])
-                .unwrap()
-                .into(),
-        ]).into(),
+        tup_vec!['!', tup_vec![-1], try_arr_vec!["test", "heya"].unwrap()].into(),
     );
     assert_eq!(obj.get("tup").unwrap().get_type(), tup_type);
 
