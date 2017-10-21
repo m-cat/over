@@ -1,5 +1,7 @@
 # OVER
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![LoC](https://tokei.rs/b1/github/m-cat/over)](https://github.com/m-cat/over)
+
 OVER: the best data format.
 
 ## About

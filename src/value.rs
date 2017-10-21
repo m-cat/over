@@ -36,11 +36,6 @@ pub enum Value {
 }
 
 impl Value {
-    /// Returns a Null value.
-    pub fn null() -> Value {
-        Value::Null
-    }
-
     /// Returns true iff this `Value` is null.
     pub fn is_null(&self) -> bool {
         if let Value::Null = *self { true } else { false }

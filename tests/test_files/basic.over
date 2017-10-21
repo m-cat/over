@@ -1,0 +1,29 @@
+ # Comment
+ aa: 0 #
+b: 1 #
+ c: 10 # Comment
+d: 20 #Comment
+# Comment
+eee: 2
+# Comment
+ f: 3
+
+
+# Comment
+
+
+g_: 4
+
+Hello: "Hello"
+i_robot: "not #a comment"
+j:
+4
+k:
+"hi"
+ l: "\$\\\""
+ m: #Comment
+ "m" n: true o: false
+
+p: Hello
+q: aa
+r: null

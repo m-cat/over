@@ -13,8 +13,8 @@ fn set_and_get() {
 
     // Null
 
-    obj.set("null", Value::null());
-    assert_eq!(obj.get("null").unwrap(), Value::null());
+    obj.set("null", Value::Null);
+    assert_eq!(obj.get("null").unwrap(), Value::Null);
     assert!(obj.get("null").unwrap().is_null());
 
     // Bool
@@ -64,11 +64,8 @@ fn set_and_get() {
     let res = obj.get("bool").unwrap().get_str();
     assert_eq!(res, Err(OverError::TypeMismatch));
 
-    assert_eq!(obj.get(""), Err(OverError::FieldNotFound("".into())));
-    assert_eq!(
-        obj.get("cool"),
-        Err(OverError::FieldNotFound("cool".into()))
-    );
+    assert_eq!(obj.get(""), None);
+    assert_eq!(obj.get("cool"), None);
 }
 
 // Test setting and getting values through parents.
@@ -115,7 +112,7 @@ fn types() {
 
     // Null
 
-    let null = Value::null();
+    let null = Value::Null;
     assert_eq!(null.get_type(), Type::Null);
 
     // Bool
@@ -161,11 +158,6 @@ fn types() {
     assert_eq!(obj.get("tup").unwrap().get_type(), tup_type);
 
     // Misc
-
-    assert_eq!(
-        obj.get("not there"),
-        Err(OverError::FieldNotFound("not there".into()))
-    );
 
     assert_ne!(obj.get("bool").unwrap().get_type(), null.get_type());
     assert_ne!(

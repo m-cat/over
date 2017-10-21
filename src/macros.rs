@@ -62,16 +62,11 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
-    fn arr_vec_mismatch() {
-        let _ = arr_vec![1, 'c'];
-    }
-
-    #[test]
     fn try_arr_vec_mismatch() {
         assert_eq!(
             try_arr_vec![arr_vec![1, 1], arr_vec!['c']],
             Err(OverError::ArrTypeMismatch)
         );
+        assert_eq!(try_arr_vec![1, 'c'], Err(OverError::ArrTypeMismatch));
     }
 }

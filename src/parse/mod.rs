@@ -1,21 +1,22 @@
 //! Functions for loading/writing Objs.
 
 pub mod error;
-// mod parser;
 
-// use {Obj, OverError, OverResult};
-// use self::error::ParseError;
+mod char_stream;
+mod parser;
+use self::error::ParseError;
 
-// type ParseResult<T> = Result<T, ParseError>;
+use {Obj, OverError, OverResult};
+use std::fs::File;
 
-// pub fn load_file(path: &str) -> OverResult<Obj> {
-//     let parser = Parser::from_file(path).map_err(OverError::from)?;
+type ParseResult<T> = Result<T, ParseError>;
 
-//     parser.parse_obj().map_err(OverError::from)
-// }
+pub fn load_file(path: &str) -> OverResult<Obj> {
+    parser::parse_file_obj(path).map_err(OverError::from)
+}
 
-// pub fn write_to_file(obj: &Obj, path: &str) -> OverResult<()> {
-//     let file = File::open(path).map_err(OverError::from)?;
+pub fn write_to_file(obj: &Obj, path: &str) -> OverResult<()> {
+    let file = File::open(path).map_err(OverError::from)?;
 
-//     Ok(())
-// }
+    unimplemented!()
+}

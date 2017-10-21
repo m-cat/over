@@ -14,7 +14,6 @@ pub enum OverError {
     ArrOutOfBounds(usize),
     ArrTypeMismatch,
     CircularParentReferences,
-    FieldNotFound(String),
     IoError(String),
     NoParentFound,
     NullError,
@@ -36,11 +35,10 @@ impl fmt::Display for OverError {
             CircularParentReferences => {
                 write!(f, "Circular references among parents are not allowed")
             }
-            FieldNotFound(ref field) => write!(f, "Field not found: {}", field),
-            IoError(ref field) => write!(f, "{}", field),
+            IoError(ref error) => write!(f, "{}", error),
             NoParentFound => write!(f, "No parent found for this obj"),
             NullError => write!(f, "Tried to access a null value"),
-            ParseError(ref field) => write!(f, "{}", field),
+            ParseError(ref error) => write!(f, "{}", error),
             SyncError => write!(f, "Tried to access two values at the same time"),
             TupOutOfBounds(ref index) => write!(f, "Tup index out of bounds: {}", index),
             TupTypeMismatch => write!(f, "Tup inner types do not match"),
@@ -58,11 +56,10 @@ impl Error for OverError {
             ArrOutOfBounds(_) => "Arr index out of bounds",
             ArrTypeMismatch => "Arr inner types do not match",
             CircularParentReferences => "Circular references among parents are not allowed",
-            FieldNotFound(_) => "Field not found: {}",
-            IoError(ref field) |
-            ParseError(ref field) => field,
+            IoError(ref error) => error,
             NoParentFound => "No parent found for this obj",
             NullError => "Tried to access a null value",
+            ParseError(ref error) => error,
             SyncError => "Tried to access two values at the same time",
             TupOutOfBounds(_) => "Tup index out of bounds",
             TupTypeMismatch => "Tup inner types do not match",
@@ -74,12 +71,12 @@ impl Error for OverError {
 
 impl From<io::Error> for OverError {
     fn from(e: io::Error) -> Self {
-        OverError::IoError(e.description().to_owned())
+        OverError::IoError(format!("{}", e))
     }
 }
 
 impl From<ParseError> for OverError {
     fn from(e: ParseError) -> Self {
-        OverError::IoError(e.description().to_owned())
+        OverError::IoError(format!("{}", e))
     }
 }

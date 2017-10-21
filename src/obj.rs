@@ -39,15 +39,15 @@ impl Obj {
         }
     }
 
-    // /// Returns a new `Obj` loaded from a file.
-    // pub fn from_file(path: &str) -> OverResult<Obj> {
-    //     parse::load_file(path)
-    // }
+    /// Returns a new `Obj` loaded from a file.
+    pub fn from_file(path: &str) -> OverResult<Obj> {
+        parse::load_file(path)
+    }
 
-    // /// Writes this `Obj` to given file in `.over` representation.
-    // pub fn write_to_file(&self, path: &str) -> OverResult<()> {
-    //     parse::write_to_file(self, path)
-    // }
+    /// Writes this `Obj` to given file in `.over` representation.
+    pub fn write_to_file(&self, path: &str) -> OverResult<()> {
+        parse::write_to_file(self, path)
+    }
 
     /// Returns the number of fields for this `Obj` (children/parents not included).
     // TODO: test this
@@ -71,10 +71,10 @@ impl Obj {
     }
 
     /// Removes a field and its associated value from the `Obj`.
-    pub fn remove(&mut self, field: &str) -> OverResult<Value> {
+    pub fn remove(&mut self, field: &str) -> Option<Value> {
         match self.inner.borrow_mut().fields.remove(field) {
-            None => Err(OverError::FieldNotFound(field.into())),
-            Some(value) => Ok(value),
+            Some(value) => Some(value),
+            None => None,
         }
     }
 
@@ -84,15 +84,15 @@ impl Obj {
     }
 
     /// Gets the `Value` associated with `field`.
-    pub fn get(&self, field: &str) -> OverResult<Value> {
+    pub fn get(&self, field: &str) -> Option<Value> {
         let inner = self.inner.borrow();
 
         match inner.fields.get(field) {
-            Some(value) => Ok(value.clone()),
+            Some(value) => Some(value.clone()),
             None => {
                 match inner.parent {
                     Some(ref parent) => parent.get(field),
-                    None => Err(OverError::FieldNotFound(field.into())),
+                    None => None,
                 }
             }
         }
