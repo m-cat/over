@@ -42,22 +42,15 @@ impl CharStream {
 
         match opt {
             Some(ref ch) => {
-                if cfg!(debug_assertions) {
-                    if **ch == '\n' {
-                        println!(
-                            "peeking. ch: '\\n', line: {}, col: {}",
-                            self.line(),
-                            self.col()
-                        );
-                    } else {
-                        println!(
-                            "peeking. ch: '{}', line: {}, col: {}",
-                            **ch,
-                            self.line(),
-                            self.col()
-                        );
-                    }
-                }
+                // if cfg!(debug_assertions) {
+                //     use super::misc::format_char;
+                //     println!(
+                //         "peeking. ch: '{}', line: {}, col: {}",
+                //         &format!("{}", **ch),
+                //         self.line(),
+                //         self.col()
+                //     );
+                // }
                 Some(**ch)
             }
             None => None,
@@ -72,13 +65,15 @@ impl CharStream {
 
         match opt {
             Some(ch) => {
-                if cfg!(debug_assertions) {
-                    if ch == '\n' {
-                        println!("ch: '\\n', line: {}, col: {}", self.line(), self.col());
-                    } else {
-                        println!("ch: '{}', line: {}, col: {}", ch, self.line(), self.col());
-                    }
-                }
+                // if cfg!(debug_assertions) {
+                //     use super::misc::format_char;
+                //     println!(
+                //         "ch: '{}', line: {}, col: {}",
+                //         &format_char(&ch),
+                //         self.line(),
+                //         self.col()
+                //     );
+                // }
                 if ch == '\n' {
                     let line = self.line();
                     self.set_line(line + 1);

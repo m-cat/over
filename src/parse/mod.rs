@@ -3,6 +3,7 @@
 pub mod error;
 
 mod char_stream;
+mod misc;
 mod parser;
 use self::error::ParseError;
 

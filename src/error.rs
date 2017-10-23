@@ -1,7 +1,6 @@
 //! Error module.
 
 #![allow(missing_docs)]
-#![allow(dead_code)]
 
 use parse::error::ParseError;
 use std::error::Error;
@@ -77,6 +76,6 @@ impl From<io::Error> for OverError {
 
 impl From<ParseError> for OverError {
     fn from(e: ParseError) -> Self {
-        OverError::IoError(format!("{}", e))
+        OverError::ParseError(format!("{}", e))
     }
 }

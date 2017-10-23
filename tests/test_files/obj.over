@@ -1,0 +1,11 @@
+empty: {} empty2: {}
+bools: { t: true f: false }
+
+outie: {
+    z: 0
+    inner: {
+        innie: { a: 1 }
+        b: 2
+    }
+    c: 3
+}

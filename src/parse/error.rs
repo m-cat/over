@@ -1,8 +1,8 @@
 //! Module for parse errors.
 
 #![allow(missing_docs)]
-#![allow(dead_code)]
 
+use super::misc::format_char;
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -12,11 +12,14 @@ use std::num::ParseIntError;
 #[derive(Debug)]
 pub enum ParseError {
     DuplicateField(String, usize, usize),
+    DuplicateGlobal(String, usize, usize),
+    GlobalNotFound(String, usize, usize),
     InvalidEscapeChar(char, usize, usize),
-    InvalidFieldChar(usize, usize),
+    InvalidFieldChar(char, usize, usize),
     InvalidFieldName(String, usize, usize),
     InvalidNumeric(usize, usize),
-    InvalidValueChar(usize, usize),
+    InvalidValue(String, usize, usize),
+    InvalidValueChar(char, usize, usize),
     IoError(String),
     NoWhitespaceAfterField(usize, usize),
     ParseIntError(String),
@@ -33,8 +36,26 @@ impl fmt::Display for ParseError {
             DuplicateField(ref field, ref line, ref col) => {
                 write!(
                     f,
-                    "Duplicate field {} found at line {}, column {}",
+                    "Duplicate field \"{}\" at line {}, column {}",
                     field,
+                    line,
+                    col
+                )
+            }
+            DuplicateGlobal(ref field, ref line, ref col) => {
+                write!(
+                    f,
+                    "Duplicate global \"{}\" at line {}, column {}",
+                    field,
+                    line,
+                    col
+                )
+            }
+            GlobalNotFound(ref var, ref line, ref col) => {
+                write!(
+                    f,
+                    "Global \"{}\" at line {}, column {} could not be found",
+                    var,
                     line,
                     col
                 )
@@ -42,17 +63,18 @@ impl fmt::Display for ParseError {
             InvalidEscapeChar(ref ch, ref line, ref col) => {
                 write!(
                     f,
-                    "Invalid escape character '\\{}' found at line {}, column {}. \
+                    "Invalid escape character '\\{}' at line {}, column {}. \
                      If you meant to write a backslash, use '\\\\'",
-                    ch,
+                    &format_char(ch),
                     line,
                     col
                 )
             }
-            InvalidFieldChar(ref line, ref col) => {
+            InvalidFieldChar(ref ch, ref line, ref col) => {
                 write!(
                     f,
-                    "Invalid character for field at line {}, column {}",
+                    "Invalid character '{}' for field at line {}, column {}",
+                    &format_char(ch),
                     line,
                     col
                 )
@@ -74,10 +96,20 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            InvalidValueChar(ref line, ref col) => {
+            InvalidValue(ref value, ref line, ref col) => {
                 write!(
                     f,
-                    "Invalid character for value at line {}, column {}",
+                    "Invalid value \"{}\" at line {}, column {}",
+                    value,
+                    line,
+                    col
+                )
+            }
+            InvalidValueChar(ref ch, ref line, ref col) => {
+                write!(
+                    f,
+                    "Invalid character '{}' for value at line {}, column {}",
+                    &format_char(ch),
                     line,
                     col
                 )
@@ -86,7 +118,7 @@ impl fmt::Display for ParseError {
             NoWhitespaceAfterField(ref line, ref col) => {
                 write!(
                     f,
-                    "No whitespace found after field at line {}, column {}",
+                    "No whitespace after field at line {}, column {}",
                     line,
                     col
                 )
@@ -119,14 +151,17 @@ impl Error for ParseError {
         use self::ParseError::*;
 
         match *self {
-            DuplicateField(_, _, _) => "Duplicate field found",
-            InvalidEscapeChar(_, _, _) => "Invalid escape character found",
-            InvalidFieldChar(_, _) => "Invalid character for field",
+            DuplicateField(_, _, _) => "Duplicate field",
+            DuplicateGlobal(_, _, _) => "Duplicate global",
+            GlobalNotFound(_, _, _) => "Global could not be found",
+            InvalidEscapeChar(_, _, _) => "Invalid escape character",
+            InvalidFieldChar(_, _, _) => "Invalid character for field",
             InvalidFieldName(_, _, _) => "Invalid field name",
             InvalidNumeric(_, _) => "Invalid character for numeric value",
-            InvalidValueChar(_, _) => "Invalid character for value",
+            InvalidValue(_, _, _) => "Invalid value",
+            InvalidValueChar(_, _, _) => "Invalid character for value",
             IoError(ref error) => error,
-            NoWhitespaceAfterField(_, _) => "No whitespace found after field",
+            NoWhitespaceAfterField(_, _) => "No whitespace after field",
             ParseIntError(ref error) => error,
             UnexpectedEnd(_, _) => "Unexpected end of file when expecting value",
             UnknownError => "An unknown error has occurred",
