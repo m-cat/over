@@ -64,7 +64,14 @@ impl Tup {
 
 impl PartialEq for Tup {
     fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.inner, &other.inner)
+        let inner = self.inner.borrow();
+        let other_inner = other.inner.borrow();
+
+        if inner.tvec != other_inner.tvec {
+            return false;
+        }
+
+        inner.vec == other_inner.vec
     }
 }
 

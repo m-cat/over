@@ -125,12 +125,12 @@ impl Obj {
     pub fn set_parent(&mut self, parent: &Obj) -> OverResult<()> {
         // Test for a circular reference.
         let mut cur_parent = parent.clone();
-        if &cur_parent == self {
+        if self.ptr_eq(&cur_parent) {
             return Err(OverError::CircularParentReferences);
         }
         while cur_parent.has_parent() {
             cur_parent = cur_parent.get_parent()?;
-            if &cur_parent == self {
+            if self.ptr_eq(&cur_parent) {
                 return Err(OverError::CircularParentReferences);
             }
         }
@@ -163,7 +163,20 @@ impl Default for Obj {
 
 impl PartialEq for Obj {
     fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.inner, &other.inner)
+        let inner = self.inner.borrow();
+        let other_inner = other.inner.borrow();
+
+        if inner.parent.is_some() && other_inner.parent.is_some() {
+            let parent = self.get_parent().unwrap();
+            let other_parent = other.get_parent().unwrap();
+            if !parent.ptr_eq(&other_parent) {
+                return false;
+            }
+        } else if !(inner.parent.is_none() && other_inner.parent.is_none()) {
+            return false;
+        }
+
+        inner.fields == other_inner.fields
     }
 }
 

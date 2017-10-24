@@ -57,7 +57,11 @@ fn set_and_get() {
 
     // Tup
 
+    // TODO:
+
     // Obj
+
+    // TODO:
 
     // Errors
 
@@ -78,6 +82,20 @@ fn parents() {
     obj.set_parent(&def1).unwrap();
 
     def1.set_parent(&def2).unwrap();
+
+    // Test object equality when parents are involved.
+
+    assert_ne!(obj, def1);
+    assert_ne!(def1, def2);
+    assert_ne!(obj, def2);
+
+    let mut obj2 = Obj::new();
+    obj2.set_parent(&def1).unwrap();
+
+    assert_eq!(obj, obj2);
+
+    obj2.set("test", true.into());
+    assert_ne!(obj, obj2);
 
     // Bool
 

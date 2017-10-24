@@ -129,9 +129,6 @@ impl PartialEq for Arr {
         let inner = self.inner.borrow();
         let other_inner = other.inner.borrow();
 
-        if inner.vec.len() != other_inner.vec.len() {
-            return false;
-        }
         if inner.t != other_inner.t {
             return false;
         }
