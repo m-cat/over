@@ -36,15 +36,14 @@ fn parse_obj(mut stream: CharStream, globals: &mut HashMap<String, Value>) -> Pa
         let peek = stream.peek().unwrap();
         if peek == '}' {
             let _ = stream.next();
-
-            // Values must be followed by either whitespace or eof.
-            parse_value_end(stream.clone())?;
-
             break;
         }
 
         parse_field_value_pair(stream.clone(), &mut obj, globals)?;
     }
+
+    // Check for valid characters after the Obj.
+    check_value_end(stream.clone())?;
 
     Ok(Value::Obj(obj))
 }
@@ -106,8 +105,8 @@ fn parse_field(mut stream: CharStream, line: usize, col: usize) -> ParseResult<(
         match ch_opt.unwrap() {
             ':' => {
                 // There must be whitespace after a field.
-                let ch_opt = stream.next();
-                if ch_opt.is_some() && !ch_opt.unwrap().is_whitespace() {
+                let peek_opt = stream.peek();
+                if peek_opt.is_some() && !is_whitespace(peek_opt.unwrap()) {
                     return Err(ParseError::NoWhitespaceAfterField(
                         stream.line(),
                         stream.col() - 1,
@@ -146,6 +145,7 @@ fn parse_value(
     // Peek to determine what kind of value we'll be parsing.
     match stream.peek().unwrap() {
         '"' => parse_str(stream),
+        '\'' => parse_char(stream),
         ch if ch.is_numeric() => parse_numeric(stream),
         ch if ch.is_alphabetic() => parse_variable(stream, obj, globals, line, col),
         '@' => parse_variable(stream, obj, globals, line, col),
@@ -168,16 +168,18 @@ fn parse_numeric(mut stream: CharStream) -> ParseResult<Value> {
     s.push(ch);
 
     loop {
-        let ch_opt = stream.next();
-        if ch_opt.is_none() {
+        let peek_opt = stream.peek();
+        if peek_opt.is_none() {
             break;
         }
 
-        match ch_opt.unwrap() {
-            ch if ch.is_whitespace() => break,
+        match peek_opt.unwrap() {
+            ch if is_value_end_char(ch) => break,
             ch if ch.is_numeric() => s.push(ch),
             _ => return Err(ParseError::InvalidNumeric(stream.line(), stream.col() - 1)),
         }
+
+        let _ = stream.next();
     }
 
     let i: i64 = s.parse().map_err(ParseError::from)?;
@@ -203,13 +205,13 @@ fn parse_variable(
     }
 
     loop {
-        let ch_opt = stream.next();
-        if ch_opt.is_none() {
+        let peek_opt = stream.peek();
+        if peek_opt.is_none() {
             break;
         }
 
-        match ch_opt.unwrap() {
-            ch if ch.is_whitespace() => break,
+        match peek_opt.unwrap() {
+            ch if is_value_end_char(ch) => break,
             ch if is_valid_field_char(ch, false) => var.push(ch),
             ch => {
                 return Err(ParseError::InvalidValueChar(
@@ -219,6 +221,8 @@ fn parse_variable(
                 ))
             }
         }
+
+        let _ = stream.next();
     }
 
     match var.as_str() {
@@ -249,48 +253,103 @@ fn parse_variable(
     }
 }
 
-// Get the next Str in the character stream.
-// Assumes the Str starts and ends with quotation marks and removes them.
-// '"', '\' and '$' must be escaped with '\'.
-fn parse_str(mut stream: CharStream) -> ParseResult<Value> {
-    let mut s = String::new();
-    let mut escape = false;
-
+// Get the next Char in the character stream.
+// Assumes the Char starts and ends with single quote marks.
+// '\', '\n', '\r', and '\t' must be escaped with '\'.
+// ''' do not need to be escaped, although they can be.
+fn parse_char(mut stream: CharStream) -> ParseResult<Value> {
     let ch = stream.next().unwrap();
-    assert_eq!(ch, '"');
+    assert_eq!(ch, '\'');
 
-    loop {
-        let ch_opt = stream.next();
-        if ch_opt.is_none() {
-            return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1));
+    let (escape, mut ch) = match stream.next() {
+        Some('\\') => (true, '\0'),
+        Some(ch) if ch == '\n' || ch == '\r' || ch == '\t' => {
+            return Err(ParseError::InvalidValueChar(
+                ch,
+                stream.line(),
+                stream.col() - 1,
+            ))
         }
+        Some(ch) => (false, ch),
+        None => return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1)),
+    };
 
-        let ch = ch_opt.unwrap();
-        if escape {
-            match ch {
-                '"' => s.push('"'),
-                '\\' => s.push('\\'),
-                '$' => s.push('$'),
-                _ => {
-                    return Err(ParseError::InvalidEscapeChar(
-                        ch,
-                        stream.line(),
-                        stream.col() - 1,
-                    ))
+    if escape {
+        ch = match stream.next() {
+            Some(ch) => {
+                match escape_char(ch) {
+                    Some(ch) => ch,
+                    None => {
+                        return Err(ParseError::InvalidEscapeChar(
+                            ch,
+                            stream.line(),
+                            stream.col() - 1,
+                        ))
+                    }
                 }
             }
-            escape = false;
-        } else {
-            match ch {
-                '"' => break,
-                '\\' => escape = true,
-                _ => s.push(ch),
-            }
+            None => return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1)),
         }
     }
 
-    // There must be whitespace after the string.
-    parse_value_end(stream.clone())?;
+    match stream.next() {
+        Some('\'') => (),
+        Some(ch) => {
+            return Err(ParseError::InvalidValueChar(
+                ch,
+                stream.line(),
+                stream.col() - 1,
+            ))
+        }
+        None => return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1)),
+    }
+
+    // Check for valid characters after the char.
+    check_value_end(stream.clone())?;
+
+    Ok(ch.into())
+}
+
+// Get the next Str in the character stream.
+// Assumes the Str starts and ends with quotation marks and does not include them in the Str.
+// '"', '\' and '$' must be escaped with '\'.
+// Newlines can be escaped with '\n', but this is NOT necessary.
+fn parse_str(mut stream: CharStream) -> ParseResult<Value> {
+    let ch = stream.next().unwrap();
+    assert_eq!(ch, '"');
+
+    let mut s = String::new();
+    let mut escape = false;
+
+    loop {
+        match stream.next() {
+            Some(ch) => {
+                if escape {
+                    match escape_char(ch) {
+                        Some(ch) => s.push(ch),
+                        None => {
+                            return Err(ParseError::InvalidEscapeChar(
+                                ch,
+                                stream.line(),
+                                stream.col() - 1,
+                            ))
+                        }
+                    }
+                    escape = false;
+                } else {
+                    match ch {
+                        '"' => break,
+                        '\\' => escape = true,
+                        _ => s.push(ch),
+                    }
+                }
+            }
+            None => return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1)),
+        }
+    }
+
+    // Check for valid characters after the string.
+    check_value_end(stream.clone())?;
 
     Ok(s.into())
 }
@@ -327,17 +386,53 @@ fn find_char(mut stream: CharStream) -> bool {
     false
 }
 
-// Helper function to make sure values are followed by whitespace.
-fn parse_value_end(mut stream: CharStream) -> ParseResult<()> {
-    let ch_opt = stream.next();
-    if ch_opt.is_some() && !ch_opt.unwrap().is_whitespace() {
-        Err(ParseError::InvalidValueChar(
-            ch_opt.unwrap(),
-            stream.line(),
-            stream.col() - 1,
-        ))
+// Helper function to make sure values are followed by whitespace or an end delimiter.
+fn check_value_end(stream: CharStream) -> ParseResult<()> {
+    let peek_opt = stream.peek();
+    if peek_opt.is_some() {
+        match peek_opt.unwrap() {
+            ch if is_value_end_char(ch) => Ok(()),
+            _ => Err(ParseError::InvalidValueChar(
+                peek_opt.unwrap(),
+                stream.line(),
+                stream.col() - 1,
+            )),
+        }
     } else {
         Ok(())
+    }
+}
+
+// If `ch` preceded by a backslash together form an escape character, then return this char.
+// Otherwise, return None.
+fn escape_char(ch: char) -> Option<char> {
+    match ch {
+        '"' => Some('"'),
+        '\'' => Some('\''),
+        '\\' => Some('\\'),
+        '$' => Some('$'),
+        'n' => Some('\n'),
+        'r' => Some('\r'),
+        't' => Some('\t'),
+        _ => None,
+    }
+}
+
+fn is_value_end_char(ch: char) -> bool {
+    is_whitespace(ch) || is_end_delimiter(ch)
+}
+
+// Returns true if the character is either whitespace or '#' (start of a comment).
+fn is_whitespace(ch: char) -> bool {
+    ch.is_whitespace() || ch == '#'
+}
+
+fn is_end_delimiter(ch: char) -> bool {
+    match ch {
+        ')' => true,
+        ']' => true,
+        '}' => true,
+        _ => false,
     }
 }
 

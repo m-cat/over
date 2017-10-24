@@ -9,8 +9,9 @@ use std::mem;
 use std::rc::Rc;
 use std::str::Chars;
 
+#[derive(Clone, Debug)]
 pub struct CharStream {
-    contents: String,
+    contents: Rc<String>,
     stream: Rc<RefCell<Peekable<Chars<'static>>>>,
     line: Rc<RefCell<usize>>,
     col: Rc<RefCell<usize>>,
@@ -27,6 +28,7 @@ impl CharStream {
         let stream = Rc::new(RefCell::new(chars.peekable()));
         let line = Rc::new(RefCell::new(1));
         let col = Rc::new(RefCell::new(1));
+        let contents = Rc::new(contents);
 
         Ok(CharStream {
             contents,
@@ -106,16 +108,5 @@ impl CharStream {
     fn set_col(&mut self, value: usize) {
         let mut col = self.col.borrow_mut();
         *col = value;
-    }
-}
-
-impl Clone for CharStream {
-    fn clone(&self) -> CharStream {
-        CharStream {
-            contents: self.contents.clone(),
-            stream: self.stream.clone(),
-            line: self.line.clone(),
-            col: self.col.clone(),
-        }
     }
 }

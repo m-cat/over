@@ -2,10 +2,13 @@ empty: {} empty2: {}
 bools: { t: true f: false }
 
 outie: {
+    ^: @bools
     z: 0
     inner: {
-        innie: { a: 1 }
-        b: 2
+        innie: {a: 1}
+        # b: (1 2)
     }
     c: 3
-}
+    d: {}}
+
+# obj-arr: {arr: [1 2 3]}

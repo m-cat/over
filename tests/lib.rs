@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate over;
 
 use over::OverError;
@@ -30,6 +31,9 @@ fn basic() {
     assert_eq!(obj.get("p").unwrap(), "Hello");
     assert_eq!(obj.get("q").unwrap(), 0);
     assert_eq!(obj.get("r").unwrap(), Value::Null);
+    assert_eq!(obj.get("s").unwrap(), '\'');
+    assert_eq!(obj.get("t").unwrap(), '\n');
+    assert_eq!(obj.get("u").unwrap(), ' ');
 }
 
 // Test parsing of Obj.
@@ -49,8 +53,9 @@ fn obj() {
     let inner = outie.get("inner").unwrap().get_obj().unwrap();
     let innie = inner.get("innie").unwrap().get_obj().unwrap();
     assert_eq!(innie.get("a").unwrap(), 1);
-    assert_eq!(inner.get("b").unwrap(), 2);
+    // assert_eq!(inner.get("b").unwrap(), 2);
     assert_eq!(outie.get("c").unwrap(), 3);
+    assert_eq!(outie.get("d").unwrap(), Obj::new());
 }
 
 // Test that globals are referenced correctly and don't get included as fields.
@@ -71,9 +76,12 @@ fn globals() {
 // Test that parsing malformed .over files results in correct errors being returned.
 #[test]
 fn errors() {
+    // TODO: use a macro to cut down on code here
+
     let e_field_true = String::from("Invalid field name \"true\" at line 1, column 1");
     let e_value_amp = String::from("Invalid value \"@\" at line 1, column 8");
     let e_dup_global = String::from("Duplicate global \"@global\" at line 2, column 1");
+    let e_arr_types = String::from("test");
 
     match Obj::from_file("tests/test_files/errors/field_true.over") {
         Err(OverError::ParseError(s)) => {
@@ -94,6 +102,14 @@ fn errors() {
     match Obj::from_file("tests/test_files/errors/dup_global.over") {
         Err(OverError::ParseError(s)) => {
             if s != e_dup_global {
+                panic!("{:?}", s);
+            }
+        }
+        res => panic!("{:?}", res),
+    }
+    match Obj::from_file("tests/test_files/errors/arr_types.over") {
+        Err(OverError::ParseError(s)) => {
+            if s != e_arr_types {
                 panic!("{:?}", s);
             }
         }

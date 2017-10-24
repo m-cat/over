@@ -1,8 +1,8 @@
  # Comment
  a1: 1 a2: 2
  aa: 0 #
-b: 1 #
- c: 10 # Comment
+b: 1#
+ c: 10# Comment
 d: 20 #Comment
 # Comment
 eee: 2
@@ -17,9 +17,9 @@ g_: 4
 
 Hello: "Hello"
 i_robot: "not #a comment"
-j:
+j:#
 4
-k:
+k:# Comment
 "hi"
  l: "\$\\\""
  m: #Comment
@@ -28,3 +28,4 @@ k:
 p: Hello
 q: aa
 r: null
+s: '\'' t: '\n' u: ' '
