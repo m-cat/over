@@ -6,12 +6,13 @@ use parse::error::ParseError;
 use std::error::Error;
 use std::fmt;
 use std::io;
+use types::Type;
 
 /// The fabulous OVER error type.
 #[derive(Debug, PartialEq, Eq)]
 pub enum OverError {
     ArrOutOfBounds(usize),
-    ArrTypeMismatch,
+    ArrTypeMismatch(Type, Type),
     CircularParentReferences,
     IoError(String),
     NoParentFound,
@@ -19,8 +20,7 @@ pub enum OverError {
     ParseError(String),
     SyncError,
     TupOutOfBounds(usize),
-    TupTypeMismatch,
-    TypeMismatch,
+    TypeMismatch(Type),
     UnknownError,
 }
 
@@ -30,7 +30,14 @@ impl fmt::Display for OverError {
 
         match *self {
             ArrOutOfBounds(ref index) => write!(f, "Arr index out of bounds: {}", index),
-            ArrTypeMismatch => write!(f, "Arr inner types do not match"),
+            ArrTypeMismatch(ref found, ref expected) => {
+                write!(
+                    f,
+                    "Arr inner types do not match: found {}, expected {}",
+                    found,
+                    expected
+                )
+            }
             CircularParentReferences => {
                 write!(f, "Circular references among parents are not allowed")
             }
@@ -40,8 +47,7 @@ impl fmt::Display for OverError {
             ParseError(ref error) => write!(f, "{}", error),
             SyncError => write!(f, "Tried to access two values at the same time"),
             TupOutOfBounds(ref index) => write!(f, "Tup index out of bounds: {}", index),
-            TupTypeMismatch => write!(f, "Tup inner types do not match"),
-            TypeMismatch => write!(f, "Type mismatch"),
+            TypeMismatch(ref found) => write!(f, "Type mismatch: found {}", found),
             UnknownError => write!(f, "An unknown error has occurred"),
         }
     }
@@ -53,7 +59,7 @@ impl Error for OverError {
 
         match *self {
             ArrOutOfBounds(_) => "Arr index out of bounds",
-            ArrTypeMismatch => "Arr inner types do not match",
+            ArrTypeMismatch(_, _) => "Arr inner types do not match",
             CircularParentReferences => "Circular references among parents are not allowed",
             IoError(ref error) => error,
             NoParentFound => "No parent found for this obj",
@@ -61,8 +67,7 @@ impl Error for OverError {
             ParseError(ref error) => error,
             SyncError => "Tried to access two values at the same time",
             TupOutOfBounds(_) => "Tup index out of bounds",
-            TupTypeMismatch => "Tup inner types do not match",
-            TypeMismatch => "Type mismatch",
+            TypeMismatch(_) => "Type mismatch",
             UnknownError => "An unknown error has occurred",
         }
     }

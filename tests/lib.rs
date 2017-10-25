@@ -44,18 +44,23 @@ fn obj() {
     assert_eq!(obj.get("empty").unwrap().get_obj().unwrap().len(), 0);
     assert_eq!(obj.get("empty2").unwrap().get_obj().unwrap().len(), 0);
 
-    let bools = obj.get("bools").unwrap().get_obj().unwrap();
-    assert_eq!(bools.get("t").unwrap(), true);
-    assert_eq!(bools.get("f").unwrap(), false);
+    assert!(!obj.contains("bools"));
+    let mut bools = Obj::new();
+    bools.set("t", true.into());
+    bools.set("f", false.into());
 
     let outie = obj.get("outie").unwrap().get_obj().unwrap();
+    assert_eq!(outie.get_parent().unwrap(), bools);
     assert_eq!(outie.get("z").unwrap(), 0);
     let inner = outie.get("inner").unwrap().get_obj().unwrap();
     let innie = inner.get("innie").unwrap().get_obj().unwrap();
     assert_eq!(innie.get("a").unwrap(), 1);
-    // assert_eq!(inner.get("b").unwrap(), 2);
+    assert_eq!(inner.get("b").unwrap(), tup_vec!(1, 2));
     assert_eq!(outie.get("c").unwrap(), 3);
     assert_eq!(outie.get("d").unwrap(), Obj::new());
+
+    let obj_arr = obj.get("obj_arr").unwrap().get_obj().unwrap();
+    assert_eq!(obj_arr.get("arr").unwrap(), arr_vec![1, 2, 3]);
 }
 
 // Test that globals are referenced correctly and don't get included as fields.
@@ -81,7 +86,10 @@ fn errors() {
     let e_field_true = String::from("Invalid field name \"true\" at line 1, column 1");
     let e_value_amp = String::from("Invalid value \"@\" at line 1, column 8");
     let e_dup_global = String::from("Duplicate global \"@global\" at line 2, column 1");
-    let e_arr_types = String::from("test");
+    let e_arr_types = String::from(
+        "Arr inner types do not match: found Arr(Tup([Int, Char])), \
+                                    expected Arr(Tup([Int, Int]))",
+    );
 
     match Obj::from_file("tests/test_files/errors/field_true.over") {
         Err(OverError::ParseError(s)) => {

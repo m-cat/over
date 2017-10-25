@@ -3,6 +3,7 @@
 #![allow(missing_docs)]
 
 use super::misc::format_char;
+use OverError;
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -22,6 +23,7 @@ pub enum ParseError {
     InvalidValueChar(char, usize, usize),
     IoError(String),
     NoWhitespaceAfterField(usize, usize),
+    OverError(String),
     ParseIntError(String),
     UnexpectedEnd(usize, usize),
     UnknownError,
@@ -123,6 +125,7 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
+            OverError(ref error) => write!(f, "{}", error),
             ParseIntError(ref error) => write!(f, "{}", error),
             UnexpectedEnd(ref line, ref col) => {
                 write!(
@@ -162,6 +165,7 @@ impl Error for ParseError {
             InvalidValueChar(_, _, _) => "Invalid character for value",
             IoError(ref error) => error,
             NoWhitespaceAfterField(_, _) => "No whitespace after field",
+            OverError(ref error) => error,
             ParseIntError(ref error) => error,
             UnexpectedEnd(_, _) => "Unexpected end of file when expecting value",
             UnknownError => "An unknown error has occurred",
@@ -179,5 +183,11 @@ impl From<io::Error> for ParseError {
 impl From<ParseIntError> for ParseError {
     fn from(e: ParseIntError) -> Self {
         ParseError::ParseIntError(format!("{}", e))
+    }
+}
+
+impl From<OverError> for ParseError {
+    fn from(e: OverError) -> Self {
+        ParseError::OverError(format!("{}", e))
     }
 }

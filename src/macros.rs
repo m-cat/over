@@ -34,7 +34,7 @@ macro_rules! try_arr_vec {
 /// intentionally not supported.
 #[macro_export]
 macro_rules! tup_vec {
-    [ $( $obj:expr ),+ ] => {
+    ( $( $obj:expr ),+ ) => {
         {
             use $crate::tup::Tup;
 
@@ -46,6 +46,7 @@ macro_rules! tup_vec {
 #[cfg(test)]
 mod tests {
     use OverError;
+    use types::Type::*;
     use value::Value;
 
     #[test]
@@ -65,8 +66,14 @@ mod tests {
     fn try_arr_vec_mismatch() {
         assert_eq!(
             try_arr_vec![arr_vec![1, 1], arr_vec!['c']],
-            Err(OverError::ArrTypeMismatch)
+            Err(OverError::ArrTypeMismatch(
+                Arr(Box::new(Char)),
+                Arr(Box::new(Int)),
+            ))
         );
-        assert_eq!(try_arr_vec![1, 'c'], Err(OverError::ArrTypeMismatch));
+        assert_eq!(
+            try_arr_vec![1, 'c'],
+            Err(OverError::ArrTypeMismatch(Char, Int))
+        );
     }
 }

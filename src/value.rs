@@ -64,7 +64,7 @@ impl Value {
         if let Value::Bool(inner) = *self {
             Ok(inner)
         } else {
-            Err(OverError::TypeMismatch)
+            Err(OverError::TypeMismatch(self.get_type()))
         }
     }
 
@@ -74,7 +74,7 @@ impl Value {
         if let Value::Int(inner) = *self {
             Ok(inner)
         } else {
-            Err(OverError::TypeMismatch)
+            Err(OverError::TypeMismatch(self.get_type()))
         }
     }
 
@@ -84,7 +84,7 @@ impl Value {
         if let Value::Frac(inner) = *self {
             Ok(inner)
         } else {
-            Err(OverError::TypeMismatch)
+            Err(OverError::TypeMismatch(self.get_type()))
         }
     }
 
@@ -94,7 +94,7 @@ impl Value {
         if let Value::Char(inner) = *self {
             Ok(inner)
         } else {
-            Err(OverError::TypeMismatch)
+            Err(OverError::TypeMismatch(self.get_type()))
         }
     }
 
@@ -104,7 +104,7 @@ impl Value {
         if let Value::Str(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch)
+            Err(OverError::TypeMismatch(self.get_type()))
         }
     }
 
@@ -114,7 +114,7 @@ impl Value {
         if let Value::Arr(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch)
+            Err(OverError::TypeMismatch(self.get_type()))
         }
     }
 
@@ -124,7 +124,7 @@ impl Value {
         if let Value::Tup(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch)
+            Err(OverError::TypeMismatch(self.get_type()))
         }
     }
 
@@ -134,7 +134,7 @@ impl Value {
         if let Value::Obj(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch)
+            Err(OverError::TypeMismatch(self.get_type()))
         }
     }
 }

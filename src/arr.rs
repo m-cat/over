@@ -39,7 +39,7 @@ impl Arr {
             if let Type::Empty = t {
                 t = tnew.clone()
             } else if t != tnew {
-                return Err(OverError::ArrTypeMismatch);
+                return Err(OverError::ArrTypeMismatch(tnew, t));
             }
         }
 
@@ -69,18 +69,17 @@ impl Arr {
 
     /// Adds a `Value` to the `Arr`.
     /// Returns an error if the new `Value` is type-incompatible with the `Arr`.
-    pub fn add(&mut self, value: Value) -> OverResult<()> {
-        // Should be impossible to add an "Empty" value.
-        debug_assert_ne!(value.get_type(), Type::Empty);
-
+    pub fn push(&mut self, value: Value) -> OverResult<()> {
         let mut inner = self.inner.borrow_mut();
 
+        let inner_type = inner.t.clone();
         let val_type = value.get_type();
-        if val_type != inner.t {
-            Err(OverError::ArrTypeMismatch)
+
+        if val_type != inner_type {
+            Err(OverError::ArrTypeMismatch(val_type, inner_type))
         } else {
             // Update type of this `Arr`.
-            if inner.t == Type::Empty {
+            if inner_type.is(&Type::Empty) {
                 inner.t = val_type;
             }
 
@@ -92,16 +91,9 @@ impl Arr {
 
     /// Inserts a `Value` into the `Arr` at the given index.
     /// Returns an error if the new `Value` is type-incompatible with the `Arr`.
-    // TODO: finish this, copy from `add` above
+    // TODO: finish this, copy from `push` above
     pub fn insert(&mut self, index: usize, value: Value) -> OverResult<()> {
-        let mut inner = self.inner.borrow_mut();
-
-        if value.get_type() != inner.t {
-            Err(OverError::ArrTypeMismatch)
-        } else {
-            inner.vec.insert(index, value);
-            Ok(())
-        }
+        unimplemented!()
     }
 
     /// Removes and returns a `Value` from the `Arr` at the given index.

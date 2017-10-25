@@ -3,8 +3,10 @@
 use super::ParseResult;
 use super::char_stream::CharStream;
 use super::error::ParseError;
+use arr::Arr;
 use obj::Obj;
 use std::collections::HashMap;
+use tup::Tup;
 use value::Value;
 
 /// Parse given file as an `Obj`.
@@ -45,7 +47,7 @@ fn parse_obj(mut stream: CharStream, globals: &mut HashMap<String, Value>) -> Pa
     // Check for valid characters after the Obj.
     check_value_end(stream.clone())?;
 
-    Ok(Value::Obj(obj))
+    Ok(obj.into())
 }
 
 // Parses a field/value pair.
@@ -56,8 +58,8 @@ fn parse_field_value_pair(
 ) -> ParseResult<()> {
     let (field_line, field_col) = (stream.line(), stream.col());
     // At a non-whitespace character, parse field.
-    let (field, is_global) = parse_field(stream.clone(), field_line, field_col)?;
-    if obj.contains(&field) {
+    let (field, is_global, is_parent) = parse_field(stream.clone(), field_line, field_col)?;
+    if !is_global && !is_parent && obj.contains(&field) {
         return Err(ParseError::DuplicateField(field, field_line, field_col));
     }
 
@@ -77,14 +79,93 @@ fn parse_field_value_pair(
         }
         globals.insert(field, value);
     } else {
-        obj.set(&field, value);
+        if is_parent {
+            let parent = value.get_obj().map_err(ParseError::from)?;
+            obj.set_parent(&parent).map_err(ParseError::from)?;
+        } else {
+            obj.set(&field, value);
+        }
     }
 
     Ok(())
 }
 
+fn parse_arr(
+    mut stream: CharStream,
+    obj: &Obj,
+    mut globals: &mut HashMap<String, Value>,
+) -> ParseResult<Value> {
+    let ch = stream.next().unwrap();
+    assert_eq!(ch, '[');
+
+    let mut arr = Arr::new();
+
+    loop {
+        if !find_char(stream.clone()) {
+            return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1));
+        }
+
+        let peek = stream.peek().unwrap();
+        if peek == ']' {
+            let _ = stream.next();
+            break;
+        }
+
+        // At a non-whitespace character, parse value.
+        let (value_line, value_col) = (stream.line(), stream.col());
+        let value = parse_value(stream.clone(), &obj, &mut globals, value_line, value_col)?;
+
+        arr.push(value).map_err(ParseError::from)?;
+    }
+
+    // Check for valid characters after the Arr.
+    check_value_end(stream.clone())?;
+
+    Ok(arr.into())
+}
+
+fn parse_tup(
+    mut stream: CharStream,
+    obj: &Obj,
+    mut globals: &mut HashMap<String, Value>,
+) -> ParseResult<Value> {
+    let ch = stream.next().unwrap();
+    assert_eq!(ch, '(');
+
+    let mut vec = Vec::new();
+
+    loop {
+        if !find_char(stream.clone()) {
+            return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1));
+        }
+
+        let peek = stream.peek().unwrap();
+        if peek == ')' {
+            let _ = stream.next();
+            break;
+        }
+
+        // At a non-whitespace character, parse value.
+        let (value_line, value_col) = (stream.line(), stream.col());
+        let value = parse_value(stream.clone(), &obj, &mut globals, value_line, value_col)?;
+
+        vec.push(value);
+    }
+
+    // Check for valid characters after the Tup.
+    check_value_end(stream.clone())?;
+
+    let tup = Tup::from_vec(vec);
+
+    Ok(tup.into())
+}
+
 // Get the next field in the char stream.
-fn parse_field(mut stream: CharStream, line: usize, col: usize) -> ParseResult<(String, bool)> {
+fn parse_field(
+    mut stream: CharStream,
+    line: usize,
+    col: usize,
+) -> ParseResult<(String, bool, bool)> {
     let mut field = String::new();
     let mut first = true;
     let mut is_global = false;
@@ -129,8 +210,12 @@ fn parse_field(mut stream: CharStream, line: usize, col: usize) -> ParseResult<(
 
     // Check for invalid field names.
     match field.as_str() {
-        "true" | "false" | "null" | "@" => Err(ParseError::InvalidFieldName(field, line, col)),
-        _ => Ok((field, is_global)),
+        "true" | "false" | "null" | "@" => Err(
+            ParseError::InvalidFieldName(field.clone(), line, col),
+        ),
+        "^" => Ok((field.clone(), false, true)),
+        bad if bad.starts_with("^") => Err(ParseError::InvalidFieldName(field.clone(), line, col)),
+        _ => Ok((field.clone(), is_global, false)),
     }
 }
 
@@ -150,6 +235,8 @@ fn parse_value(
         ch if ch.is_alphabetic() => parse_variable(stream, obj, globals, line, col),
         '@' => parse_variable(stream, obj, globals, line, col),
         '{' => parse_obj(stream, &mut globals),
+        '[' => parse_arr(stream, obj, &mut globals),
+        '(' => parse_tup(stream, obj, &mut globals),
         ch => {
             Err(ParseError::InvalidValueChar(
                 ch,
@@ -444,6 +531,7 @@ fn is_valid_field_char(ch: char, first: bool) -> bool {
         ch if ch.is_alphabetic() => true,
         ch if ch.is_numeric() => !first,
         '_' => !first,
+        '^' => first,
         _ => false,
     }
 }
