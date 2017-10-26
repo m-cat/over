@@ -78,13 +78,11 @@ fn parse_field_value_pair(
             return Err(ParseError::DuplicateGlobal(field, field_line, field_col));
         }
         globals.insert(field, value);
+    } else if is_parent {
+        let parent = value.get_obj().map_err(ParseError::from)?;
+        obj.set_parent(&parent).map_err(ParseError::from)?;
     } else {
-        if is_parent {
-            let parent = value.get_obj().map_err(ParseError::from)?;
-            obj.set_parent(&parent).map_err(ParseError::from)?;
-        } else {
-            obj.set(&field, value);
-        }
+        obj.set(&field, value);
     }
 
     Ok(())

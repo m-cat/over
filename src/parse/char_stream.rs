@@ -10,11 +10,16 @@ use std::rc::Rc;
 use std::str::Chars;
 
 #[derive(Clone, Debug)]
+struct Inner {
+    contents: String,
+    stream: Peekable<Chars<'static>>,
+    line: usize,
+    col: usize,
+}
+
+#[derive(Clone, Debug)]
 pub struct CharStream {
-    contents: Rc<String>,
-    stream: Rc<RefCell<Peekable<Chars<'static>>>>,
-    line: Rc<RefCell<usize>>,
-    col: Rc<RefCell<usize>>,
+    inner: Rc<RefCell<Inner>>,
 }
 
 impl CharStream {
@@ -25,22 +30,21 @@ impl CharStream {
         file.read_to_string(&mut contents)?;
 
         let chars: Chars = unsafe { mem::transmute(contents.chars()) };
-        let stream = Rc::new(RefCell::new(chars.peekable()));
-        let line = Rc::new(RefCell::new(1));
-        let col = Rc::new(RefCell::new(1));
-        let contents = Rc::new(contents);
+        let stream = chars.peekable();
 
         Ok(CharStream {
-            contents,
-            stream,
-            line,
-            col,
+            inner: Rc::new(RefCell::new(Inner {
+                contents,
+                stream,
+                line: 1,
+                col: 1,
+            })),
         })
     }
 
     pub fn peek(&self) -> Option<char> {
-        let mut peekable = self.stream.borrow_mut();
-        let opt = peekable.peek();
+        let mut inner = self.inner.borrow_mut();
+        let opt = inner.stream.peek();
 
         match opt {
             Some(ref ch) => {
@@ -61,8 +65,8 @@ impl CharStream {
 
     pub fn next(&mut self) -> Option<char> {
         let opt = {
-            let mut peekable = self.stream.borrow_mut();
-            peekable.next()
+            let mut inner = self.inner.borrow_mut();
+            inner.stream.next()
         };
 
         match opt {
@@ -91,22 +95,22 @@ impl CharStream {
     }
 
     pub fn line(&self) -> usize {
-        let line = self.line.borrow();
-        *line
+        let inner = self.inner.borrow();
+        inner.line
     }
 
     pub fn col(&self) -> usize {
-        let col = self.col.borrow();
-        *col
+        let inner = self.inner.borrow();
+        inner.col
     }
 
     fn set_line(&mut self, value: usize) {
-        let mut line = self.line.borrow_mut();
-        *line = value;
+        let mut inner = self.inner.borrow_mut();
+        inner.line = value;
     }
 
     fn set_col(&mut self, value: usize) {
-        let mut col = self.col.borrow_mut();
-        *col = value;
+        let mut inner = self.inner.borrow_mut();
+        inner.col = value;
     }
 }

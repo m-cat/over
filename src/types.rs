@@ -120,7 +120,7 @@ impl fmt::Display for Type {
             Tup(ref tvec) => {
                 write!(
                     f,
-                    "Tup([{}])",
+                    "Tup({})",
                     match tvec.iter().nth(0) {
                         Some(t1) => {
                             tvec.iter().skip(1).fold(format!("{}", t1), |s, t| {

@@ -180,8 +180,6 @@ impl PartialEq for Obj {
     }
 }
 
-// TODO: panicking index for obj, tup, and vec?
-
 // TODO:
 // pub struct Iter {
 

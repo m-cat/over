@@ -1,17 +1,11 @@
 //! Tup module.
 //! A tuple container which can hold elements of different types.
 
+use {OverError, OverResult};
 use std::cell::RefCell;
 use std::rc::Rc;
 use types::Type;
 use value::Value;
-
-// /// Given an array of type; element pairs, converts each element to values with the specified
-// /// types.
-// #[macro_export]
-// macro_rules! tup_value_vec {
-
-// }
 
 #[derive(Clone, Debug)]
 struct TupInner {
@@ -39,6 +33,18 @@ impl Tup {
         self.inner.borrow().tvec.clone()
     }
 
+    /// Gets the value at `index`.
+    /// Returns an error if `index` is out of bounds.
+    pub fn get(&self, index: usize) -> OverResult<Value> {
+        let inner = self.inner.borrow();
+
+        if index >= inner.vec.len() {
+            Err(OverError::TupOutOfBounds(index))
+        } else {
+            Ok(inner.vec[index].clone())
+        }
+    }
+
     /// Returns the length of this `Tup`.
     // TODO: test this
     pub fn len(&self) -> usize {
@@ -54,13 +60,20 @@ impl Tup {
     pub fn ptr_eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.inner, &other.inner)
     }
-}
 
-// impl Clone for Tup {
-//     fn clone(&self) -> Tup {
-//         Tup { inner: inner.clone(), tvec: tvec.clone() }
-//     }
-// }
+    /// Sets the value at `index` to `value`.
+    /// Returns an error if `index` is out of bounds.
+    pub fn set(&mut self, index: usize, value: Value) -> OverResult<()> {
+        let mut inner = self.inner.borrow_mut();
+
+        if index >= inner.vec.len() {
+            Err(OverError::TupOutOfBounds(index))
+        } else {
+            inner.vec[index] = value;
+            Ok(())
+        }
+    }
+}
 
 impl PartialEq for Tup {
     fn eq(&self, other: &Self) -> bool {
@@ -74,20 +87,3 @@ impl PartialEq for Tup {
         inner.vec == other_inner.vec
     }
 }
-
-// impl Index<&str> for Tup {
-//     type Output = OverResult<Value>;
-
-//     fn index(&self, index: &str) -> Self::Output {
-//         match index {
-//             self.get()
-//         }
-//     }
-// }
-
-// impl IndexMut<&str> for Tup {
-//     fn index_mut<'a>(&mut self, index: Side) -> &'a mut Weight {
-//         match index {
-//         }
-//     }
-// }

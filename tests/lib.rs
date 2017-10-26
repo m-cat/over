@@ -87,8 +87,8 @@ fn errors() {
     let e_value_amp = String::from("Invalid value \"@\" at line 1, column 8");
     let e_dup_global = String::from("Duplicate global \"@global\" at line 2, column 1");
     let e_arr_types = String::from(
-        "Arr inner types do not match: found Arr(Tup([Int, Char])), \
-                                    expected Arr(Tup([Int, Int]))",
+        "Arr inner types do not match: found Arr(Tup(Int, Char)), \
+                                    expected Arr(Tup(Int, Int))",
     );
 
     match Obj::from_file("tests/test_files/errors/field_true.over") {

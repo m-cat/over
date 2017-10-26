@@ -51,6 +51,18 @@ impl Arr {
         self.inner.borrow().t.clone()
     }
 
+    /// Gets the value at `index`.
+    /// Returns an error if `index` is out of bounds.
+    pub fn get(&self, index: usize) -> OverResult<Value> {
+        let inner = self.inner.borrow();
+
+        if index >= inner.vec.len() {
+            Err(OverError::ArrOutOfBounds(index))
+        } else {
+            Ok(inner.vec[index].clone())
+        }
+    }
+
     /// Returns the length of this `Arr`.
     // TODO: test this
     pub fn len(&self) -> usize {
@@ -65,6 +77,19 @@ impl Arr {
     /// Returns whether this `Arr` and `other` point to the same data.
     pub fn ptr_eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.inner, &other.inner)
+    }
+
+    /// Sets the value at `index` to `value`.
+    /// Returns an error if `index` is out of bounds.
+    pub fn set(&mut self, index: usize, value: Value) -> OverResult<()> {
+        let mut inner = self.inner.borrow_mut();
+
+        if index >= inner.vec.len() {
+            Err(OverError::ArrOutOfBounds(index))
+        } else {
+            inner.vec[index] = value;
+            Ok(())
+        }
     }
 
     /// Adds a `Value` to the `Arr`.
@@ -90,17 +115,48 @@ impl Arr {
     }
 
     /// Inserts a `Value` into the `Arr` at the given index.
-    /// Returns an error if the new `Value` is type-incompatible with the `Arr`.
-    // TODO: finish this, copy from `push` above
+    /// Returns an error if the new `Value` is type-incompatible with the `Arr`
+    /// or if the index is out of bounds.
     pub fn insert(&mut self, index: usize, value: Value) -> OverResult<()> {
-        unimplemented!()
+        let mut inner = self.inner.borrow_mut();
+
+        let inner_type = inner.t.clone();
+        let val_type = value.get_type();
+
+        if index > inner.vec.len() {
+            return Err(OverError::ArrOutOfBounds(index));
+        }
+        if val_type != inner_type {
+            Err(OverError::ArrTypeMismatch(val_type, inner_type))
+        } else {
+            // Update type of this `Arr`.
+            if inner_type.is(&Type::Empty) {
+                inner.t = val_type;
+            }
+
+            inner.vec.insert(index, value);
+
+            Ok(())
+        }
     }
 
     /// Removes and returns a `Value` from the `Arr` at the given index.
+    /// Sets the Arr type to Empty if the new length is 0, otherwise the type is left unchanged.
     /// Returns an error if the index is out of bounds.
-    // TODO: implement this
-    pub fn remove() -> OverResult<Value> {
-        unimplemented!()
+    pub fn remove(&mut self, index: usize) -> OverResult<Value> {
+        let mut inner = self.inner.borrow_mut();
+
+        if index > inner.vec.len() {
+            return Err(OverError::ArrOutOfBounds(index));
+        }
+
+        let res = inner.vec.remove(index);
+
+        if inner.vec.is_empty() {
+            inner.t = Type::Empty;
+        }
+
+        Ok(res)
     }
 }
 
@@ -109,12 +165,6 @@ impl Default for Arr {
         Self::new()
     }
 }
-
-// impl Clone for Arr {
-//     fn clone(&self) -> Arr {
-//         Arr { inner: inner.clone(), t: t.clone() }
-//     }
-// }
 
 impl PartialEq for Arr {
     fn eq(&self, other: &Self) -> bool {
@@ -128,20 +178,3 @@ impl PartialEq for Arr {
         inner.vec == other_inner.vec
     }
 }
-
-// impl Index<&str> for Arr {
-//     type Output = OverResult<Value>;
-
-//     fn index(&self, index: &str) -> Self::Output {
-//         match index {
-//             self.get()
-//         }
-//     }
-// }
-
-// impl IndexMut<&str> for Arr {
-//     fn index_mut<'a>(&mut self, index: Side) -> &'a mut Weight {
-//         match index {
-//         }
-//     }
-// }
