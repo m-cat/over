@@ -5,15 +5,15 @@ build:
 	cargo build
 
 format:
-	cargo fmt # run rustfmt
+	cargo fmt
 
 test:
 	cargo test
 
-# Run compiler checks without building
 check:
 	cargo check
 
+#TODO: Upgrade clippy version
 clippy:
 	cargo +nightly-2017-07-20 clippy
 
@@ -27,6 +27,10 @@ modules:
 # Generate dependency graph
 graph:
 	cargo graph | dot -Tpng > deps.png
+
+# Run fuzz
+fuzz:
+	cargo fuzz run fuzz_target_1
 
 clean:
 	rm **/*.bk
