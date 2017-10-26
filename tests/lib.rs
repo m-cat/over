@@ -82,45 +82,41 @@ fn globals() {
 #[test]
 fn errors() {
     // TODO: use a macro to cut down on code here
+    macro_rules! error_helper {
+        ( $filename:expr, $error:expr ) => {
+            {
+                match Obj::from_file($filename) {
+                    Err(OverError::ParseError(s)) => {
+                        if s != $error {
+                            panic!("{:?}", s);
+                        }
+                    }
+                    res => panic!("{:?}", res),
+                }
+            }
+        }
+    }
 
-    let e_field_true = String::from("Invalid field name \"true\" at line 1, column 1");
-    let e_value_amp = String::from("Invalid value \"@\" at line 1, column 8");
-    let e_dup_global = String::from("Duplicate global \"@global\" at line 2, column 1");
-    let e_arr_types = String::from(
-        "Arr inner types do not match: found Arr(Tup(Int, Char)), \
-                                    expected Arr(Tup(Int, Int))",
+    error_helper!(
+        "tests/test_files/errors/field_true.over",
+        "Invalid field name \"true\" at line 1, column 1"
     );
-
-    match Obj::from_file("tests/test_files/errors/field_true.over") {
-        Err(OverError::ParseError(s)) => {
-            if s != e_field_true {
-                panic!("{:?}", s);
-            }
-        }
-        res => panic!("{:?}", res),
-    }
-    match Obj::from_file("tests/test_files/errors/value_amp.over") {
-        Err(OverError::ParseError(s)) => {
-            if s != e_value_amp {
-                panic!("{:?}", s);
-            }
-        }
-        res => panic!("{:?}", res),
-    }
-    match Obj::from_file("tests/test_files/errors/dup_global.over") {
-        Err(OverError::ParseError(s)) => {
-            if s != e_dup_global {
-                panic!("{:?}", s);
-            }
-        }
-        res => panic!("{:?}", res),
-    }
-    match Obj::from_file("tests/test_files/errors/arr_types.over") {
-        Err(OverError::ParseError(s)) => {
-            if s != e_arr_types {
-                panic!("{:?}", s);
-            }
-        }
-        res => panic!("{:?}", res),
-    }
+    error_helper!(
+        "tests/test_files/errors/value_amp.over",
+        "Invalid value \"@\" at line 1, column 8"
+    );
+    error_helper!(
+        "tests/test_files/errors/dup_global.over",
+        "Duplicate global \"@global\" at line 2, column 1"
+    );
+    error_helper!(
+        "tests/test_files/errors/arr_types.over",
+        "Arr inner types do not match: found Arr(Tup(Int, Char)), \
+                   expected Arr(Tup(Int, Int))"
+    );
+    error_helper!(
+        "tests/test_files/errors/empty_field.over",
+        "Invalid character \':\' for field at line 1, column 1"
+    );
+    // error_helper!("tests/test_files/errors/fuzz1.over", "test");
 }

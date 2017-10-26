@@ -187,7 +187,7 @@ fn parse_field(
 
     while let Some(ch) = stream.next() {
         match ch {
-            ':' => {
+            ':' if !first => {
                 // There must be whitespace after a field.
                 let peek_opt = stream.peek();
                 if peek_opt.is_some() && !is_whitespace(peek_opt.unwrap()) {
