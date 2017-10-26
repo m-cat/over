@@ -13,6 +13,7 @@ use std::collections::HashMap;
 use std::convert;
 use std::io;
 use std::rc::Rc;
+use std::str::FromStr;
 use types::Type;
 use value::Value;
 
@@ -41,12 +42,12 @@ impl Obj {
 
     /// Returns a new `Obj` loaded from a file.
     pub fn from_file(path: &str) -> OverResult<Obj> {
-        parse::load_file(path)
+        parse::load_from_file(path).map_err(OverError::from)
     }
 
     /// Writes this `Obj` to given file in `.over` representation.
     pub fn write_to_file(&self, path: &str) -> OverResult<()> {
-        parse::write_to_file(self, path)
+        parse::write_to_file(self, path).map_err(OverError::from)
     }
 
     /// Returns the number of fields for this `Obj` (children/parents not included).
@@ -158,6 +159,14 @@ impl Obj {
 impl Default for Obj {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl FromStr for Obj {
+    type Err = OverError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        parse::load_from_str(s).map_err(OverError::from)
     }
 }
 

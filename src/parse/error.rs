@@ -26,7 +26,6 @@ pub enum ParseError {
     OverError(String),
     ParseIntError(String),
     UnexpectedEnd(usize, usize),
-    UnknownError,
     VariableNotFound(String, usize, usize),
 }
 
@@ -116,7 +115,9 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            IoError(ref error) => write!(f, "{}", error),
+            IoError(ref error) |
+            OverError(ref error) |
+            ParseIntError(ref error) => write!(f, "{}", error),
             NoWhitespaceAfterField(ref line, ref col) => {
                 write!(
                     f,
@@ -125,8 +126,6 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            OverError(ref error) => write!(f, "{}", error),
-            ParseIntError(ref error) => write!(f, "{}", error),
             UnexpectedEnd(ref line, ref col) => {
                 write!(
                     f,
@@ -135,7 +134,6 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            UnknownError => write!(f, "An unknown error has occurred"),
             VariableNotFound(ref var, ref line, ref col) => {
                 write!(
                     f,
@@ -163,12 +161,11 @@ impl Error for ParseError {
             InvalidNumeric(_, _) => "Invalid character for numeric value",
             InvalidValue(_, _, _) => "Invalid value",
             InvalidValueChar(_, _, _) => "Invalid character for value",
-            IoError(ref error) => error,
-            NoWhitespaceAfterField(_, _) => "No whitespace after field",
-            OverError(ref error) => error,
+            IoError(ref error) |
+            OverError(ref error) |
             ParseIntError(ref error) => error,
+            NoWhitespaceAfterField(_, _) => "No whitespace after field",
             UnexpectedEnd(_, _) => "Unexpected end of file when expecting value",
-            UnknownError => "An unknown error has occurred",
             VariableNotFound(_, _, _) => "Variable could not be found",
         }
     }

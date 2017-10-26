@@ -1,7 +1,6 @@
 //! Module for types.
 
 use std::fmt;
-use std::fmt::{Debug, Display};
 
 /// Enum of possible types for `Value`.
 #[derive(Clone, Debug)]
@@ -78,12 +77,6 @@ impl PartialEq for Type {
 
         match *self {
             Empty => true,
-            Null => self.is(other),
-            Bool => self.is(other),
-            Int => self.is(other),
-            Frac => self.is(other),
-            Char => self.is(other),
-            Str => self.is(other),
             Arr(ref box1) => {
                 if let Arr(ref box2) = *other {
                     box1 == box2
@@ -98,7 +91,7 @@ impl PartialEq for Type {
                     false
                 }
             }
-            Obj => self.is(other),
+            _ => self.is(other),
         }
     }
 }
@@ -121,7 +114,7 @@ impl fmt::Display for Type {
                 write!(
                     f,
                     "Tup({})",
-                    match tvec.iter().nth(0) {
+                    match tvec.get(0) {
                         Some(t1) => {
                             tvec.iter().skip(1).fold(format!("{}", t1), |s, t| {
                                 format!("{}, {}", s, t)

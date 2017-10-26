@@ -5,7 +5,6 @@
 use parse::error::ParseError;
 use std::error::Error;
 use std::fmt;
-use std::io;
 use types::Type;
 
 /// The fabulous OVER error type.
@@ -14,14 +13,10 @@ pub enum OverError {
     ArrOutOfBounds(usize),
     ArrTypeMismatch(Type, Type),
     CircularParentReferences,
-    IoError(String),
     NoParentFound,
-    NullError,
     ParseError(String),
-    SyncError,
     TupOutOfBounds(usize),
     TypeMismatch(Type),
-    UnknownError,
 }
 
 impl fmt::Display for OverError {
@@ -41,14 +36,10 @@ impl fmt::Display for OverError {
             CircularParentReferences => {
                 write!(f, "Circular references among parents are not allowed")
             }
-            IoError(ref error) => write!(f, "{}", error),
             NoParentFound => write!(f, "No parent found for this obj"),
-            NullError => write!(f, "Tried to access a null value"),
             ParseError(ref error) => write!(f, "{}", error),
-            SyncError => write!(f, "Tried to access two values at the same time"),
             TupOutOfBounds(ref index) => write!(f, "Tup index out of bounds: {}", index),
             TypeMismatch(ref found) => write!(f, "Type mismatch: found {}", found),
-            UnknownError => write!(f, "An unknown error has occurred"),
         }
     }
 }
@@ -61,21 +52,11 @@ impl Error for OverError {
             ArrOutOfBounds(_) => "Arr index out of bounds",
             ArrTypeMismatch(_, _) => "Arr inner types do not match",
             CircularParentReferences => "Circular references among parents are not allowed",
-            IoError(ref error) => error,
             NoParentFound => "No parent found for this obj",
-            NullError => "Tried to access a null value",
             ParseError(ref error) => error,
-            SyncError => "Tried to access two values at the same time",
             TupOutOfBounds(_) => "Tup index out of bounds",
             TypeMismatch(_) => "Type mismatch",
-            UnknownError => "An unknown error has occurred",
         }
-    }
-}
-
-impl From<io::Error> for OverError {
-    fn from(e: io::Error) -> Self {
-        OverError::IoError(format!("{}", e))
     }
 }
 

@@ -7,17 +7,24 @@ mod misc;
 mod parser;
 use self::error::ParseError;
 
-use {Obj, OverError, OverResult};
-use std::fs::File;
+use Obj;
 
 type ParseResult<T> = Result<T, ParseError>;
 
-pub fn load_file(path: &str) -> OverResult<Obj> {
-    parser::parse_file_obj(path).map_err(OverError::from)
+/// Load an `Obj` from a file.
+pub fn load_from_file(path: &str) -> ParseResult<Obj> {
+    parser::parse_obj_file(path)
 }
 
-pub fn write_to_file(obj: &Obj, path: &str) -> OverResult<()> {
-    let file = File::open(path).map_err(OverError::from)?;
+/// Load an `Obj` from a &str.
+pub fn load_from_str(contents: &str) -> ParseResult<Obj> {
+    parser::parse_obj_str(contents)
+}
+
+/// Write `obj` to a file at `path`.
+pub fn write_to_file(_obj: &Obj, _path: &str) -> ParseResult<()> {
+    // use std::fs::File;
+    // let file = File::open(path).map_err(ParseError::from)?;
 
     unimplemented!()
 }

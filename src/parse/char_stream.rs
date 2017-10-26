@@ -29,6 +29,10 @@ impl CharStream {
 
         file.read_to_string(&mut contents)?;
 
+        Self::from_string(contents)
+    }
+
+    pub fn from_string(contents: String) -> io::Result<CharStream> {
         let chars: Chars = unsafe { mem::transmute(contents.chars()) };
         let stream = chars.peekable();
 
@@ -47,7 +51,7 @@ impl CharStream {
         let opt = inner.stream.peek();
 
         match opt {
-            Some(ref ch) => {
+            Some(ch) => {
                 // if cfg!(debug_assertions) {
                 //     use super::misc::format_char;
                 //     println!(
@@ -57,13 +61,37 @@ impl CharStream {
                 //         self.col()
                 //     );
                 // }
-                Some(**ch)
+                Some(*ch)
             }
             None => None,
         }
     }
 
-    pub fn next(&mut self) -> Option<char> {
+    pub fn line(&self) -> usize {
+        let inner = self.inner.borrow();
+        inner.line
+    }
+
+    pub fn col(&self) -> usize {
+        let inner = self.inner.borrow();
+        inner.col
+    }
+
+    fn set_line(&mut self, value: usize) {
+        let mut inner = self.inner.borrow_mut();
+        inner.line = value;
+    }
+
+    fn set_col(&mut self, value: usize) {
+        let mut inner = self.inner.borrow_mut();
+        inner.col = value;
+    }
+}
+
+impl Iterator for CharStream {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
         let opt = {
             let mut inner = self.inner.borrow_mut();
             inner.stream.next()
@@ -92,25 +120,5 @@ impl CharStream {
             }
             None => None,
         }
-    }
-
-    pub fn line(&self) -> usize {
-        let inner = self.inner.borrow();
-        inner.line
-    }
-
-    pub fn col(&self) -> usize {
-        let inner = self.inner.borrow();
-        inner.col
-    }
-
-    fn set_line(&mut self, value: usize) {
-        let mut inner = self.inner.borrow_mut();
-        inner.line = value;
-    }
-
-    fn set_col(&mut self, value: usize) {
-        let mut inner = self.inner.borrow_mut();
-        inner.col = value;
     }
 }

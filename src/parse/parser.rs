@@ -10,14 +10,24 @@ use tup::Tup;
 use value::Value;
 
 /// Parse given file as an `Obj`.
-pub fn parse_file_obj(path: &str) -> ParseResult<Obj> {
+pub fn parse_obj_file(path: &str) -> ParseResult<Obj> {
     let stream = CharStream::from_file(path).map_err(ParseError::from)?;
+    parse_obj_stream(&stream)
+}
 
+/// Parse given &str as an `Obj`.
+pub fn parse_obj_str(contents: &str) -> ParseResult<Obj> {
+    let contents = String::from(contents);
+    let stream = CharStream::from_string(contents).map_err(ParseError::from)?;
+    parse_obj_stream(&stream)
+}
+
+fn parse_obj_stream(stream: &CharStream) -> ParseResult<Obj> {
     let mut obj = Obj::new();
     let mut globals: HashMap<String, Value> = HashMap::new();
 
     while find_char(stream.clone()) {
-        parse_field_value_pair(stream.clone(), &mut obj, &mut globals)?;
+        parse_field_value_pair(stream, &mut obj, &mut globals)?;
     }
 
     Ok(obj)
@@ -41,18 +51,18 @@ fn parse_obj(mut stream: CharStream, globals: &mut HashMap<String, Value>) -> Pa
             break;
         }
 
-        parse_field_value_pair(stream.clone(), &mut obj, globals)?;
+        parse_field_value_pair(&stream, &mut obj, globals)?;
     }
 
     // Check for valid characters after the Obj.
-    check_value_end(stream.clone())?;
+    check_value_end(&stream)?;
 
     Ok(obj.into())
 }
 
 // Parses a field/value pair.
 fn parse_field_value_pair(
-    stream: CharStream,
+    stream: &CharStream,
     obj: &mut Obj,
     mut globals: &mut HashMap<String, Value>,
 ) -> ParseResult<()> {
@@ -70,7 +80,7 @@ fn parse_field_value_pair(
 
     // At a non-whitespace character, parse value.
     let (value_line, value_col) = (stream.line(), stream.col());
-    let value = parse_value(stream.clone(), &obj, &mut globals, value_line, value_col)?;
+    let value = parse_value(stream.clone(), obj, &mut globals, value_line, value_col)?;
 
     // Add value either to the globals map or to the current Obj.
     if is_global {
@@ -111,13 +121,13 @@ fn parse_arr(
 
         // At a non-whitespace character, parse value.
         let (value_line, value_col) = (stream.line(), stream.col());
-        let value = parse_value(stream.clone(), &obj, &mut globals, value_line, value_col)?;
+        let value = parse_value(stream.clone(), obj, &mut globals, value_line, value_col)?;
 
         arr.push(value).map_err(ParseError::from)?;
     }
 
     // Check for valid characters after the Arr.
-    check_value_end(stream.clone())?;
+    check_value_end(&stream)?;
 
     Ok(arr.into())
 }
@@ -145,13 +155,13 @@ fn parse_tup(
 
         // At a non-whitespace character, parse value.
         let (value_line, value_col) = (stream.line(), stream.col());
-        let value = parse_value(stream.clone(), &obj, &mut globals, value_line, value_col)?;
+        let value = parse_value(stream.clone(), obj, &mut globals, value_line, value_col)?;
 
         vec.push(value);
     }
 
     // Check for valid characters after the Tup.
-    check_value_end(stream.clone())?;
+    check_value_end(&stream)?;
 
     let tup = Tup::from_vec(vec);
 
@@ -175,32 +185,27 @@ fn parse_field(
         field.push(ch);
     }
 
-    loop {
-        match stream.next() {
-            Some(ch) => {
-                match ch {
-                    ':' => {
-                        // There must be whitespace after a field.
-                        let peek_opt = stream.peek();
-                        if peek_opt.is_some() && !is_whitespace(peek_opt.unwrap()) {
-                            return Err(ParseError::NoWhitespaceAfterField(
-                                stream.line(),
-                                stream.col() - 1,
-                            ));
-                        }
-                        break;
-                    }
-                    ch if is_valid_field_char(ch, first) => field.push(ch),
-                    ch => {
-                        return Err(ParseError::InvalidFieldChar(
-                            ch,
-                            stream.line(),
-                            stream.col() - 1,
-                        ))
-                    }
+    while let Some(ch) = stream.next() {
+        match ch {
+            ':' => {
+                // There must be whitespace after a field.
+                let peek_opt = stream.peek();
+                if peek_opt.is_some() && !is_whitespace(peek_opt.unwrap()) {
+                    return Err(ParseError::NoWhitespaceAfterField(
+                        stream.line(),
+                        stream.col() - 1,
+                    ));
                 }
+                break;
             }
-            None => break,
+            ch if is_valid_field_char(ch, first) => field.push(ch),
+            ch => {
+                return Err(ParseError::InvalidFieldChar(
+                    ch,
+                    stream.line(),
+                    stream.col() - 1,
+                ))
+            }
         }
 
         first = false;
@@ -212,7 +217,7 @@ fn parse_field(
             ParseError::InvalidFieldName(field.clone(), line, col),
         ),
         "^" => Ok((field.clone(), false, true)),
-        bad if bad.starts_with("^") => Err(ParseError::InvalidFieldName(field.clone(), line, col)),
+        bad if bad.starts_with('^') => Err(ParseError::InvalidFieldName(field.clone(), line, col)),
         _ => Ok((field.clone(), is_global, false)),
     }
 }
@@ -252,16 +257,11 @@ fn parse_numeric(mut stream: CharStream) -> ParseResult<Value> {
     let ch = stream.next().unwrap();
     s.push(ch);
 
-    loop {
-        match stream.peek() {
-            Some(ch) => {
-                match ch {
-                    ch if is_value_end_char(ch) => break,
-                    ch if ch.is_numeric() => s.push(ch),
-                    _ => return Err(ParseError::InvalidNumeric(stream.line(), stream.col() - 1)),
-                }
-            }
-            None => break,
+    while let Some(ch) = stream.peek() {
+        match ch {
+            ch if is_value_end_char(ch) => break,
+            ch if ch.is_numeric() => s.push(ch),
+            _ => return Err(ParseError::InvalidNumeric(stream.line(), stream.col() - 1)),
         }
 
         let _ = stream.next();
@@ -289,22 +289,17 @@ fn parse_variable(
         var.push(ch);
     }
 
-    loop {
-        match stream.peek() {
-            Some(ch) => {
-                match ch {
-                    ch if is_value_end_char(ch) => break,
-                    ch if is_valid_field_char(ch, false) => var.push(ch),
-                    ch => {
-                        return Err(ParseError::InvalidValueChar(
-                            ch,
-                            stream.line(),
-                            stream.col() - 1,
-                        ))
-                    }
-                }
+    while let Some(ch) = stream.peek() {
+        match ch {
+            ch if is_value_end_char(ch) => break,
+            ch if is_valid_field_char(ch, false) => var.push(ch),
+            ch => {
+                return Err(ParseError::InvalidValueChar(
+                    ch,
+                    stream.line(),
+                    stream.col() - 1,
+                ))
             }
-            None => break,
         }
 
         let _ = stream.next();
@@ -390,7 +385,7 @@ fn parse_char(mut stream: CharStream) -> ParseResult<Value> {
     }
 
     // Check for valid characters after the char.
-    check_value_end(stream.clone())?;
+    check_value_end(&stream)?;
 
     Ok(ch.into())
 }
@@ -434,7 +429,7 @@ fn parse_str(mut stream: CharStream) -> ParseResult<Value> {
     }
 
     // Check for valid characters after the string.
-    check_value_end(stream.clone())?;
+    check_value_end(&stream)?;
 
     Ok(s.into())
 }
@@ -442,29 +437,24 @@ fn parse_str(mut stream: CharStream) -> ParseResult<Value> {
 // Find the next non-whitespace character, ignoring comments, and update stream position.
 // Return true if such a character was found or false if we got to the end of the stream.
 fn find_char(mut stream: CharStream) -> bool {
-    loop {
-        match stream.peek() {
-            Some(ch) => {
-                match ch {
-                    '#' => {
-                        // Comment found; eat the rest of the line.
-                        loop {
-                            let ch = stream.next();
-                            if ch.is_none() {
-                                return false;
-                            }
-                            if ch.unwrap() == '\n' {
-                                break;
-                            }
-                        }
+    while let Some(ch) = stream.peek() {
+        match ch {
+            '#' => {
+                // Comment found; eat the rest of the line.
+                loop {
+                    let ch = stream.next();
+                    if ch.is_none() {
+                        return false;
                     }
-                    ch if ch.is_whitespace() => {
-                        let _ = stream.next();
+                    if ch.unwrap() == '\n' {
+                        break;
                     }
-                    _ => return true,
                 }
             }
-            None => break,
+            ch if ch.is_whitespace() => {
+                let _ = stream.next();
+            }
+            _ => return true,
         }
     }
 
@@ -472,7 +462,7 @@ fn find_char(mut stream: CharStream) -> bool {
 }
 
 // Helper function to make sure values are followed by whitespace or an end delimiter.
-fn check_value_end(stream: CharStream) -> ParseResult<()> {
+fn check_value_end(stream: &CharStream) -> ParseResult<()> {
     match stream.peek() {
         Some(ch) => {
             match ch {
@@ -514,9 +504,7 @@ fn is_whitespace(ch: char) -> bool {
 
 fn is_end_delimiter(ch: char) -> bool {
     match ch {
-        ')' => true,
-        ']' => true,
-        '}' => true,
+        ')' | ']' | '}' => true,
         _ => false,
     }
 }
