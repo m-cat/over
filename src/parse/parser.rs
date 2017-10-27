@@ -1,6 +1,6 @@
 //! Module containing parsing functions.
 
-use super::ParseResult;
+use super::{MAX_DEPTH, ParseResult};
 use super::char_stream::CharStream;
 use super::error::ParseError;
 use arr::Arr;
@@ -12,62 +12,86 @@ use value::Value;
 /// Parse given file as an `Obj`.
 pub fn parse_obj_file(path: &str) -> ParseResult<Obj> {
     let stream = CharStream::from_file(path).map_err(ParseError::from)?;
-    parse_obj_stream(&stream)
+    parse_obj_stream(stream, 1)
 }
 
 /// Parse given &str as an `Obj`.
 pub fn parse_obj_str(contents: &str) -> ParseResult<Obj> {
     let contents = String::from(contents);
     let stream = CharStream::from_string(contents).map_err(ParseError::from)?;
-    parse_obj_stream(&stream)
+    parse_obj_stream(stream, 1)
 }
 
-fn parse_obj_stream(stream: &CharStream) -> ParseResult<Obj> {
+// Parse an Obj given a character stream.
+fn parse_obj_stream(mut stream: CharStream, depth: usize) -> ParseResult<Obj> {
     let mut obj = Obj::new();
     let mut globals: HashMap<String, Value> = HashMap::new();
 
-    while find_char(stream.clone()) {
-        parse_field_value_pair(stream, &mut obj, &mut globals)?;
+    // Go to the first non-whitespace character, or return if there is none.
+    if !find_char(stream.clone()) {
+        return Ok(obj);
     }
+
+    // Parse field/value pairs.
+    while parse_field_value_pair(&mut stream, &mut obj, &mut globals, depth, None)? {}
 
     Ok(obj)
 }
 
 // Parse a sub-Obj in a file. It *must* start with { and end with }.
-fn parse_obj(mut stream: CharStream, globals: &mut HashMap<String, Value>) -> ParseResult<Value> {
+fn parse_obj(
+    mut stream: &mut CharStream,
+    globals: &mut HashMap<String, Value>,
+    depth: usize,
+) -> ParseResult<Value> {
+    // Check depth.
+    if depth > MAX_DEPTH {
+        return Err(ParseError::MaxDepth(stream.line(), stream.col()));
+    }
+
+    // We must already be at a '{'.
     let ch = stream.next().unwrap();
     assert_eq!(ch, '{');
 
-    let mut obj = Obj::new();
-
-    loop {
-        if !find_char(stream.clone()) {
-            return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1));
-        }
-
-        let peek = stream.peek().unwrap();
-        if peek == '}' {
-            let _ = stream.next();
-            break;
-        }
-
-        parse_field_value_pair(&stream, &mut obj, globals)?;
+    // Go to the first non-whitespace character, or error if there is none.
+    if !find_char(stream.clone()) {
+        return Err(ParseError::UnexpectedEnd(stream.line()));
     }
 
-    // Check for valid characters after the Obj.
-    check_value_end(&stream)?;
+    let mut obj = Obj::new();
+
+    // Parse field/value pairs.
+    while parse_field_value_pair(&mut stream, &mut obj, globals, depth, Some('}'))? {}
 
     Ok(obj.into())
 }
 
 // Parses a field/value pair.
 fn parse_field_value_pair(
-    stream: &CharStream,
+    mut stream: &mut CharStream,
     obj: &mut Obj,
     mut globals: &mut HashMap<String, Value>,
-) -> ParseResult<()> {
+    depth: usize,
+    cur_brace: Option<char>,
+) -> ParseResult<bool> {
+    // Check if we're at an end delimiter instead of a field.
+    let peek = stream.peek().unwrap();
+    if peek == '}' && cur_brace.is_some() {
+        let _ = stream.next();
+        return Ok(false);
+    } else if is_end_delimiter(peek) {
+        return Err(ParseError::InvalidClosingBracket(
+            peek,
+            cur_brace,
+            stream.line(),
+            stream.col(),
+        ));
+    }
+
+    // Get the field line/col.
     let (field_line, field_col) = (stream.line(), stream.col());
-    // At a non-whitespace character, parse field.
+
+    // Parse field.
     let (field, is_global, is_parent) = parse_field(stream.clone(), field_line, field_col)?;
     if !is_global && !is_parent && obj.contains(&field) {
         return Err(ParseError::DuplicateField(field, field_line, field_col));
@@ -75,12 +99,20 @@ fn parse_field_value_pair(
 
     // Deal with extra whitespace between field and value.
     if !find_char(stream.clone()) {
-        return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1));
+        return Err(ParseError::UnexpectedEnd(stream.line()));
     }
 
     // At a non-whitespace character, parse value.
     let (value_line, value_col) = (stream.line(), stream.col());
-    let value = parse_value(stream.clone(), obj, &mut globals, value_line, value_col)?;
+    let value = parse_value(
+        &mut stream,
+        obj,
+        &mut globals,
+        value_line,
+        value_col,
+        depth,
+        cur_brace,
+    )?;
 
     // Add value either to the globals map or to the current Obj.
     if is_global {
@@ -95,73 +127,123 @@ fn parse_field_value_pair(
         obj.set(&field, value);
     }
 
-    Ok(())
+    // Go to the next non-whitespace character.
+    if !find_char(stream.clone()) {
+        match cur_brace {
+            Some(_) => return Err(ParseError::UnexpectedEnd(stream.line())),
+            None => return Ok(false),
+        }
+    }
+
+    Ok(true)
 }
 
+// Parse a sub-Arr in a file. It *must* start with [ and end with ].
 fn parse_arr(
-    mut stream: CharStream,
+    mut stream: &mut CharStream,
     obj: &Obj,
     mut globals: &mut HashMap<String, Value>,
+    depth: usize,
 ) -> ParseResult<Value> {
+    // Check depth.
+    if depth > MAX_DEPTH {
+        return Err(ParseError::MaxDepth(stream.line(), stream.col()));
+    }
+
+    // We must already be at a '['.
     let ch = stream.next().unwrap();
     assert_eq!(ch, '[');
 
     let mut arr = Arr::new();
 
     loop {
+        // Go to the first non-whitespace character, or error if there is none.
         if !find_char(stream.clone()) {
-            return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1));
+            return Err(ParseError::UnexpectedEnd(stream.line()));
         }
 
         let peek = stream.peek().unwrap();
         if peek == ']' {
             let _ = stream.next();
             break;
+        } else if is_end_delimiter(peek) {
+            return Err(ParseError::InvalidClosingBracket(
+                peek,
+                Some(']'),
+                stream.line(),
+                stream.col(),
+            ));
         }
 
         // At a non-whitespace character, parse value.
         let (value_line, value_col) = (stream.line(), stream.col());
-        let value = parse_value(stream.clone(), obj, &mut globals, value_line, value_col)?;
+        let value = parse_value(
+            &mut stream,
+            obj,
+            &mut globals,
+            value_line,
+            value_col,
+            depth,
+            Some(']'),
+        )?;
 
         arr.push(value).map_err(ParseError::from)?;
     }
 
-    // Check for valid characters after the Arr.
-    check_value_end(&stream)?;
-
     Ok(arr.into())
 }
 
+// Parse a sub-Tup in a file. It *must* start with ( and end with ).
 fn parse_tup(
-    mut stream: CharStream,
+    mut stream: &mut CharStream,
     obj: &Obj,
     mut globals: &mut HashMap<String, Value>,
+    depth: usize,
 ) -> ParseResult<Value> {
+    // Check depth.
+    if depth > MAX_DEPTH {
+        return Err(ParseError::MaxDepth(stream.line(), stream.col()));
+    }
+
+    // We must already be at a '('.
     let ch = stream.next().unwrap();
     assert_eq!(ch, '(');
 
     let mut vec = Vec::new();
 
     loop {
+        // Go to the first non-whitespace character, or error if there is none.
         if !find_char(stream.clone()) {
-            return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1));
+            return Err(ParseError::UnexpectedEnd(stream.line()));
         }
 
         let peek = stream.peek().unwrap();
         if peek == ')' {
             let _ = stream.next();
             break;
+        } else if is_end_delimiter(peek) {
+            return Err(ParseError::InvalidClosingBracket(
+                peek,
+                Some(')'),
+                stream.line(),
+                stream.col(),
+            ));
         }
 
         // At a non-whitespace character, parse value.
         let (value_line, value_col) = (stream.line(), stream.col());
-        let value = parse_value(stream.clone(), obj, &mut globals, value_line, value_col)?;
+        let value = parse_value(
+            &mut stream,
+            obj,
+            &mut globals,
+            value_line,
+            value_col,
+            depth,
+            Some(')'),
+        )?;
 
         vec.push(value);
     }
-
-    // Check for valid characters after the Tup.
-    check_value_end(&stream)?;
 
     let tup = Tup::from_vec(vec);
 
@@ -193,7 +275,7 @@ fn parse_field(
                 if peek_opt.is_some() && !is_whitespace(peek_opt.unwrap()) {
                     return Err(ParseError::NoWhitespaceAfterField(
                         stream.line(),
-                        stream.col() - 1,
+                        stream.col(),
                     ));
                 }
                 break;
@@ -224,34 +306,41 @@ fn parse_field(
 
 // Get the next value in the char stream.
 fn parse_value(
-    stream: CharStream,
+    mut stream: &mut CharStream,
     obj: &Obj,
     mut globals: &mut HashMap<String, Value>,
     line: usize,
     col: usize,
+    depth: usize,
+    cur_brace: Option<char>,
 ) -> ParseResult<Value> {
     // Peek to determine what kind of value we'll be parsing.
-    match stream.peek().unwrap() {
-        '"' => parse_str(stream),
-        '\'' => parse_char(stream),
-        ch if ch.is_numeric() => parse_numeric(stream),
-        ch if ch.is_alphabetic() => parse_variable(stream, obj, globals, line, col),
-        '@' => parse_variable(stream, obj, globals, line, col),
-        '{' => parse_obj(stream, &mut globals),
-        '[' => parse_arr(stream, obj, &mut globals),
-        '(' => parse_tup(stream, obj, &mut globals),
+    let res = match stream.peek().unwrap() {
+        '"' => parse_str(&mut stream)?,
+        '\'' => parse_char(&mut stream)?,
+        ch if ch.is_numeric() => parse_numeric(&mut stream)?,
+        ch if ch.is_alphabetic() => parse_variable(&mut stream, obj, globals, line, col)?,
+        '@' => parse_variable(&mut stream, obj, globals, line, col)?,
+        '{' => parse_obj(&mut stream, &mut globals, depth + 1)?,
+        '[' => parse_arr(&mut stream, obj, &mut globals, depth + 1)?,
+        '(' => parse_tup(&mut stream, obj, &mut globals, depth + 1)?,
         ch => {
-            Err(ParseError::InvalidValueChar(
+            return Err(ParseError::InvalidValueChar(
                 ch,
                 stream.line(),
                 stream.col(),
-            ))
+            ));
         }
-    }
+    };
+
+    // Check for valid characters after the value.
+    check_value_end(stream, cur_brace)?;
+
+    Ok(res)
 }
 
 // Get the next numeric (either Int or Frac) in the character stream.
-fn parse_numeric(mut stream: CharStream) -> ParseResult<Value> {
+fn parse_numeric(stream: &mut CharStream) -> ParseResult<Value> {
     let mut s = String::new();
 
     let ch = stream.next().unwrap();
@@ -273,7 +362,7 @@ fn parse_numeric(mut stream: CharStream) -> ParseResult<Value> {
 
 // Parse a variable name and get a value from the corresponding variable.
 fn parse_variable(
-    mut stream: CharStream,
+    stream: &mut CharStream,
     obj: &Obj,
     globals: &HashMap<String, Value>,
     line: usize,
@@ -337,7 +426,7 @@ fn parse_variable(
 // Assumes the Char starts and ends with single quote marks.
 // '\', '\n', '\r', and '\t' must be escaped with '\'.
 // ''' do not need to be escaped, although they can be.
-fn parse_char(mut stream: CharStream) -> ParseResult<Value> {
+fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
     let ch = stream.next().unwrap();
     assert_eq!(ch, '\'');
 
@@ -351,7 +440,7 @@ fn parse_char(mut stream: CharStream) -> ParseResult<Value> {
             ))
         }
         Some(ch) => (false, ch),
-        None => return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1)),
+        None => return Err(ParseError::UnexpectedEnd(stream.line())),
     };
 
     if escape {
@@ -368,7 +457,7 @@ fn parse_char(mut stream: CharStream) -> ParseResult<Value> {
                     }
                 }
             }
-            None => return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1)),
+            None => return Err(ParseError::UnexpectedEnd(stream.line())),
         }
     }
 
@@ -381,11 +470,8 @@ fn parse_char(mut stream: CharStream) -> ParseResult<Value> {
                 stream.col() - 1,
             ))
         }
-        None => return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1)),
+        None => return Err(ParseError::UnexpectedEnd(stream.line())),
     }
-
-    // Check for valid characters after the char.
-    check_value_end(&stream)?;
 
     Ok(ch.into())
 }
@@ -394,7 +480,7 @@ fn parse_char(mut stream: CharStream) -> ParseResult<Value> {
 // Assumes the Str starts and ends with quotation marks and does not include them in the Str.
 // '"', '\' and '$' must be escaped with '\'.
 // Newlines can be escaped with '\n', but this is NOT necessary.
-fn parse_str(mut stream: CharStream) -> ParseResult<Value> {
+fn parse_str(stream: &mut CharStream) -> ParseResult<Value> {
     let ch = stream.next().unwrap();
     assert_eq!(ch, '"');
 
@@ -424,12 +510,9 @@ fn parse_str(mut stream: CharStream) -> ParseResult<Value> {
                     }
                 }
             }
-            None => return Err(ParseError::UnexpectedEnd(stream.line(), stream.col() - 1)),
+            None => return Err(ParseError::UnexpectedEnd(stream.line())),
         }
     }
-
-    // Check for valid characters after the string.
-    check_value_end(&stream)?;
 
     Ok(s.into())
 }
@@ -461,16 +544,27 @@ fn find_char(mut stream: CharStream) -> bool {
     false
 }
 
-// Helper function to make sure values are followed by whitespace or an end delimiter.
-fn check_value_end(stream: &CharStream) -> ParseResult<()> {
+// Helper function to make sure values are followed by whitespace or a correct end delimiter.
+fn check_value_end(stream: &CharStream, cur_brace: Option<char>) -> ParseResult<()> {
     match stream.peek() {
         Some(ch) => {
             match ch {
-                ch if is_value_end_char(ch) => Ok(()),
+                ch if is_value_end_char(ch) => {
+                    if is_end_delimiter(ch) && Some(ch) != cur_brace {
+                        Err(ParseError::InvalidClosingBracket(
+                            ch,
+                            cur_brace,
+                            stream.line(),
+                            stream.col(),
+                        ))
+                    } else {
+                        Ok(())
+                    }
+                }
                 ch => Err(ParseError::InvalidValueChar(
                     ch,
                     stream.line(),
-                    stream.col() - 1,
+                    stream.col(),
                 )),
             }
         }
@@ -493,6 +587,7 @@ fn escape_char(ch: char) -> Option<char> {
     }
 }
 
+// Returns true if this character signifies the legal end of a value.
 fn is_value_end_char(ch: char) -> bool {
     is_whitespace(ch) || is_end_delimiter(ch)
 }

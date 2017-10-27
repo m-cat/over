@@ -22,7 +22,7 @@ doc:
 
 # Display module structure
 modules:
-	cargo modules
+	cargo modules --orphans
 
 # Generate dependency graph
 graph:
@@ -30,7 +30,7 @@ graph:
 
 # Run fuzz
 fuzz:
-	cargo fuzz run fuzz_target_1
+	cargo fuzz run fuzz_target_1 -- -max_len=516 -max_total_time=600
 
 clean:
 	rm **/*.bk

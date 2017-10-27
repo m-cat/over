@@ -5,6 +5,14 @@ use over::OverError;
 use over::obj::Obj;
 use over::value::Value;
 
+// Test parsing of empty file.
+#[test]
+fn empty() {
+    let obj = Obj::from_file("tests/test_files/empty.over").unwrap();
+
+    assert_eq!(obj.len(), 0);
+}
+
 // Test reading basic Ints, Strs, Bools, and Null.
 // Also test that whitespace and comments are correctly ignored.
 #[test]
@@ -36,7 +44,7 @@ fn basic() {
     assert_eq!(obj.get("u").unwrap(), ' ');
 }
 
-// Test parsing of Obj.
+// Test parsing of sub-Objs.
 #[test]
 fn obj() {
     let obj = Obj::from_file("tests/test_files/obj.over").unwrap();
@@ -81,14 +89,13 @@ fn globals() {
 // Test that parsing malformed .over files results in correct errors being returned.
 #[test]
 fn errors() {
-    // TODO: use a macro to cut down on code here
     macro_rules! error_helper {
         ( $filename:expr, $error:expr ) => {
             {
-                match Obj::from_file($filename) {
+                match Obj::from_file(&format!("tests/test_files/errors/{}", $filename)) {
                     Err(OverError::ParseError(s)) => {
                         if s != $error {
-                            panic!("{:?}", s);
+                            panic!("Error in {}: {:?}", $filename, s);
                         }
                     }
                     res => panic!("{:?}", res),
@@ -98,25 +105,54 @@ fn errors() {
     }
 
     error_helper!(
-        "tests/test_files/errors/field_true.over",
-        "Invalid field name \"true\" at line 1, column 1"
-    );
-    error_helper!(
-        "tests/test_files/errors/value_amp.over",
-        "Invalid value \"@\" at line 1, column 8"
-    );
-    error_helper!(
-        "tests/test_files/errors/dup_global.over",
-        "Duplicate global \"@global\" at line 2, column 1"
-    );
-    error_helper!(
-        "tests/test_files/errors/arr_types.over",
+        "arr_types.over",
         "Arr inner types do not match: found Arr(Tup(Int, Char)), \
                    expected Arr(Tup(Int, Int))"
     );
     error_helper!(
-        "tests/test_files/errors/empty_field.over",
+        "deep.over",
+        "Exceeded maximum depth (128) for a container at line 1, column 142"
+    );
+    error_helper!(
+        "dup_global.over",
+        "Duplicate global \"@global\" at line 2, column 1"
+    );
+    error_helper!(
+        "empty_field.over",
         "Invalid character \':\' for field at line 1, column 1"
     );
-    // error_helper!("tests/test_files/errors/fuzz1.over", "test");
+    error_helper!(
+        "field_true.over",
+        "Invalid field name \"true\" at line 1, column 1"
+    );
+    error_helper!(
+        "field_whitespace.over",
+        "No whitespace after field at line 1, column 6"
+    );
+    error_helper!(
+        "fuzz1.over",
+        "Invalid closing bracket \')\' at line 20, column 1; expected \']\'"
+    );
+    error_helper!(
+        "fuzz2.over",
+        "Invalid closing bracket \')\' at line 22, column 2; expected none"
+    );
+    error_helper!(
+        "fuzz3.over",
+        "Invalid closing bracket \')\' at line 8, column 4; expected \']\'"
+    );
+    error_helper!("fuzz4.over", "Duplicate field \"M\" at line 22, column 1");
+    error_helper!(
+        "fuzz5.over",
+        "Invalid character \'(\' for value at line 27, column 4"
+    );
+    error_helper!(
+        "unexpected_end1.over",
+        "Unexpected end when reading value at line 2"
+    );
+    error_helper!(
+        "unexpected_end2.over",
+        "Unexpected end when reading value at line 3"
+    );
+    error_helper!("value_amp.over", "Invalid value \"@\" at line 1, column 8");
 }

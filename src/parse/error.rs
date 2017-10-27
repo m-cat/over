@@ -2,6 +2,7 @@
 
 #![allow(missing_docs)]
 
+use super::MAX_DEPTH;
 use super::misc::format_char;
 use OverError;
 use std::error::Error;
@@ -15,18 +16,21 @@ pub enum ParseError {
     DuplicateField(String, usize, usize),
     DuplicateGlobal(String, usize, usize),
     GlobalNotFound(String, usize, usize),
+    InvalidClosingBracket(char, Option<char>, usize, usize),
     InvalidEscapeChar(char, usize, usize),
     InvalidFieldChar(char, usize, usize),
     InvalidFieldName(String, usize, usize),
     InvalidNumeric(usize, usize),
     InvalidValue(String, usize, usize),
     InvalidValueChar(char, usize, usize),
-    IoError(String),
+    MaxDepth(usize, usize),
     NoWhitespaceAfterField(usize, usize),
+    UnexpectedEnd(usize),
+    VariableNotFound(String, usize, usize),
+
+    IoError(String),
     OverError(String),
     ParseIntError(String),
-    UnexpectedEnd(usize, usize),
-    VariableNotFound(String, usize, usize),
 }
 
 impl fmt::Display for ParseError {
@@ -59,6 +63,19 @@ impl fmt::Display for ParseError {
                     var,
                     line,
                     col
+                )
+            }
+            InvalidClosingBracket(ref found, ref expected, ref line, ref col) => {
+                write!(
+                    f,
+                    "Invalid closing bracket '{}' at line {}, column {}; expected {}",
+                    found,
+                    line,
+                    col,
+                    match *expected {
+                        Some(ch) => format!("'{}'", ch),
+                        None => String::from("none"),
+                    }
                 )
             }
             InvalidEscapeChar(ref ch, ref line, ref col) => {
@@ -115,9 +132,15 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            IoError(ref error) |
-            OverError(ref error) |
-            ParseIntError(ref error) => write!(f, "{}", error),
+            MaxDepth(ref line, ref col) => {
+                write!(
+                    f,
+                    "Exceeded maximum depth ({}) for a container at line {}, column {}",
+                    MAX_DEPTH,
+                    line,
+                    col
+                )
+            }
             NoWhitespaceAfterField(ref line, ref col) => {
                 write!(
                     f,
@@ -126,12 +149,11 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            UnexpectedEnd(ref line, ref col) => {
+            UnexpectedEnd(ref line) => {
                 write!(
                     f,
-                    "Unexpected end of file when expecting value at line {}, column {}",
+                    "Unexpected end when reading value at line {}",
                     line,
-                    col
                 )
             }
             VariableNotFound(ref var, ref line, ref col) => {
@@ -143,6 +165,10 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
+
+            IoError(ref error) |
+            OverError(ref error) |
+            ParseIntError(ref error) => write!(f, "{}", error),
         }
     }
 }
@@ -155,18 +181,21 @@ impl Error for ParseError {
             DuplicateField(_, _, _) => "Duplicate field",
             DuplicateGlobal(_, _, _) => "Duplicate global",
             GlobalNotFound(_, _, _) => "Global could not be found",
+            InvalidClosingBracket(_, _, _, _) => "Invalid closing bracket",
             InvalidEscapeChar(_, _, _) => "Invalid escape character",
             InvalidFieldChar(_, _, _) => "Invalid character for field",
             InvalidFieldName(_, _, _) => "Invalid field name",
             InvalidNumeric(_, _) => "Invalid character for numeric value",
             InvalidValue(_, _, _) => "Invalid value",
             InvalidValueChar(_, _, _) => "Invalid character for value",
+            MaxDepth(_, _) => "Exceeded maximum depth for a container",
+            NoWhitespaceAfterField(_, _) => "No whitespace after field",
+            UnexpectedEnd(_) => "Unexpected end when reading value",
+            VariableNotFound(_, _, _) => "Variable could not be found",
+
             IoError(ref error) |
             OverError(ref error) |
             ParseIntError(ref error) => error,
-            NoWhitespaceAfterField(_, _) => "No whitespace after field",
-            UnexpectedEnd(_, _) => "Unexpected end of file when expecting value",
-            VariableNotFound(_, _, _) => "Variable could not be found",
         }
     }
 }
@@ -177,14 +206,14 @@ impl From<io::Error> for ParseError {
     }
 }
 
-impl From<ParseIntError> for ParseError {
-    fn from(e: ParseIntError) -> Self {
-        ParseError::ParseIntError(format!("{}", e))
-    }
-}
-
 impl From<OverError> for ParseError {
     fn from(e: OverError) -> Self {
         ParseError::OverError(format!("{}", e))
+    }
+}
+
+impl From<ParseIntError> for ParseError {
+    fn from(e: ParseIntError) -> Self {
+        ParseError::ParseIntError(format!("{}", e))
     }
 }

@@ -122,7 +122,6 @@ impl Obj {
 
     /// Sets the parent for this `Obj`.
     /// Circular references in parents are not allowed.
-    // TODO: prevent data races here?
     pub fn set_parent(&mut self, parent: &Obj) -> OverResult<()> {
         // Test for a circular reference.
         let mut cur_parent = parent.clone();
