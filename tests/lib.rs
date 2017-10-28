@@ -22,7 +22,7 @@ fn basic() {
     assert_eq!(obj.get("a1").unwrap(), 1);
     assert_eq!(obj.get("a2").unwrap(), 2);
     assert_eq!(obj.get("aa").unwrap(), 0);
-    assert_eq!(obj.get("b").unwrap(), 1);
+    assert_eq!(obj.get("b").unwrap(), "Smörgåsbord");
     assert_eq!(obj.get("c").unwrap(), 10);
     assert_eq!(obj.get("d").unwrap(), 20);
     assert_eq!(obj.get("eee").unwrap(), 2);
