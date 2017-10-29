@@ -1,6 +1,6 @@
 # OVER
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![LoC](https://tokei.rs/b1/github/m-cat/over)](https://github.com/m-cat/over)
+[![](https://img.shields.io/crates/v/over.svg)](https://crates.io/crates/over) [![Documentation](https://docs.rs/over/badge.svg)](https://docs.rs/over) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![LoC](https://tokei.rs/b1/github/m-cat/over)](https://github.com/m-cat/over)
 
 OVER: the best data format.
 
