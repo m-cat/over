@@ -10,8 +10,12 @@ macro_rules! arr_vec {
     [] => {
         $crate::arr::Arr::new()
     };
-    [ $( $obj:expr ),+ ] => {
-        try_arr_vec![$( $obj ),+].unwrap()
+    [ $( $elem:expr ),+ , ] => {
+        // Rule with trailing comma.
+        try_arr_vec![$( $elem ),+].unwrap()
+    };
+    [ $( $elem:expr ),+ ] => {
+        try_arr_vec![$( $elem ),+].unwrap()
     };
 }
 
@@ -20,25 +24,53 @@ macro_rules! arr_vec {
 /// `Arr`, use `arr_vec` as it will never fail.
 #[macro_export]
 macro_rules! try_arr_vec {
-    [ $( $obj:expr ),+ ] => {
+    [ $( $elem:expr ),+ , ] => {
+        // Rule with trailing comma.
+        try_arr_vec![$( $elem ),+]
+    };
+    [ $( $elem:expr ),+ ] => {
         {
             use $crate::arr::Arr;
 
-            Arr::from_vec(vec![ $( $obj.into() ),+ ])
+            Arr::from_vec(vec![ $( $elem.into() ),+ ])
         }
     };
 }
 
 /// Given an array of elements, converts each element to values and returns a `Tup` containing a
-/// vector of the values. Note that there is no construct to create empty `Tup`s as this is
-/// intentionally not supported.
+/// vector of the values.
 #[macro_export]
 macro_rules! tup_vec {
-    ( $( $obj:expr ),+ ) => {
+    ( $( $elem:expr ),* , ) => {
+        tup_vec!($( $elem ),*)
+    };
+    ( $( $elem:expr ),* ) => {
         {
             use $crate::tup::Tup;
 
-            Tup::from_vec(vec![ $( $obj.into() ),+ ])
+            Tup::from_vec(vec![ $( $elem.into() ),+ ])
+        }
+    };
+}
+
+/// Given an array of field/value pairs, returns an `Obj` containing each pair.
+#[macro_export]
+macro_rules! obj_map {
+    { $( $field:expr => $inner:expr ),* , } => {
+        // Rule with trailing comma.
+        obj_map!{ $( $field => $inner ),* };
+    };
+    { $( $field:expr => $inner:expr ),* } => {
+        {
+            use $crate::obj::Obj;
+
+            let mut obj = Obj::new();
+
+            $(
+                obj.set($field, $inner.into());
+            )*
+
+            obj
         }
     };
 }
@@ -46,6 +78,7 @@ macro_rules! tup_vec {
 #[cfg(test)]
 mod tests {
     use OverError;
+    use obj::Obj;
     use types::Type::*;
     use value::Value;
 
@@ -74,6 +107,21 @@ mod tests {
         assert_eq!(
             try_arr_vec![1, 'c'],
             Err(OverError::ArrTypeMismatch(Char, Int))
+        );
+    }
+
+    #[test]
+    fn obj_map_basic() {
+        let mut obj = Obj::new();
+        obj.set("a", 1.into());
+        obj.set("b", arr_vec![1, 2].into());
+
+        assert_eq!(
+            obj,
+            obj_map!{
+            "a" => 1,
+            "b" => arr_vec![1, 2]
+        }
         );
     }
 }
