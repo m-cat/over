@@ -1,6 +1,8 @@
+extern crate fraction;
 #[macro_use]
 extern crate over;
 
+use fraction::Fraction;
 use over::OverError;
 use over::obj::Obj;
 use over::value::Value;
@@ -44,6 +46,51 @@ fn basic() {
     assert_eq!(obj.get("u").unwrap(), ' ');
 }
 
+// Test the example from the README.
+#[test]
+fn example() {
+    let obj = Obj::from_file("tests/test_files/example.over").unwrap();
+
+    assert_eq!(obj.get("receipt").unwrap(), "Oz-Ware Purchase Invoice");
+    assert_eq!(obj.get("date").unwrap(), "2012-08-06");
+    assert_eq!(
+        obj.get("customer").unwrap(),
+        obj_map!{"first_name" => "Dorothy",
+                 "family_name" => "Gale"}
+    );
+
+    assert_eq!(
+        obj.get("items").unwrap(),
+        arr_vec![
+            obj_map!{"part_no" => "A4786",
+                     "descrip" => "Water Bucket (Filled)",
+                     "price" => Fraction::new(147u8, 100u8),
+                     "quantity" => 4},
+            obj_map!{"part_no" => "E1628",
+                     "descrip" => "High Heeled \"Ruby\" Slippers",
+                     "size" => 8,
+                     "price" => Fraction::new(1337u16, 10u8),
+                     "quantity" => 1},
+        ]
+    );
+
+    assert_eq!(
+        obj.get("bill_to").unwrap(),
+        obj_map!{"street" => "123 Tornado Alley\nSuite 16",
+                 "city" => "East Centerville",
+                 "state" => "KS",
+        }
+    );
+
+    assert_eq!(obj.get("ship_to").unwrap(), obj.get("bill_to").unwrap());
+
+    assert_eq!(
+        obj.get("specialDelivery").unwrap(),
+        "Follow the Yellow Brick Road to the Emerald City. \
+         Pay no attention to the man behind the curtain."
+    );
+}
+
 // Test parsing of sub-Objs.
 #[test]
 fn obj() {
@@ -63,7 +110,7 @@ fn obj() {
     let inner = outie.get("inner").unwrap().get_obj().unwrap();
     let innie = inner.get("innie").unwrap().get_obj().unwrap();
     assert_eq!(innie.get("a").unwrap(), 1);
-    assert_eq!(inner.get("b").unwrap(), tup_vec!(1, 2));
+    assert_eq!(inner.get("b").unwrap(), tup_vec!(1, 2,));
     assert_eq!(outie.get("c").unwrap(), 3);
     assert_eq!(outie.get("d").unwrap(), Obj::new());
 
@@ -84,6 +131,31 @@ fn globals() {
 
     assert_eq!(obj.get("c").unwrap(), 2);
     assert_eq!(obj.len(), 2);
+}
+
+// Test parsing of numbers.
+#[test]
+fn numbers() {
+    let obj = Obj::from_file("tests/test_files/numbers.over").unwrap();
+
+    assert_eq!(obj.get("neg").unwrap(), -4);
+    assert_eq!(obj.get("pos").unwrap(), Fraction::new(4u8, 1u8));
+    assert_eq!(obj.get("neg_zero").unwrap(), Fraction::new(0u8, 1u8));
+    assert_eq!(obj.get("pos_zero").unwrap(), Fraction::new(0u8, 1u8));
+
+    assert_eq!(obj.get("frac_from_dec").unwrap(), Fraction::new(13u8, 10u8));
+    assert_eq!(obj.get("neg_ffd").unwrap(), Fraction::new_neg(13u8, 10u8));
+    assert_eq!(obj.get("pos_ffd").unwrap(), Fraction::new(13u8, 10u8));
+}
+
+// TODO: Test includes.over
+
+// TODO: Test multi-line.over (need substitution)
+
+// Test fuzz files; just make sure there was no error in parsing.
+#[test]
+fn fuzz() {
+    let _ = Obj::from_file("tests/test_files/fuzz1.over").unwrap();
 }
 
 // Test that parsing malformed .over files results in correct errors being returned.
@@ -109,6 +181,7 @@ fn errors() {
         "Arr inner types do not match: found Arr(Tup(Int, Char)), \
                    expected Arr(Tup(Int, Int))"
     );
+    error_helper!("decimal.over", "Invalid numeric value at line 1, column 10");
     error_helper!(
         "deep.over",
         "Exceeded maximum depth (128) for a container at line 1, column 142"
@@ -120,6 +193,10 @@ fn errors() {
     error_helper!(
         "empty_field.over",
         "Invalid character \':\' for field at line 1, column 1"
+    );
+    error_helper!(
+        "empty_number.over",
+        "Invalid numeric value at line 1, column 6"
     );
     error_helper!(
         "field_true.over",
