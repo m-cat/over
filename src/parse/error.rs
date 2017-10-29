@@ -107,12 +107,7 @@ impl fmt::Display for ParseError {
                 )
             }
             InvalidNumeric(ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid character for numeric value at line {}, column {}",
-                    line,
-                    col
-                )
+                write!(f, "Invalid numeric value at line {}, column {}", line, col)
             }
             InvalidValue(ref value, ref line, ref col) => {
                 write!(
@@ -185,7 +180,7 @@ impl Error for ParseError {
             InvalidEscapeChar(_, _, _) => "Invalid escape character",
             InvalidFieldChar(_, _, _) => "Invalid character for field",
             InvalidFieldName(_, _, _) => "Invalid field name",
-            InvalidNumeric(_, _) => "Invalid character for numeric value",
+            InvalidNumeric(_, _) => "Invalid numeric value",
             InvalidValue(_, _, _) => "Invalid value",
             InvalidValueChar(_, _, _) => "Invalid character for value",
             MaxDepth(_, _) => "Exceeded maximum depth for a container",

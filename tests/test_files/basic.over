@@ -4,12 +4,13 @@
 b: "Smörgåsbord"#
  c: 10# Comment
 d: 20 #Comment
-# Comment
+# Comment "with a string"
 eee: 2
 # Comment
  f: 3
 
 
+# Multi-line
 # Comment
 
 

@@ -56,7 +56,7 @@ impl CharStream {
                 //     use super::misc::format_char;
                 //     println!(
                 //         "peeking. ch: '{}', line: {}, col: {}",
-                //         &format!("{}", **ch),
+                //         &format_char(&ch),
                 //         self.line(),
                 //         self.col()
                 //     );

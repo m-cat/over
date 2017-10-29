@@ -3,6 +3,7 @@
 use super::{MAX_DEPTH, ParseResult};
 use super::char_stream::CharStream;
 use super::error::ParseError;
+use super::util::*;
 use arr::Arr;
 use obj::Obj;
 use std::collections::HashMap;
@@ -318,18 +319,14 @@ fn parse_value(
     let res = match stream.peek().unwrap() {
         '"' => parse_str(&mut stream)?,
         '\'' => parse_char(&mut stream)?,
-        ch if ch.is_numeric() => parse_numeric(&mut stream)?,
+        ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
         ch if ch.is_alphabetic() => parse_variable(&mut stream, obj, globals, line, col)?,
         '@' => parse_variable(&mut stream, obj, globals, line, col)?,
         '{' => parse_obj(&mut stream, &mut globals, depth + 1)?,
         '[' => parse_arr(&mut stream, obj, &mut globals, depth + 1)?,
         '(' => parse_tup(&mut stream, obj, &mut globals, depth + 1)?,
         ch => {
-            return Err(ParseError::InvalidValueChar(
-                ch,
-                stream.line(),
-                stream.col(),
-            ));
+            return Err(ParseError::InvalidValueChar(ch, line, col));
         }
     };
 
@@ -340,24 +337,93 @@ fn parse_value(
 }
 
 // Get the next numeric (either Int or Frac) in the character stream.
-fn parse_numeric(stream: &mut CharStream) -> ParseResult<Value> {
-    let mut s = String::new();
-
-    let ch = stream.next().unwrap();
-    s.push(ch);
+fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResult<Value> {
+    let mut s1 = String::new();
+    let mut s2 = String::new();
+    let mut neg1 = false;
+    let mut first = true;
+    let mut dec = false;
 
     while let Some(ch) = stream.peek() {
         match ch {
             ch if is_value_end_char(ch) => break,
-            ch if ch.is_numeric() => s.push(ch),
-            _ => return Err(ParseError::InvalidNumeric(stream.line(), stream.col() - 1)),
+            ch if is_digit(ch) => {
+                if !dec {
+                    s1.push(ch);
+                } else {
+                    s2.push(ch);
+                }
+            }
+            '+' => {
+                if !first {
+                    break;
+                }
+            }
+            '-' => {
+                if !first {
+                    break;
+                } else {
+                    neg1 = true;
+                }
+            }
+            '.' => {
+                if !dec {
+                    dec = true;
+                } else {
+                    return Err(ParseError::InvalidValueChar(
+                        ch,
+                        stream.line(),
+                        stream.col(),
+                    ));
+                }
+            }
+            _ => {
+                return Err(ParseError::InvalidValueChar(
+                    ch,
+                    stream.line(),
+                    stream.col(),
+                ))
+            }
         }
 
         let _ = stream.next();
+        first = false;
     }
 
-    let i: i64 = s.parse().map_err(ParseError::from)?;
-    Ok(i.into())
+    if dec {
+        // Parse a Frac from a number with a decimal.
+        if s1.is_empty() && s2.is_empty() {
+            return Err(ParseError::InvalidNumeric(line, col));
+        }
+
+        let whole: i64 = if s1.is_empty() {
+            0
+        } else {
+            s1.parse().map_err(ParseError::from)?
+        };
+        let whole = negate(whole, neg1);
+
+        // Remove trailing zeros.
+        let s2 = s2.trim_right_matches('0');
+
+        let (decimal, dec_len): (u64, usize) = if s2.is_empty() {
+            (0, 1)
+        } else {
+            (s2.parse().map_err(ParseError::from)?, s2.len())
+        };
+
+        let f = frac_from_whole_and_dec(whole, decimal, dec_len);
+        Ok(f.into())
+    } else {
+        // Parse an Int.
+        if s1.is_empty() {
+            return Err(ParseError::InvalidNumeric(line, col));
+        }
+
+        let i: i64 = s1.parse().map_err(ParseError::from)?;
+        let i = negate(i, neg1);
+        Ok(i.into())
+    }
 }
 
 // Parse a variable name and get a value from the corresponding variable.
@@ -569,50 +635,5 @@ fn check_value_end(stream: &CharStream, cur_brace: Option<char>) -> ParseResult<
             }
         }
         None => Ok(()),
-    }
-}
-
-// If `ch` preceded by a backslash together form an escape character, then return this char.
-// Otherwise, return None.
-fn escape_char(ch: char) -> Option<char> {
-    match ch {
-        '"' => Some('"'),
-        '\'' => Some('\''),
-        '\\' => Some('\\'),
-        '$' => Some('$'),
-        'n' => Some('\n'),
-        'r' => Some('\r'),
-        't' => Some('\t'),
-        _ => None,
-    }
-}
-
-// Returns true if this character signifies the legal end of a value.
-fn is_value_end_char(ch: char) -> bool {
-    is_whitespace(ch) || is_end_delimiter(ch)
-}
-
-// Returns true if the character is either whitespace or '#' (start of a comment).
-fn is_whitespace(ch: char) -> bool {
-    ch.is_whitespace() || ch == '#'
-}
-
-fn is_end_delimiter(ch: char) -> bool {
-    match ch {
-        ')' | ']' | '}' => true,
-        _ => false,
-    }
-}
-
-// Returns true if the given char is valid for a field, given whether it is the first char or not.
-// The first character must be alphabetic.
-// Subsequent characters are allowed to be alphabetic, numeric, or '_'.
-fn is_valid_field_char(ch: char, first: bool) -> bool {
-    match ch {
-        ch if ch.is_alphabetic() => true,
-        ch if ch.is_numeric() => !first,
-        '_' => !first,
-        '^' => first,
-        _ => false,
     }
 }

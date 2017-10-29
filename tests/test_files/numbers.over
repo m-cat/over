@@ -1,0 +1,8 @@
+neg: -04
+pos: +4.0
+neg_zero: -0.
+pos_zero: +.0
+
+frac_from_dec: 01.30
+neg_ffd: -1.30
+pos_ffd: +01.3

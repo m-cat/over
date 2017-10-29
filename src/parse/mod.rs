@@ -5,8 +5,9 @@ pub mod error;
 mod char_stream;
 mod misc;
 mod parser;
-use self::error::ParseError;
+mod util;
 
+use self::error::ParseError;
 use Obj;
 
 type ParseResult<T> = Result<T, ParseError>;
