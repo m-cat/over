@@ -7,6 +7,7 @@
 #![deny(missing_docs)]
 
 extern crate fraction;
+extern crate num;
 extern crate num_traits;
 
 #[macro_use]

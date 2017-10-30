@@ -5,7 +5,7 @@
 
 use OverResult;
 use error::OverError;
-use fraction::Fraction;
+use fraction::BigFraction;
 use num_traits::Zero;
 use parse;
 use std::cell::RefCell;

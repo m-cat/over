@@ -6,3 +6,6 @@ pos_zero: +.0
 frac_from_dec: 01.30
 neg_ffd: -1.30
 pos_ffd: +01.3
+
+big_frac:
+91577735.000000000008123281907466341927

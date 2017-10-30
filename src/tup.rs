@@ -1,4 +1,4 @@
-//! Tup module.
+//! `Tup` module.
 //! A tuple container which can hold elements of different types.
 
 use {OverError, OverResult};

@@ -5,6 +5,7 @@ use super::char_stream::CharStream;
 use super::error::ParseError;
 use super::util::*;
 use arr::Arr;
+use num::bigint::{BigInt, BigUint};
 use obj::Obj;
 use std::collections::HashMap;
 use tup::Tup;
@@ -325,6 +326,7 @@ fn parse_value(
         '{' => parse_obj(&mut stream, &mut globals, depth + 1)?,
         '[' => parse_arr(&mut stream, obj, &mut globals, depth + 1)?,
         '(' => parse_tup(&mut stream, obj, &mut globals, depth + 1)?,
+        // '<' => parse_include(&mut stream)?,
         ch => {
             return Err(ParseError::InvalidValueChar(ch, line, col));
         }
@@ -396,23 +398,22 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
             return Err(ParseError::InvalidNumeric(line, col));
         }
 
-        let whole: i64 = if s1.is_empty() {
-            0
+        let whole: BigUint = if s1.is_empty() {
+            0u8.into()
         } else {
             s1.parse().map_err(ParseError::from)?
         };
-        let whole = negate(whole, neg1);
 
         // Remove trailing zeros.
         let s2 = s2.trim_right_matches('0');
 
-        let (decimal, dec_len): (u64, usize) = if s2.is_empty() {
-            (0, 1)
+        let (decimal, dec_len): (BigUint, usize) = if s2.is_empty() {
+            (0u8.into(), 1)
         } else {
             (s2.parse().map_err(ParseError::from)?, s2.len())
         };
 
-        let f = frac_from_whole_and_dec(whole, decimal, dec_len);
+        let f = frac_from_whole_and_dec(whole, decimal, dec_len, neg1);
         Ok(f.into())
     } else {
         // Parse an Int.
@@ -420,8 +421,10 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
             return Err(ParseError::InvalidNumeric(line, col));
         }
 
-        let i: i64 = s1.parse().map_err(ParseError::from)?;
-        let i = negate(i, neg1);
+        let mut i: BigInt = s1.parse().map_err(ParseError::from)?;
+        if neg1 {
+            i = i * -1
+        }
         Ok(i.into())
     }
 }

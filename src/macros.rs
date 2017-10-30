@@ -85,13 +85,13 @@ mod tests {
     #[test]
     fn arr_vec_basic() {
         assert_eq!(
-            arr_vec![Value::Int(1), Value::Int(2)],
+            arr_vec![Value::Int(1.into()), Value::Int(2.into())],
             try_arr_vec![1, 2].unwrap()
         );
 
         assert_ne!(
             arr_vec![-1, 2],
-            try_arr_vec![Value::Int(1), Value::Int(2)].unwrap()
+            try_arr_vec![Value::Int(1.into()), Value::Int(2.into())].unwrap()
         );
     }
 

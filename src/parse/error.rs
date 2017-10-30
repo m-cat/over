@@ -5,6 +5,7 @@
 use super::MAX_DEPTH;
 use super::misc::format_char;
 use OverError;
+use num::bigint::ParseBigIntError;
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -209,6 +210,12 @@ impl From<OverError> for ParseError {
 
 impl From<ParseIntError> for ParseError {
     fn from(e: ParseIntError) -> Self {
+        ParseError::ParseIntError(format!("{}", e))
+    }
+}
+
+impl From<ParseBigIntError> for ParseError {
+    fn from(e: ParseBigIntError) -> Self {
         ParseError::ParseIntError(format!("{}", e))
     }
 }

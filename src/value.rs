@@ -3,7 +3,8 @@
 use OverResult;
 use arr;
 use error::OverError;
-use fraction::Fraction;
+use fraction::BigFraction;
+use num::bigint::BigInt;
 use obj;
 use tup;
 use types::Type;
@@ -18,9 +19,9 @@ pub enum Value {
     /// A boolean value.
     Bool(bool),
     /// A signed integer value.
-    Int(i64),
+    Int(BigInt),
     /// A fractional value.
-    Frac(Fraction),
+    Frac(BigFraction),
     /// A character value.
     Char(char),
     /// A string value.
@@ -68,21 +69,21 @@ impl Value {
         }
     }
 
-    /// Returns the `i64` contained in this `Value`.
+    /// Returns the `BigInt` contained in this `Value`.
     /// Returns an error if this `Value` is not Int.
-    pub fn get_int(&self) -> OverResult<i64> {
-        if let Value::Int(inner) = *self {
-            Ok(inner)
+    pub fn get_int(&self) -> OverResult<BigInt> {
+        if let Value::Int(ref inner) = *self {
+            Ok(inner.clone())
         } else {
             Err(OverError::TypeMismatch(self.get_type()))
         }
     }
 
-    /// Returns the `Fraction` contained in this `Value`.
+    /// Returns the `BigFraction` contained in this `Value`.
     /// Returns an error if this `Value` is not Frac.
-    pub fn get_frac(&self) -> OverResult<Fraction> {
-        if let Value::Frac(inner) = *self {
-            Ok(inner)
+    pub fn get_frac(&self) -> OverResult<BigFraction> {
+        if let Value::Frac(ref inner) = *self {
+            Ok(inner.clone())
         } else {
             Err(OverError::TypeMismatch(self.get_type()))
         }
@@ -164,8 +165,8 @@ macro_rules! impl_eq {
 }
 
 impl_eq!(Bool, bool);
-impl_eq!(Int, i64);
-impl_eq!(Frac, Fraction);
+impl_eq!(Int, BigInt);
+impl_eq!(Frac, BigFraction);
 impl_eq!(Char, char);
 impl_eq!(Str, String);
 impl_eq!(Arr, arr::Arr);
@@ -196,23 +197,40 @@ macro_rules! impl_from {
     ( $type:ty, $fn:tt ) => {
         impl From<$type> for Value {
             fn from(inner: $type) -> Self {
-                Value::$fn(inner)
+                Value::$fn(inner.into())
             }
         }
     };
 }
 
 impl_from!(bool, Bool);
-impl_from!(i64, Int);
-impl_from!(Fraction, Frac);
-impl_from!(char, Char);
-impl_from!(String, Str);
-impl_from!(arr::Arr, Arr);
-impl_from!(tup::Tup, Tup);
-impl_from!(obj::Obj, Obj);
 
+impl_from!(usize, Int);
+impl_from!(u8, Int);
+impl_from!(u16, Int);
+impl_from!(u32, Int);
+impl_from!(u64, Int);
+impl_from!(i8, Int);
+impl_from!(i16, Int);
+impl_from!(i32, Int);
+impl_from!(i64, Int);
+impl_from!(BigInt, Int);
+
+impl_from!(f32, Frac);
+impl_from!(f64, Frac);
+impl_from!(BigFraction, Frac);
+
+impl_from!(char, Char);
+
+impl_from!(String, Str);
 impl<'a> From<&'a str> for Value {
     fn from(inner: &str) -> Self {
         Value::Str(inner.into())
     }
 }
+
+impl_from!(arr::Arr, Arr);
+
+impl_from!(tup::Tup, Tup);
+
+impl_from!(obj::Obj, Obj);

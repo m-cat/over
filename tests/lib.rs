@@ -1,11 +1,17 @@
 extern crate fraction;
+extern crate num;
 #[macro_use]
 extern crate over;
 
-use fraction::Fraction;
+use fraction::BigFraction;
+use num::ToPrimitive;
 use over::OverError;
 use over::obj::Obj;
 use over::value::Value;
+
+fn get_int(obj: &Obj, field: &str) -> i64 {
+    obj.get(field).unwrap().get_int().unwrap().to_i64().unwrap()
+}
 
 // Test parsing of empty file.
 #[test]
@@ -21,25 +27,25 @@ fn empty() {
 fn basic() {
     let obj = Obj::from_file("tests/test_files/basic.over").unwrap();
 
-    assert_eq!(obj.get("a1").unwrap(), 1);
-    assert_eq!(obj.get("a2").unwrap(), 2);
-    assert_eq!(obj.get("aa").unwrap(), 0);
+    assert_eq!(get_int(&obj, "a1"), 1);
+    assert_eq!(get_int(&obj, "a2"), 2);
+    assert_eq!(get_int(&obj, "aa"), 0);
     assert_eq!(obj.get("b").unwrap(), "Smörgåsbord");
-    assert_eq!(obj.get("c").unwrap(), 10);
-    assert_eq!(obj.get("d").unwrap(), 20);
-    assert_eq!(obj.get("eee").unwrap(), 2);
-    assert_eq!(obj.get("f").unwrap(), 3);
-    assert_eq!(obj.get("g_").unwrap(), 4);
+    assert_eq!(get_int(&obj, "c"), 10);
+    assert_eq!(get_int(&obj, "d"), 20);
+    assert_eq!(get_int(&obj, "eee"), 2);
+    assert_eq!(get_int(&obj, "f"), 3);
+    assert_eq!(get_int(&obj, "g_"), 4);
     assert_eq!(obj.get("Hello").unwrap(), "Hello");
     assert_eq!(obj.get("i_robot").unwrap(), "not #a comment");
-    assert_eq!(obj.get("j").unwrap(), 4);
+    assert_eq!(get_int(&obj, "j"), 4);
     assert_eq!(obj.get("k").unwrap(), "hi");
     assert_eq!(obj.get("l").unwrap(), "$\\\"");
     assert_eq!(obj.get("m").unwrap(), "m");
     assert_eq!(obj.get("n").unwrap(), true);
     assert_eq!(obj.get("o").unwrap(), false);
     assert_eq!(obj.get("p").unwrap(), "Hello");
-    assert_eq!(obj.get("q").unwrap(), 0);
+    assert_eq!(get_int(&obj, "q"), 0);
     assert_eq!(obj.get("r").unwrap(), Value::Null);
     assert_eq!(obj.get("s").unwrap(), '\'');
     assert_eq!(obj.get("t").unwrap(), '\n');
@@ -64,12 +70,12 @@ fn example() {
         arr_vec![
             obj_map!{"part_no" => "A4786",
                      "descrip" => "Water Bucket (Filled)",
-                     "price" => Fraction::new(147u8, 100u8),
+                     "price" => 1.47,
                      "quantity" => 4},
             obj_map!{"part_no" => "E1628",
                      "descrip" => "High Heeled \"Ruby\" Slippers",
                      "size" => 8,
-                     "price" => Fraction::new(1337u16, 10u8),
+                     "price" => 133.7,
                      "quantity" => 1},
         ]
     );
@@ -106,12 +112,13 @@ fn obj() {
 
     let outie = obj.get("outie").unwrap().get_obj().unwrap();
     assert_eq!(outie.get_parent().unwrap(), bools);
-    assert_eq!(outie.get("z").unwrap(), 0);
+    assert_eq!(get_int(&outie, "z"), 0);
     let inner = outie.get("inner").unwrap().get_obj().unwrap();
+    assert_eq!(get_int(&inner, "z"), 1);
     let innie = inner.get("innie").unwrap().get_obj().unwrap();
-    assert_eq!(innie.get("a").unwrap(), 1);
+    assert_eq!(get_int(&innie, "a"), 1);
     assert_eq!(inner.get("b").unwrap(), tup_vec!(1, 2,));
-    assert_eq!(outie.get("c").unwrap(), 3);
+    assert_eq!(get_int(&outie, "c"), 3);
     assert_eq!(outie.get("d").unwrap(), Obj::new());
 
     let obj_arr = obj.get("obj_arr").unwrap().get_obj().unwrap();
@@ -125,11 +132,11 @@ fn globals() {
 
     let sub = obj.get("sub").unwrap().get_obj().unwrap();
 
-    assert_eq!(sub.get("a").unwrap(), 1);
-    assert_eq!(sub.get("b").unwrap(), 2);
+    assert_eq!(sub.get("a").unwrap().get_int().unwrap().to_i64(), Some(1));
+    assert_eq!(get_int(&sub, "b"), 2);
     assert_eq!(sub.len(), 2);
 
-    assert_eq!(obj.get("c").unwrap(), 2);
+    assert_eq!(get_int(&obj, "c"), 2);
     assert_eq!(obj.len(), 2);
 }
 
@@ -138,14 +145,33 @@ fn globals() {
 fn numbers() {
     let obj = Obj::from_file("tests/test_files/numbers.over").unwrap();
 
-    assert_eq!(obj.get("neg").unwrap(), -4);
-    assert_eq!(obj.get("pos").unwrap(), Fraction::new(4u8, 1u8));
-    assert_eq!(obj.get("neg_zero").unwrap(), Fraction::new(0u8, 1u8));
-    assert_eq!(obj.get("pos_zero").unwrap(), Fraction::new(0u8, 1u8));
+    assert_eq!(get_int(&obj, "neg"), -4);
+    assert_eq!(
+        obj.get("pos").unwrap().get_frac().unwrap().to_f32(),
+        Some(4f32)
+    );
+    assert_eq!(
+        obj.get("neg_zero").unwrap().get_frac().unwrap().to_f32(),
+        Some(0f32)
+    );
+    assert_eq!(
+        obj.get("pos_zero").unwrap().get_frac().unwrap().to_f32(),
+        Some(0f32)
+    );
 
-    assert_eq!(obj.get("frac_from_dec").unwrap(), Fraction::new(13u8, 10u8));
-    assert_eq!(obj.get("neg_ffd").unwrap(), Fraction::new_neg(13u8, 10u8));
-    assert_eq!(obj.get("pos_ffd").unwrap(), Fraction::new(13u8, 10u8));
+    assert_eq!(
+        obj.get("frac_from_dec").unwrap(),
+        BigFraction::new(13u8, 10u8)
+    );
+    assert_eq!(
+        obj.get("neg_ffd").unwrap(),
+        BigFraction::new_neg(13u8, 10u8)
+    );
+    assert_eq!(obj.get("pos_ffd").unwrap(), BigFraction::new(13u8, 10u8));
+
+    let frac = obj.get("big_frac").unwrap().get_frac().unwrap();
+    assert!(frac > BigFraction::new(91_000_000u64, 1u8));
+    assert!(frac < BigFraction::new(92_000_000u64, 1u8));
 }
 
 // TODO: Test includes.over
@@ -222,6 +248,10 @@ fn errors() {
     error_helper!(
         "fuzz5.over",
         "Invalid character \'(\' for value at line 27, column 4"
+    );
+    error_helper!(
+        "fuzz6.over",
+        "Arr inner types do not match: found Frac, expected Int"
     );
     error_helper!(
         "unexpected_end1.over",

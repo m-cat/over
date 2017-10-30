@@ -1,6 +1,8 @@
 //! Utility functions used by the parser.
 
-use fraction::Fraction;
+use fraction::BigFraction;
+use num::bigint::BigUint;
+use num_traits::{FromPrimitive, pow};
 
 // If `ch` preceded by a backslash together form an escape character, then return this char.
 // Otherwise, return None.
@@ -36,25 +38,27 @@ pub fn is_valid_field_char(ch: char, first: bool) -> bool {
     }
 }
 
-pub fn frac_from_whole_and_dec(whole: i64, decimal: u64, dec_len: usize) -> Fraction {
-    let frac = Fraction::new(decimal, 10u8.pow(dec_len as u32));
-    if whole < 0 {
-        -frac + frac_from_whole(whole)
-    } else {
-        frac + frac_from_whole(whole)
-    }
+pub fn frac_from_whole_and_dec(
+    whole: BigUint,
+    decimal: BigUint,
+    dec_len: usize,
+    neg: bool,
+) -> BigFraction {
+    let denom = pow(BigUint::from_u8(10).unwrap(), dec_len);
+    frac_from_whole(whole, neg) +
+        if neg {
+            BigFraction::new_neg(decimal, denom)
+        } else {
+            BigFraction::new(decimal, denom)
+        }
 }
 
-pub fn frac_from_whole(whole: i64) -> Fraction {
-    if whole < 0 {
-        Fraction::new_neg(whole.abs() as u64, 1u8)
+pub fn frac_from_whole(whole: BigUint, neg: bool) -> BigFraction {
+    if neg {
+        BigFraction::new_neg(whole, 1u8)
     } else {
-        Fraction::new(whole as u64, 1u8)
+        BigFraction::new(whole, 1u8)
     }
-}
-
-pub fn negate(n: i64, neg: bool) -> i64 {
-    n * if neg { -1 } else { 1 }
 }
 
 // Returns true if the character is either whitespace or '#' (start of a comment).
