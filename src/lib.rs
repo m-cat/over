@@ -26,7 +26,7 @@ mod parse;
 mod tests;
 
 pub use error::OverError;
-pub use obj::*;
+pub use obj::Obj;
 
 /// Result type for this crate.
 pub type OverResult<T> = Result<T, OverError>;

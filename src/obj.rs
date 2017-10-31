@@ -1,6 +1,7 @@
 //! `Obj` module.
 //! A hashmap of keys to values, where values can be any type, including other objects.
 
+#![allow(missing_docs)]
 #![allow(unused_imports)] // will complain about num_traits::Zero otherwise
 
 use OverResult;
@@ -34,7 +35,6 @@ pub struct Obj {
 
 macro_rules! get_fn {
     ( $name:tt, $type:ty ) => {
-        /// Try to get the `$type` associated with `field`.
         pub fn $name(&self, field: &str) -> OverResult<$type> {
             match self.get(field) {
                 Some(value) => {
@@ -81,7 +81,7 @@ impl Obj {
         self.inner.borrow().fields.is_empty()
     }
 
-    /// Returns whether this `Arr` and `other` point to the same data.
+    /// Returns whether `self` and `other` point to the same data.
     pub fn ptr_eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.inner, &other.inner)
     }

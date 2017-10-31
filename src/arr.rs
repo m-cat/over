@@ -74,7 +74,7 @@ impl Arr {
         self.inner.borrow().vec.is_empty()
     }
 
-    /// Returns whether this `Arr` and `other` point to the same data.
+    /// Returns whether `self` and `other` point to the same data.
     pub fn ptr_eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.inner, &other.inner)
     }

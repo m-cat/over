@@ -60,7 +60,7 @@ impl Value {
     }
 
     /// Returns the `bool` contained in this `Value`.
-    /// Returns an error if this `Value` is not Bool.
+    /// Returns an error if this `Value` is not `Bool`.
     pub fn get_bool(&self) -> OverResult<bool> {
         if let Value::Bool(inner) = *self {
             Ok(inner)
@@ -70,7 +70,7 @@ impl Value {
     }
 
     /// Returns the `BigInt` contained in this `Value`.
-    /// Returns an error if this `Value` is not Int.
+    /// Returns an error if this `Value` is not `Int`.
     pub fn get_int(&self) -> OverResult<BigInt> {
         if let Value::Int(ref inner) = *self {
             Ok(inner.clone())
@@ -80,7 +80,7 @@ impl Value {
     }
 
     /// Returns the `BigFraction` contained in this `Value`.
-    /// Returns an error if this `Value` is not Frac.
+    /// Returns an error if this `Value` is not `Frac`.
     pub fn get_frac(&self) -> OverResult<BigFraction> {
         if let Value::Frac(ref inner) = *self {
             Ok(inner.clone())
@@ -90,7 +90,7 @@ impl Value {
     }
 
     /// Returns the `char` contained in this `Value`.
-    /// Returns an error if this `Value` is not Char.
+    /// Returns an error if this `Value` is not `Char`.
     pub fn get_char(&self) -> OverResult<char> {
         if let Value::Char(inner) = *self {
             Ok(inner)
@@ -100,7 +100,7 @@ impl Value {
     }
 
     /// Returns the `String` contained in this `Value`.
-    /// Returns an error if this `Value` is not Str.
+    /// Returns an error if this `Value` is not `Str`.
     pub fn get_str(&self) -> OverResult<String> {
         if let Value::Str(ref inner) = *self {
             Ok(inner.clone())
@@ -110,7 +110,7 @@ impl Value {
     }
 
     /// Returns the `Arr` contained in this `Value`.
-    /// Returns an error if this `Value` is not Arr.
+    /// Returns an error if this `Value` is not `Arr`.
     pub fn get_arr(&self) -> OverResult<arr::Arr> {
         if let Value::Arr(ref inner) = *self {
             Ok(inner.clone())
@@ -120,7 +120,7 @@ impl Value {
     }
 
     /// Returns the `Tup` contained in this `Value`.
-    /// Returns an error if this `Value` is not Tup.
+    /// Returns an error if this `Value` is not `Tup`.
     pub fn get_tup(&self) -> OverResult<tup::Tup> {
         if let Value::Tup(ref inner) = *self {
             Ok(inner.clone())
@@ -130,7 +130,7 @@ impl Value {
     }
 
     /// Returns the `Obj` contained in this `Value`.
-    /// Returns an error if this `Value` is not Obj.
+    /// Returns an error if this `Value` is not `Obj`.
     pub fn get_obj(&self) -> OverResult<obj::Obj> {
         if let Value::Obj(ref inner) = *self {
             Ok(inner.clone())

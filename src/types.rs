@@ -65,7 +65,7 @@ impl Type {
 }
 
 /// Two types are considered equal if one of them is Empty or they have the same variant.
-// TODO: tests for this
+/// In the case of `Arr` and `Tup`, the inner types are recursively checked for equality.
 impl PartialEq for Type {
     fn eq(&self, other: &Self) -> bool {
         use self::Type::*;
