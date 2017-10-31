@@ -13,6 +13,7 @@ pub enum OverError {
     ArrOutOfBounds(usize),
     ArrTypeMismatch(Type, Type),
     CircularParentReferences,
+    FieldNotFound(String),
     NoParentFound,
     ParseError(String),
     TupOutOfBounds(usize),
@@ -36,6 +37,7 @@ impl fmt::Display for OverError {
             CircularParentReferences => {
                 write!(f, "Circular references among parents are not allowed")
             }
+            FieldNotFound(ref field) => write!(f, "Field not found: {}", field),
             NoParentFound => write!(f, "No parent found for this obj"),
             ParseError(ref error) => write!(f, "{}", error),
             TupOutOfBounds(ref index) => write!(f, "Tup index out of bounds: {}", index),
@@ -52,6 +54,7 @@ impl Error for OverError {
             ArrOutOfBounds(_) => "Arr index out of bounds",
             ArrTypeMismatch(_, _) => "Arr inner types do not match",
             CircularParentReferences => "Circular references among parents are not allowed",
+            FieldNotFound(_) => "Field not found",
             NoParentFound => "No parent found for this obj",
             ParseError(ref error) => error,
             TupOutOfBounds(_) => "Tup index out of bounds",

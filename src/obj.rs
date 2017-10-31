@@ -4,8 +4,10 @@
 #![allow(unused_imports)] // will complain about num_traits::Zero otherwise
 
 use OverResult;
+use arr::Arr;
 use error::OverError;
 use fraction::BigFraction;
+use num::bigint::BigInt;
 use num_traits::Zero;
 use parse;
 use std::cell::RefCell;
@@ -14,6 +16,7 @@ use std::convert;
 use std::io;
 use std::rc::Rc;
 use std::str::FromStr;
+use tup::Tup;
 use types::Type;
 use value::Value;
 
@@ -27,6 +30,23 @@ struct ObjInner {
 #[derive(Clone, Debug)]
 pub struct Obj {
     inner: Rc<RefCell<ObjInner>>,
+}
+
+macro_rules! get_fn {
+    ( $name:tt, $type:ty ) => {
+        /// Try to get the `$type` associated with `field`.
+        pub fn $name(&self, field: &str) -> OverResult<$type> {
+            match self.get(field) {
+                Some(value) => {
+                    match value.$name() {
+                        Ok(result) => Ok(result),
+                        e @ Err(_) => e,
+                    }
+                }
+                None => Err(OverError::FieldNotFound(field.into())),
+            }
+        }
+    }
 }
 
 impl Obj {
@@ -98,6 +118,15 @@ impl Obj {
             }
         }
     }
+
+    get_fn!(get_bool, bool);
+    get_fn!(get_int, BigInt);
+    get_fn!(get_frac, BigFraction);
+    get_fn!(get_char, char);
+    get_fn!(get_str, String);
+    get_fn!(get_arr, Arr);
+    get_fn!(get_tup, Tup);
+    get_fn!(get_obj, Obj);
 
     /// Sets the `Value` for `field`.
     pub fn set(&mut self, field: &str, value: Value) {

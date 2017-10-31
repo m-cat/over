@@ -10,7 +10,7 @@ use over::obj::Obj;
 use over::value::Value;
 
 fn get_int(obj: &Obj, field: &str) -> i64 {
-    obj.get(field).unwrap().get_int().unwrap().to_i64().unwrap()
+    obj.get_int(field).unwrap().to_i64().unwrap()
 }
 
 // Test parsing of empty file.
@@ -61,30 +61,30 @@ fn example() {
     assert_eq!(obj.get("date").unwrap(), "2012-08-06");
     assert_eq!(
         obj.get("customer").unwrap(),
-        obj_map!{"first_name" => "Dorothy",
-                 "family_name" => "Gale"}
+        obj!{"first_name" => "Dorothy",
+             "family_name" => "Gale"}
     );
 
     assert_eq!(
         obj.get("items").unwrap(),
-        arr_vec![
-            obj_map!{"part_no" => "A4786",
-                     "descrip" => "Water Bucket (Filled)",
-                     "price" => 1.47,
-                     "quantity" => 4},
-            obj_map!{"part_no" => "E1628",
-                     "descrip" => "High Heeled \"Ruby\" Slippers",
-                     "size" => 8,
-                     "price" => 133.7,
-                     "quantity" => 1},
+        arr![
+            obj!{"part_no" => "A4786",
+                 "descrip" => "Water Bucket (Filled)",
+                 "price" => 1.47,
+                 "quantity" => 4},
+            obj!{"part_no" => "E1628",
+                 "descrip" => "High Heeled \"Ruby\" Slippers",
+                 "size" => 8,
+                 "price" => 133.7,
+                 "quantity" => 1},
         ]
     );
 
     assert_eq!(
         obj.get("bill_to").unwrap(),
-        obj_map!{"street" => "123 Tornado Alley\nSuite 16",
-                 "city" => "East Centerville",
-                 "state" => "KS",
+        obj!{"street" => "123 Tornado Alley\nSuite 16",
+             "city" => "East Centerville",
+             "state" => "KS",
         }
     );
 
@@ -102,27 +102,27 @@ fn example() {
 fn obj() {
     let obj = Obj::from_file("tests/test_files/obj.over").unwrap();
 
-    assert_eq!(obj.get("empty").unwrap().get_obj().unwrap().len(), 0);
-    assert_eq!(obj.get("empty2").unwrap().get_obj().unwrap().len(), 0);
+    assert_eq!(obj.get_obj("empty").unwrap().len(), 0);
+    assert_eq!(obj.get_obj("empty2").unwrap().len(), 0);
 
     assert!(!obj.contains("bools"));
     let mut bools = Obj::new();
     bools.set("t", true.into());
     bools.set("f", false.into());
 
-    let outie = obj.get("outie").unwrap().get_obj().unwrap();
+    let outie = obj.get_obj("outie").unwrap();
     assert_eq!(outie.get_parent().unwrap(), bools);
     assert_eq!(get_int(&outie, "z"), 0);
-    let inner = outie.get("inner").unwrap().get_obj().unwrap();
+    let inner = outie.get_obj("inner").unwrap();
     assert_eq!(get_int(&inner, "z"), 1);
-    let innie = inner.get("innie").unwrap().get_obj().unwrap();
+    let innie = inner.get_obj("innie").unwrap();
     assert_eq!(get_int(&innie, "a"), 1);
-    assert_eq!(inner.get("b").unwrap(), tup_vec!(1, 2,));
+    assert_eq!(inner.get("b").unwrap(), tup!(1, 2,));
     assert_eq!(get_int(&outie, "c"), 3);
     assert_eq!(outie.get("d").unwrap(), Obj::new());
 
-    let obj_arr = obj.get("obj_arr").unwrap().get_obj().unwrap();
-    assert_eq!(obj_arr.get("arr").unwrap(), arr_vec![1, 2, 3]);
+    let obj_arr = obj.get_obj("obj_arr").unwrap();
+    assert_eq!(obj_arr.get("arr").unwrap(), arr![1, 2, 3]);
 }
 
 // Test that globals are referenced correctly and don't get included as fields.
@@ -130,9 +130,9 @@ fn obj() {
 fn globals() {
     let obj = Obj::from_file("tests/test_files/globals.over").unwrap();
 
-    let sub = obj.get("sub").unwrap().get_obj().unwrap();
+    let sub = obj.get_obj("sub").unwrap();
 
-    assert_eq!(sub.get("a").unwrap().get_int().unwrap().to_i64(), Some(1));
+    assert_eq!(sub.get_int("a").unwrap().to_i64(), Some(1));
     assert_eq!(get_int(&sub, "b"), 2);
     assert_eq!(sub.len(), 2);
 
@@ -146,18 +146,9 @@ fn numbers() {
     let obj = Obj::from_file("tests/test_files/numbers.over").unwrap();
 
     assert_eq!(get_int(&obj, "neg"), -4);
-    assert_eq!(
-        obj.get("pos").unwrap().get_frac().unwrap().to_f32(),
-        Some(4f32)
-    );
-    assert_eq!(
-        obj.get("neg_zero").unwrap().get_frac().unwrap().to_f32(),
-        Some(0f32)
-    );
-    assert_eq!(
-        obj.get("pos_zero").unwrap().get_frac().unwrap().to_f32(),
-        Some(0f32)
-    );
+    assert_eq!(obj.get_frac("pos").unwrap().to_f32(), Some(4f32));
+    assert_eq!(obj.get_frac("neg_zero").unwrap().to_f32(), Some(0f32));
+    assert_eq!(obj.get_frac("pos_zero").unwrap().to_f32(), Some(0f32));
 
     assert_eq!(
         obj.get("frac_from_dec").unwrap(),
@@ -169,7 +160,7 @@ fn numbers() {
     );
     assert_eq!(obj.get("pos_ffd").unwrap(), BigFraction::new(13u8, 10u8));
 
-    let frac = obj.get("big_frac").unwrap().get_frac().unwrap();
+    let frac = obj.get_frac("big_frac").unwrap();
     assert!(frac > BigFraction::new(91_000_000u64, 1u8));
     assert!(frac < BigFraction::new(92_000_000u64, 1u8));
 }
@@ -252,6 +243,14 @@ fn errors() {
     error_helper!(
         "fuzz6.over",
         "Arr inner types do not match: found Frac, expected Int"
+    );
+    error_helper!(
+        "fuzz7.over",
+        "Invalid character \'\\n\' for field at line 8, column 0"
+    );
+    error_helper!(
+        "fuzz8.over",
+        "Invalid character \'\"\' for value at line 34, column 3"
     );
     error_helper!(
         "unexpected_end1.over",

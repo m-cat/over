@@ -6,7 +6,7 @@ use obj::Obj;
 use types::Type;
 use value::Value;
 
-// Test setting and getting values, both directly and through parents.
+// Test setting and getting values.
 #[test]
 fn set_and_get() {
     let mut obj = Obj::new();
@@ -20,26 +20,23 @@ fn set_and_get() {
     // Bool
 
     obj.set("bool", true.into());
-    assert_eq!(obj.get("bool").unwrap(), true);
-    assert_eq!(obj.get("bool").unwrap().get_bool(), Ok(true));
+    assert_eq!(obj.get_bool("bool").unwrap(), true);
+    assert_eq!(obj.get_bool("bool"), Ok(true));
 
     // Int
 
     obj.set("int", (-5).into());
-    assert_eq!(obj.get("int").unwrap().get_int(), Ok((-5).into()));
+    assert_eq!(obj.get_int("int"), Ok((-5).into()));
 
     // Frac
 
     obj.set("frac", BigFraction::new_neg(1u8, 1u8).into());
-    assert_eq!(
-        obj.get("frac").unwrap().get_frac(),
-        Ok(BigFraction::new_neg(1u8, 1u8))
-    );
+    assert_eq!(obj.get_frac("frac"), Ok(BigFraction::new_neg(1u8, 1u8)));
 
     // Char
 
     obj.set("char", 'x'.into());
-    assert_eq!(obj.get("char").unwrap().get_char(), Ok('x'));
+    assert_eq!(obj.get_char("char"), Ok('x'));
 
     // String
 
@@ -51,7 +48,7 @@ fn set_and_get() {
 
     // Arr
 
-    let arr = arr_vec![-5, 0, 1];
+    let arr = arr![-5, 0, 1];
     obj.set("arr", arr.clone().into());
     assert_eq!(obj.get("arr").unwrap(), arr);
 
@@ -107,7 +104,7 @@ fn parents() {
     def2.set("bool2", true.into());
     def2.set("bool3", true.into());
 
-    assert_eq!(obj.get("bool1").unwrap().get_bool(), Ok(true));
+    assert_eq!(obj.get_bool("bool1"), Ok(true));
     assert_eq!(obj.get("bool2").unwrap(), false);
     assert_eq!(obj.get("bool3").unwrap(), true);
 
@@ -145,7 +142,7 @@ fn types() {
 
     // Arr
 
-    obj.set("arr_char", arr_vec!['w', 'o', 'w'].into());
+    obj.set("arr_char", arr!['w', 'o', 'w'].into());
     assert_eq!(
         obj.get("arr_char").unwrap().get_type(),
         Type::Arr(Box::new(Type::Char))
@@ -153,9 +150,7 @@ fn types() {
 
     obj.set(
         "arr_arr",
-        try_arr_vec![arr_vec![], arr_vec![true, false]]
-            .unwrap()
-            .into(),
+        try_arr![arr![], arr![true, false]].unwrap().into(),
     );
     assert_eq!(
         obj.get("arr_arr").unwrap().get_type(),
@@ -171,7 +166,7 @@ fn types() {
     ]);
     obj.set(
         "tup",
-        tup_vec!['!', tup_vec![-1], try_arr_vec!["test", "heya"].unwrap()].into(),
+        tup!('!', tup!(-1), try_arr!["test", "heya"].unwrap()).into(),
     );
     assert_eq!(obj.get("tup").unwrap().get_type(), tup_type);
 

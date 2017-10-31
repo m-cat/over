@@ -30,7 +30,7 @@ graph:
 
 # Run fuzz
 fuzz:
-	cargo fuzz run fuzz_target_1 -- -max_len=516 -max_total_time=600
+	cargo fuzz run fuzz_target_1 -- -max_len=4128 -max_total_time=600
 
 clean:
 	rm **/*.bk

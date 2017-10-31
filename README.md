@@ -70,30 +70,30 @@ fn example() {
     assert_eq!(obj.get("date").unwrap(), "2012-08-06");
     assert_eq!(
         obj.get("customer").unwrap(),
-        obj_map!{"first_name" => "Dorothy",
-                 "family_name" => "Gale"}
+        obj!{"first_name" => "Dorothy",
+             "family_name" => "Gale"}
     );
 
     assert_eq!(
         obj.get("items").unwrap(),
-        arr_vec![
-            obj_map!{"part_no" => "A4786",
-                     "descrip" => "Water Bucket (Filled)",
-                     "price" => Fraction::new(147u8, 100u8),
-                     "quantity" => 4},
-            obj_map!{"part_no" => "E1628",
-                     "descrip" => "High Heeled \"Ruby\" Slippers",
-                     "size" => 8,
-                     "price" => Fraction::new(1337u16, 10u8),
-                     "quantity" => 1},
+        arr![
+            obj!{"part_no" => "A4786",
+                 "descrip" => "Water Bucket (Filled)",
+                 "price" => 1.47,
+                 "quantity" => 4},
+            obj!{"part_no" => "E1628",
+                 "descrip" => "High Heeled \"Ruby\" Slippers",
+                 "size" => 8,
+                 "price" => 133.7,
+                 "quantity" => 1},
         ]
     );
 
     assert_eq!(
         obj.get("bill_to").unwrap(),
-        obj_map!{"street" => "123 Tornado Alley\nSuite 16",
-                 "city" => "East Centerville",
-                 "state" => "KS",
+        obj!{"street" => "123 Tornado Alley\nSuite 16",
+             "city" => "East Centerville",
+             "state" => "KS",
         }
     );
 
