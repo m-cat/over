@@ -30,6 +30,7 @@ OVER: the best data format.
         - [Obj](#obj)
     - [What's wrong with JSON?](#whats-wrong-with-json)
     - [What about YAML/others?](#what-about-yamlothers)
+    - [Change Log](#change-log)
     - [Copyright](#copyright)
 
 <!-- markdown-toc end -->
@@ -49,7 +50,7 @@ Add OVER to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-over = "0.1.0"
+over = "*"
 ```
 
 Example Rust code reading the first example ("The Basics") from this README:
@@ -296,9 +297,15 @@ A tuple container which can hold elements of different types.
 
 ### Obj
 
-The godfather of all types, the *object*. A hashmap of keys to values, where values can be any type, including other objects.
+The godfather of all types, the *object*. A hashmap of keys, which we call *fields*, to values, where a value can be of any type, including other objects.
 
-**Examples:** `{ id: 4 field: { field: "Objects can be nested and each has their own scope." } }`
+Fields must be followed by a colon and cannot be "null", "true", or "false".
+
+**Examples:** 
+
+`{ a: 1 b: 2 list: [a b b a] }`
+
+`{ id: 4 field: { field: "Objects can be nested and each has their own scope." } }`
 
 ## What's wrong with JSON?
 
