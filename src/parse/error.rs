@@ -196,15 +196,16 @@ impl Error for ParseError {
     }
 }
 
-impl From<io::Error> for ParseError {
-    fn from(e: io::Error) -> Self {
-        ParseError::IoError(format!("{}", e))
+impl ParseError {
+    /// Convert an `OverError` to a `ParseError` given line and column numbers.
+    pub fn from_over(e: OverError, line: usize, col: usize) -> Self {
+        ParseError::OverError(format!("{} at line {}, col {}", e, line, col))
     }
 }
 
-impl From<OverError> for ParseError {
-    fn from(e: OverError) -> Self {
-        ParseError::OverError(format!("{}", e))
+impl From<io::Error> for ParseError {
+    fn from(e: io::Error) -> Self {
+        ParseError::IoError(format!("{}", e))
     }
 }
 

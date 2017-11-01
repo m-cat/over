@@ -123,8 +123,12 @@ fn parse_field_value_pair(
         }
         globals.insert(field, value);
     } else if is_parent {
-        let parent = value.get_obj().map_err(ParseError::from)?;
-        obj.set_parent(&parent).map_err(ParseError::from)?;
+        let parent = value.get_obj().map_err(|e| {
+            ParseError::from_over(e, value_line, value_col)
+        })?;
+        obj.set_parent(&parent).map_err(|e| {
+            ParseError::from_over(e, value_line, value_col)
+        })?;
     } else {
         obj.set(&field, value);
     }
@@ -189,7 +193,9 @@ fn parse_arr(
             Some(']'),
         )?;
 
-        arr.push(value).map_err(ParseError::from)?;
+        arr.push(value).map_err(|e| {
+            ParseError::from_over(e, value_line, value_col)
+        })?;
     }
 
     Ok(arr.into())

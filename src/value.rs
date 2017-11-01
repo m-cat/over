@@ -65,7 +65,7 @@ impl Value {
         if let Value::Bool(inner) = *self {
             Ok(inner)
         } else {
-            Err(OverError::TypeMismatch(self.get_type()))
+            Err(OverError::TypeMismatch(self.get_type(), Type::Bool))
         }
     }
 
@@ -75,7 +75,7 @@ impl Value {
         if let Value::Int(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch(self.get_type()))
+            Err(OverError::TypeMismatch(self.get_type(), Type::Int))
         }
     }
 
@@ -85,7 +85,7 @@ impl Value {
         if let Value::Frac(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch(self.get_type()))
+            Err(OverError::TypeMismatch(self.get_type(), Type::Frac))
         }
     }
 
@@ -95,7 +95,7 @@ impl Value {
         if let Value::Char(inner) = *self {
             Ok(inner)
         } else {
-            Err(OverError::TypeMismatch(self.get_type()))
+            Err(OverError::TypeMismatch(self.get_type(), Type::Char))
         }
     }
 
@@ -105,7 +105,7 @@ impl Value {
         if let Value::Str(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch(self.get_type()))
+            Err(OverError::TypeMismatch(self.get_type(), Type::Str))
         }
     }
 
@@ -115,7 +115,10 @@ impl Value {
         if let Value::Arr(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch(self.get_type()))
+            Err(OverError::TypeMismatch(
+                self.get_type(),
+                Type::Arr(Box::new(Type::Any)),
+            ))
         }
     }
 
@@ -125,7 +128,7 @@ impl Value {
         if let Value::Tup(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch(self.get_type()))
+            Err(OverError::TypeMismatch(self.get_type(), Type::Tup(vec![])))
         }
     }
 
@@ -135,7 +138,7 @@ impl Value {
         if let Value::Obj(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch(self.get_type()))
+            Err(OverError::TypeMismatch(self.get_type(), Type::Obj))
         }
     }
 }

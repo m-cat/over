@@ -196,7 +196,7 @@ fn errors() {
     error_helper!(
         "arr_types.over",
         "Arr inner types do not match: found Arr(Tup(Int, Char)), \
-                   expected Arr(Tup(Int, Int))"
+         expected Arr(Tup(Int, Int)) at line 2, col 37"
     );
     error_helper!("decimal.over", "Invalid numeric value at line 1, column 10");
     error_helper!(
@@ -242,7 +242,7 @@ fn errors() {
     );
     error_helper!(
         "fuzz6.over",
-        "Arr inner types do not match: found Frac, expected Int"
+        "Arr inner types do not match: found Frac, expected Int at line 22, col 1"
     );
     error_helper!(
         "fuzz7.over",
@@ -251,6 +251,10 @@ fn errors() {
     error_helper!(
         "fuzz8.over",
         "Invalid character \'\"\' for value at line 34, column 3"
+    );
+    error_helper!(
+        "fuzz9.over",
+        "Type mismatch: found Null, expected Obj at line 18, col 4"
     );
     error_helper!(
         "unexpected_end1.over",

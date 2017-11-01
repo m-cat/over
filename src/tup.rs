@@ -20,6 +20,16 @@ pub struct Tup {
 }
 
 impl Tup {
+    /// Creates a new, empty Tup.
+    pub fn new() -> Tup {
+        Tup {
+            inner: Rc::new(RefCell::new(TupInner {
+                vec: Vec::new(),
+                tvec: Vec::new(),
+            })),
+        }
+    }
+
     /// Creates and returns a new `Tup` from a vector of values.
     pub fn from_vec(values: Vec<Value>) -> Tup {
         let tvec: Vec<Type> = values.iter().map(|val| val.get_type()).collect();
@@ -72,6 +82,12 @@ impl Tup {
             inner.vec[index] = value;
             Ok(())
         }
+    }
+}
+
+impl Default for Tup {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

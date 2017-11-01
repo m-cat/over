@@ -6,7 +6,7 @@ use std::fmt;
 #[derive(Clone, Debug)]
 pub enum Type {
     /// A type used to indicate an empty Arr.
-    Empty,
+    Any,
     /// Null value.
     Null,
 
@@ -35,7 +35,7 @@ impl Type {
         use self::Type::*;
 
         match *self {
-            Empty => if let Empty = *other { true } else { false },
+            Any => if let Any = *other { true } else { false },
             Null => if let Null = *other { true } else { false },
             Bool => if let Bool = *other { true } else { false },
             Int => if let Int = *other { true } else { false },
@@ -64,19 +64,19 @@ impl Type {
     }
 }
 
-/// Two types are considered equal if one of them is Empty or they have the same variant.
+/// Two types are considered equal if one of them is Any or they have the same variant.
 /// In the case of `Arr` and `Tup`, the inner types are recursively checked for equality.
 impl PartialEq for Type {
     fn eq(&self, other: &Self) -> bool {
         use self::Type::*;
 
-        // If either is Empty, always return `true`.
-        if let Empty = *other {
+        // If either is Any, always return `true`.
+        if let Any = *other {
             return true;
         }
 
         match *self {
-            Empty => true,
+            Any => true,
             Arr(ref box1) => {
                 if let Arr(ref box2) = *other {
                     box1 == box2
@@ -102,7 +102,7 @@ impl fmt::Display for Type {
         use self::Type::*;
 
         match *self {
-            Empty => write!(f, "Empty"),
+            Any => write!(f, "Any"),
             Null => write!(f, "Null"),
             Bool => write!(f, "Bool"),
             Int => write!(f, "Int"),

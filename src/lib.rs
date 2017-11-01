@@ -1,8 +1,4 @@
 //! OVER: the best data format.
-//!
-//! # Examples
-//!
-//!
 
 #![deny(missing_docs)]
 

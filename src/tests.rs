@@ -63,7 +63,7 @@ fn set_and_get() {
     // Errors
 
     let res = obj.get("bool").unwrap().get_str();
-    assert_eq!(res, Err(OverError::TypeMismatch(Type::Bool)));
+    assert_eq!(res, Err(OverError::TypeMismatch(Type::Bool, Type::Str)));
 
     assert_eq!(obj.get(""), None);
     assert_eq!(obj.get("cool"), None);

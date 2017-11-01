@@ -1,4 +1,3 @@
-
 [package]
 name = "over-fuzz"
 version = "0.0.1"

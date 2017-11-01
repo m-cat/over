@@ -25,18 +25,18 @@ impl Arr {
         Arr {
             inner: Rc::new(RefCell::new(ArrInner {
                 vec: Vec::new(),
-                t: Type::Empty,
+                t: Type::Any,
             })),
         }
     }
 
     /// Returns a new `Arr` with the given value vector as elements.
     pub fn from_vec(vec: Vec<Value>) -> OverResult<Arr> {
-        let mut t = Type::Empty;
+        let mut t = Type::Any;
 
         for value in &vec {
             let tnew = value.get_type();
-            if let Type::Empty = t {
+            if let Type::Any = t {
                 t = tnew.clone()
             } else if t != tnew {
                 return Err(OverError::ArrTypeMismatch(tnew, t));
@@ -104,7 +104,7 @@ impl Arr {
             Err(OverError::ArrTypeMismatch(val_type, inner_type))
         } else {
             // Update type of this `Arr`.
-            if inner_type.is(&Type::Empty) {
+            if inner_type.is(&Type::Any) {
                 inner.t = val_type;
             }
 
@@ -130,7 +130,7 @@ impl Arr {
             Err(OverError::ArrTypeMismatch(val_type, inner_type))
         } else {
             // Update type of this `Arr`.
-            if inner_type.is(&Type::Empty) {
+            if inner_type.is(&Type::Any) {
                 inner.t = val_type;
             }
 
@@ -141,7 +141,7 @@ impl Arr {
     }
 
     /// Removes and returns a `Value` from the `Arr` at the given index.
-    /// Sets the Arr type to Empty if the new length is 0, otherwise the type is left unchanged.
+    /// Sets the Arr type to Any if the new length is 0, otherwise the type is left unchanged.
     /// Returns an error if the index is out of bounds.
     pub fn remove(&mut self, index: usize) -> OverResult<Value> {
         let mut inner = self.inner.borrow_mut();
@@ -153,7 +153,7 @@ impl Arr {
         let res = inner.vec.remove(index);
 
         if inner.vec.is_empty() {
-            inner.t = Type::Empty;
+            inner.t = Type::Any;
         }
 
         Ok(res)

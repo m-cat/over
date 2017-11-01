@@ -6,6 +6,13 @@ use std::str::FromStr;
 
 fuzz_target!(|data: &[u8]| {
     if let Ok(s) = std::str::from_utf8(data) {
-        let _ = over::Obj::from_str(s);
+        match over::Obj::from_str(s) {
+            Ok(_) => (),
+            Err(e) => {
+                // Make sure all that error messages contain some information about where the error
+                // occurred.
+                assert!(format!("{}", e).contains("line"));
+            },
+        }
     }
 });

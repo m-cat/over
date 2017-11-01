@@ -17,7 +17,7 @@ pub enum OverError {
     NoParentFound,
     ParseError(String),
     TupOutOfBounds(usize),
-    TypeMismatch(Type),
+    TypeMismatch(Type, Type),
 }
 
 impl fmt::Display for OverError {
@@ -41,7 +41,9 @@ impl fmt::Display for OverError {
             NoParentFound => write!(f, "No parent found for this obj"),
             ParseError(ref error) => write!(f, "{}", error),
             TupOutOfBounds(ref index) => write!(f, "Tup index out of bounds: {}", index),
-            TypeMismatch(ref found) => write!(f, "Type mismatch: found {}", found),
+            TypeMismatch(ref found, ref expected) => {
+                write!(f, "Type mismatch: found {}, expected {}", found, expected)
+            }
         }
     }
 }
@@ -58,7 +60,7 @@ impl Error for OverError {
             NoParentFound => "No parent found for this obj",
             ParseError(ref error) => error,
             TupOutOfBounds(_) => "Tup index out of bounds",
-            TypeMismatch(_) => "Type mismatch",
+            TypeMismatch(_, _) => "Type mismatch",
         }
     }
 }
