@@ -70,6 +70,12 @@ impl Obj {
         parse::write_to_file(self, path).map_err(OverError::from)
     }
 
+    /// Returns a clone of the HashMap of `self`.
+    /// Use this if you want to iterate over the key/value pairs in this `Obj`.
+    pub fn map(&self) -> HashMap<String, Value> {
+        self.inner.borrow().fields.clone()
+    }
+
     /// Returns the number of fields for this `Obj` (children/parents not included).
     // TODO: test this
     pub fn len(&self) -> usize {
@@ -183,21 +189,6 @@ impl Obj {
         self.inner.borrow_mut().parent = Some(parent.clone());
         Ok(())
     }
-
-    // TODO:
-    // /// An iterator visiting all field/value pairs in arbitrary order.
-    // pub fn iter(&self) -> OverResult<Iter<String, Value>> {
-    //     match self.fields {
-    //         None => Err(OverError::NullObj),
-    //         Some(ref fields) => {
-    //             let hashmap = fields.read().map_err(OverError::from)?;
-    //             let cloned: HashMap<String, Value> = hashmap.iter().
-    //                 map(|(field, value)| (field.clone(), value.clone()))
-    //                 .collect();
-    //             Ok(cloned.iter())
-    //         }
-    //     }
-    // }
 }
 
 impl Default for Obj {
@@ -232,21 +223,3 @@ impl PartialEq for Obj {
         inner.fields == other_inner.fields
     }
 }
-
-// TODO:
-// pub struct Iter {
-
-// }
-
-// impl Iterator for Iter {
-//     type Item = (String, Value);
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         match self.fields {
-//             None => None,
-//             Some(ref fields) => {
-//                 fields.read().unwrap().next()
-//             }
-//         }
-//     }
-// }

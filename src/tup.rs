@@ -38,6 +38,12 @@ impl Tup {
         Tup { inner: Rc::new(RefCell::new(TupInner { vec, tvec })) }
     }
 
+    /// Returns a clone of the Vec of `self`.
+    /// Use this if you want to iterate over the values in this `Tup`.
+    pub fn vec(&self) -> Vec<Value> {
+        self.inner.borrow().vec.clone()
+    }
+
     /// Returns the type vector of this `Tup`.
     pub fn get_type(&self) -> Vec<Type> {
         self.inner.borrow().tvec.clone()

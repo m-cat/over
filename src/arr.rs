@@ -46,6 +46,12 @@ impl Arr {
         Ok(Arr { inner: Rc::new(RefCell::new(ArrInner { vec, t })) })
     }
 
+    /// Returns a clone of the Vec of `self`.
+    /// Use this if you want to iterate over the values in this `Arr`.
+    pub fn vec(&self) -> Vec<Value> {
+        self.inner.borrow().vec.clone()
+    }
+
     /// Returns the type of all elements in this `Arr`.
     pub fn get_type(&self) -> Type {
         self.inner.borrow().t.clone()
