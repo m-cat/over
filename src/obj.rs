@@ -119,6 +119,22 @@ impl Obj {
         }
     }
 
+    /// Gets the `Value` associated with `field` and the `Obj` where it was found (either `self` or
+    /// one of its parents).
+    pub fn get_with_source(&self, field: &str) -> Option<(Value, Obj)> {
+        let inner = self.inner.borrow();
+
+        match inner.fields.get(field) {
+            Some(value) => Some((value.clone(), self.clone())),
+            None => {
+                match inner.parent {
+                    Some(ref parent) => parent.get_with_source(field),
+                    None => None,
+                }
+            }
+        }
+    }
+
     get_fn!(get_bool, bool);
     get_fn!(get_int, BigInt);
     get_fn!(get_frac, BigFraction);

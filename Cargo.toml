@@ -1,7 +1,9 @@
 [package]
 authors = ["Marcin S. <scatman@bu.edu>"]
 description = "OVER: the best data format."
+documentation = "https://docs.rs/over"
 license = "MIT"
+keywords = ["config", "format", "minimal", "intuitive", "powerful"]
 name = "over"
 readme = "README.md"
 repository = "https://github.com/m-cat/over"

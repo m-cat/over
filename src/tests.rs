@@ -104,9 +104,17 @@ fn parents() {
     def2.set("bool2", true.into());
     def2.set("bool3", true.into());
 
-    assert_eq!(obj.get_bool("bool1"), Ok(true));
-    assert_eq!(obj.get("bool2").unwrap(), false);
-    assert_eq!(obj.get("bool3").unwrap(), true);
+    let (v, o) = obj.get_with_source("bool1").unwrap();
+    assert_eq!(v, true);
+    assert!(o.ptr_eq(&obj));
+
+    let (v, o) = obj.get_with_source("bool2").unwrap();
+    assert_eq!(v, false);
+    assert!(o.ptr_eq(&def1));
+
+    let (v, o) = obj.get_with_source("bool3").unwrap();
+    assert_eq!(v, true);
+    assert!(o.ptr_eq(&def2));
 
     // String
 
