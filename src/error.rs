@@ -5,6 +5,7 @@
 use parse::error::ParseError;
 use std::error::Error;
 use std::fmt;
+use std::io;
 use types::Type;
 
 /// The fabulous OVER error type.
@@ -18,6 +19,8 @@ pub enum OverError {
     ParseError(String),
     TupOutOfBounds(usize),
     TypeMismatch(Type, Type),
+
+    IoError(String),
 }
 
 impl fmt::Display for OverError {
@@ -39,11 +42,13 @@ impl fmt::Display for OverError {
             }
             FieldNotFound(ref field) => write!(f, "Field not found: {}", field),
             NoParentFound => write!(f, "No parent found for this obj"),
-            ParseError(ref error) => write!(f, "{}", error),
             TupOutOfBounds(ref index) => write!(f, "Tup index out of bounds: {}", index),
             TypeMismatch(ref found, ref expected) => {
                 write!(f, "Type mismatch: found {}, expected {}", found, expected)
             }
+
+            ParseError(ref error) |
+            IoError(ref error) => write!(f, "{}", error),
         }
     }
 }
@@ -58,10 +63,18 @@ impl Error for OverError {
             CircularParentReferences => "Circular references among parents are not allowed",
             FieldNotFound(_) => "Field not found",
             NoParentFound => "No parent found for this obj",
-            ParseError(ref error) => error,
             TupOutOfBounds(_) => "Tup index out of bounds",
             TypeMismatch(_, _) => "Type mismatch",
+
+            ParseError(ref error) |
+            IoError(ref error) => error,
         }
+    }
+}
+
+impl From<io::Error> for OverError {
+    fn from(e: io::Error) -> Self {
+        OverError::IoError(format!("{}", e))
     }
 }
 

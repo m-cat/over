@@ -521,7 +521,7 @@ fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
     if escape {
         ch = match stream.next() {
             Some(ch) => {
-                match escape_char(ch) {
+                match get_escape_char(ch) {
                     Some(ch) => ch,
                     None => {
                         return Err(ParseError::InvalidEscapeChar(
@@ -566,7 +566,7 @@ fn parse_str(stream: &mut CharStream) -> ParseResult<Value> {
         match stream.next() {
             Some(ch) => {
                 if escape {
-                    match escape_char(ch) {
+                    match get_escape_char(ch) {
                         Some(ch) => s.push(ch),
                         None => {
                             return Err(ParseError::InvalidEscapeChar(

@@ -11,14 +11,17 @@ use fraction::BigFraction;
 use num::bigint::BigInt;
 use num_traits::Zero;
 use parse;
+use parse::format::Format;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert;
+use std::fmt;
 use std::io;
 use std::rc::Rc;
 use std::str::FromStr;
 use tup::Tup;
 use types::Type;
+use util::write_file_str;
 use value::Value;
 
 #[derive(Clone, Debug)]
@@ -66,18 +69,26 @@ impl Obj {
     }
 
     /// Writes this `Obj` to given file in `.over` representation.
+    ///
+    /// # Notes
+    /// Note that the fields of the `Obj` will be output in an unpredictable order.
+    /// Also note that shorthand in the original file, including variables and file includes,
+    /// is not preserved when parsing the file, and will not appear when writing to another file.
     pub fn write_to_file(&self, path: &str) -> OverResult<()> {
-        parse::write_to_file(self, path).map_err(OverError::from)
+        write_file_str(path, &self.format(false, 0)).map_err(OverError::from)
     }
 
-    /// Returns a clone of the HashMap of `self`.
-    /// Use this if you want to iterate over the key/value pairs in this `Obj`.
-    pub fn map(&self) -> HashMap<String, Value> {
-        self.inner.borrow().fields.clone()
+    /// Iterates over each `(String, Value)` pair in `self`, applying `Fn` `f`.
+    pub fn with_each<F>(&self, mut f: F)
+    where
+        F: FnMut(&String, &Value),
+    {
+        for (field, value) in &self.inner.borrow().fields {
+            f(field, value)
+        }
     }
 
     /// Returns the number of fields for this `Obj` (children/parents not included).
-    // TODO: test this
     pub fn len(&self) -> usize {
         self.inner.borrow().fields.len()
     }
@@ -194,6 +205,12 @@ impl Obj {
 impl Default for Obj {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl fmt::Display for Obj {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.format(true, 0))
     }
 }
 

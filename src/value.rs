@@ -6,6 +6,8 @@ use error::OverError;
 use fraction::BigFraction;
 use num::bigint::BigInt;
 use obj;
+use parse::format::Format;
+use std::fmt;
 use tup;
 use types::Type;
 
@@ -140,6 +142,12 @@ impl Value {
         } else {
             Err(OverError::TypeMismatch(self.get_type(), Type::Obj))
         }
+    }
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.format(true, 0))
     }
 }
 

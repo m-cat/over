@@ -2,7 +2,9 @@
 //! A tuple container which can hold elements of different types.
 
 use {OverError, OverResult};
+use parse::format::Format;
 use std::cell::RefCell;
+use std::fmt;
 use std::rc::Rc;
 use types::Type;
 use value::Value;
@@ -38,10 +40,14 @@ impl Tup {
         Tup { inner: Rc::new(RefCell::new(TupInner { vec, tvec })) }
     }
 
-    /// Returns a clone of the Vec of `self`.
-    /// Use this if you want to iterate over the values in this `Tup`.
-    pub fn vec(&self) -> Vec<Value> {
-        self.inner.borrow().vec.clone()
+    /// Iterates over each `Value` in `self`, applying `Fn` `f`.
+    pub fn with_each<F>(&self, mut f: F)
+    where
+        F: FnMut(&Value),
+    {
+        for value in &self.inner.borrow().vec {
+            f(value)
+        }
     }
 
     /// Returns the type vector of this `Tup`.
@@ -94,6 +100,12 @@ impl Tup {
 impl Default for Tup {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl fmt::Display for Tup {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.format(true, 0))
     }
 }
 

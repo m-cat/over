@@ -2,7 +2,9 @@
 //! An array container which can hold an arbitrary number of elements of a single type.
 
 use {OverError, OverResult};
+use parse::format::Format;
 use std::cell::RefCell;
+use std::fmt;
 use std::rc::Rc;
 use types::Type;
 use value::Value;
@@ -46,10 +48,14 @@ impl Arr {
         Ok(Arr { inner: Rc::new(RefCell::new(ArrInner { vec, t })) })
     }
 
-    /// Returns a clone of the Vec of `self`.
-    /// Use this if you want to iterate over the values in this `Arr`.
-    pub fn vec(&self) -> Vec<Value> {
-        self.inner.borrow().vec.clone()
+    /// Iterates over each `Value` in `self`, applying `Fn` `f`.
+    pub fn with_each<F>(&self, mut f: F)
+    where
+        F: FnMut(&Value),
+    {
+        for value in &self.inner.borrow().vec {
+            f(value)
+        }
     }
 
     /// Returns the type of all elements in this `Arr`.
@@ -169,6 +175,12 @@ impl Arr {
 impl Default for Arr {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+impl fmt::Display for Arr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.format(true, 0))
     }
 }
 

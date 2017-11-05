@@ -1,0 +1,55 @@
+receipt: "Oz-Ware Purchase Invoice"
+date:    "2012-08-06"
+customer: {
+    first_name:  "Dorothy"
+    family_name: "Gale"
+}
+
+items: [{
+         part_no:  "A4786"
+         descrip:  "Water Bucket (Filled)"
+         price:    01.47
+         quantity: 4
+        }
+        {
+         part_no:  "E1628"
+         descrip:  "High Heeled \"Ruby\" Slippers"
+         size:     8
+         price:    133.70
+         quantity: 1
+        }
+       ]
+
+bill_to: {
+    street:
+    # A multi-line string. Can also be written as "123 Tornado Alley\nSuite16"
+"123 Tornado Alley
+Suite 16"
+    city:  "East Centerville"
+    state: "KS"
+}
+
+ship_to: bill_to
+
+specialDelivery:
+"Follow the Yellow Brick Road to the Emerald City. Pay no attention to the man behind the curtain."
+
+empty: {} empty2: {}
+@bools: { t: true f: false }
+
+outie: [{
+    ^: @bools
+    z: 0
+    inner: {
+        z: 1
+        innie: {a: 1}
+        b: (z 2)
+    }
+    c: 3
+    d: {}}]
+
+obj_arr: {arr: [1 2 3]}
+
+
+
+tuples: (() (1) (1 2) [] [()] ([()]))

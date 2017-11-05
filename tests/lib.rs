@@ -169,6 +169,20 @@ fn numbers() {
 
 // TODO: Test multi-line.over (need substitution)
 
+// Test writing objects to files.
+#[test]
+fn write() {
+    let path1 = "tests/test_files/read.over";
+    let path2 = "tests/test_files/write.over";
+    let obj1 = Obj::from_file(path1).unwrap();
+
+    obj1.write_to_file(path2).unwrap();
+
+    let obj2 = Obj::from_file(path2).unwrap();
+
+    assert_eq!(obj1, obj2);
+}
+
 // Test fuzz files; just make sure there was no error in parsing.
 #[test]
 fn fuzz() {
