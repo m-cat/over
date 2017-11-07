@@ -78,7 +78,7 @@ impl Obj {
         write_file_str(path, &self.format(false, 0)).map_err(OverError::from)
     }
 
-    /// Iterates over each `(String, Value)` pair in `self`, applying `Fn` `f`.
+    /// Iterates over each `(String, Value)` pair in `self`, applying `f`.
     pub fn with_each<F>(&self, mut f: F)
     where
         F: FnMut(&String, &Value),
@@ -175,10 +175,10 @@ impl Obj {
     }
 
     /// Returns the parent for this `Obj`.
-    pub fn get_parent(&self) -> OverResult<Obj> {
+    pub fn get_parent(&self) -> Option<Obj> {
         match self.inner.borrow().parent {
-            Some(ref parent) => Ok(parent.clone()),
-            None => Err(OverError::NoParentFound),
+            Some(ref parent) => Some(parent.clone()),
+            None => None,
         }
     }
 
@@ -191,7 +191,7 @@ impl Obj {
             return Err(OverError::CircularParentReferences);
         }
         while cur_parent.has_parent() {
-            cur_parent = cur_parent.get_parent()?;
+            cur_parent = cur_parent.get_parent().unwrap();
             if self.ptr_eq(&cur_parent) {
                 return Err(OverError::CircularParentReferences);
             }

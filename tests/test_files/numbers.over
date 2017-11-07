@@ -7,5 +7,24 @@ frac_from_dec: 01.30
 neg_ffd: -1.30
 pos_ffd: +01.3
 
+add_dec: 1.5+1.5
+sub_dec: -1.5-1.5
+
 big_frac:
 91577735.000000000008123281907466341927
+
+frac1: +1/--2
+frac2: -1/---2
+frac3: 0/10
+frac4: -5/4
+frac5: +4/+4
+
+whole_frac: 1+1/2
+neg_whole_frac: -5-1/4
+dec_frac: 0.+1/2
+dec_frac2: .0-1/+2
+
+array: [whole_frac -1/2 1+0.5 -1/-1]
+tup: (-1/2 whole_frac -1/-1 1+0.5)
+
+var_frac: -frac1/frac5

@@ -6,10 +6,14 @@ use super::error::ParseError;
 use super::util::*;
 use arr::Arr;
 use num::bigint::{BigInt, BigUint};
+use num_traits::Zero;
 use obj::Obj;
 use std::collections::HashMap;
+use std::collections::VecDeque;
 use tup::Tup;
 use value::Value;
+
+type Globals = HashMap<String, Value>;
 
 /// Parse given file as an `Obj`.
 pub fn parse_obj_file(path: &str) -> ParseResult<Obj> {
@@ -27,7 +31,7 @@ pub fn parse_obj_str(contents: &str) -> ParseResult<Obj> {
 // Parse an Obj given a character stream.
 fn parse_obj_stream(mut stream: CharStream, depth: usize) -> ParseResult<Obj> {
     let mut obj = Obj::new();
-    let mut globals: HashMap<String, Value> = HashMap::new();
+    let mut globals: Globals = HashMap::new();
 
     // Go to the first non-whitespace character, or return if there is none.
     if !find_char(stream.clone()) {
@@ -43,7 +47,7 @@ fn parse_obj_stream(mut stream: CharStream, depth: usize) -> ParseResult<Obj> {
 // Parse a sub-Obj in a file. It *must* start with { and end with }.
 fn parse_obj(
     mut stream: &mut CharStream,
-    globals: &mut HashMap<String, Value>,
+    globals: &mut Globals,
     depth: usize,
 ) -> ParseResult<Value> {
     // Check depth.
@@ -72,7 +76,7 @@ fn parse_obj(
 fn parse_field_value_pair(
     mut stream: &mut CharStream,
     obj: &mut Obj,
-    mut globals: &mut HashMap<String, Value>,
+    mut globals: &mut Globals,
     depth: usize,
     cur_brace: Option<char>,
 ) -> ParseResult<bool> {
@@ -114,6 +118,7 @@ fn parse_field_value_pair(
         value_col,
         depth,
         cur_brace,
+        true,
     )?;
 
     // Add value either to the globals map or to the current Obj.
@@ -148,7 +153,7 @@ fn parse_field_value_pair(
 fn parse_arr(
     mut stream: &mut CharStream,
     obj: &Obj,
-    mut globals: &mut HashMap<String, Value>,
+    mut globals: &mut Globals,
     depth: usize,
 ) -> ParseResult<Value> {
     // Check depth.
@@ -191,6 +196,7 @@ fn parse_arr(
             value_col,
             depth,
             Some(']'),
+            true,
         )?;
 
         arr.push(value).map_err(|e| {
@@ -205,7 +211,7 @@ fn parse_arr(
 fn parse_tup(
     mut stream: &mut CharStream,
     obj: &Obj,
-    mut globals: &mut HashMap<String, Value>,
+    mut globals: &mut Globals,
     depth: usize,
 ) -> ParseResult<Value> {
     // Check depth.
@@ -248,6 +254,7 @@ fn parse_tup(
             value_col,
             depth,
             Some(')'),
+            true,
         )?;
 
         vec.push(value);
@@ -313,43 +320,131 @@ fn parse_field(
 }
 
 // Get the next value in the char stream.
+#[allow(unknown_lints)]
+#[allow(too_many_arguments)]
 fn parse_value(
     mut stream: &mut CharStream,
     obj: &Obj,
-    mut globals: &mut HashMap<String, Value>,
+    mut globals: &mut Globals,
     line: usize,
     col: usize,
     depth: usize,
     cur_brace: Option<char>,
+    is_first: bool,
 ) -> ParseResult<Value> {
     // Peek to determine what kind of value we'll be parsing.
     let res = match stream.peek().unwrap() {
         '"' => parse_str(&mut stream)?,
         '\'' => parse_char(&mut stream)?,
-        ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
-        ch if ch.is_alphabetic() => parse_variable(&mut stream, obj, globals, line, col)?,
-        '@' => parse_variable(&mut stream, obj, globals, line, col)?,
         '{' => parse_obj(&mut stream, &mut globals, depth + 1)?,
         '[' => parse_arr(&mut stream, obj, &mut globals, depth + 1)?,
         '(' => parse_tup(&mut stream, obj, &mut globals, depth + 1)?,
         // '<' => parse_include(&mut stream)?,
+        '@' => parse_variable(&mut stream, obj, globals, line, col)?,
+        ch @ '+' | ch @ '-' => parse_unary_op(&mut stream, obj, globals, depth, cur_brace, ch)?,
+        ch if ch.is_alphabetic() => parse_variable(&mut stream, obj, globals, line, col)?,
+        ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
         ch => {
             return Err(ParseError::InvalidValueChar(ch, line, col));
         }
     };
 
-    // Check for valid characters after the value.
-    check_value_end(stream, cur_brace)?;
+    // Process operations if this is the first value.
+    if is_first {
+        let mut val_deque: VecDeque<(Value, usize, usize)> = VecDeque::new();
+        let mut op_deque: VecDeque<char> = VecDeque::new();
+        val_deque.push_back((res, line, col));
 
-    Ok(res)
+        loop {
+            match stream.peek() {
+                // Ignore whitespace.
+                // if !find_char(stream.clone()) {
+                //     break;
+                // }
+                Some(ch) if is_operator(ch) => {
+                    let _ = stream.next();
+                    if stream.peek().is_none() {
+                        // if !find_char(stream.clone()) {
+                        return Err(ParseError::UnexpectedEnd(stream.line()));
+                    }
+
+                    let (line2, col2) = (stream.line(), stream.col());
+
+                    // Parse another value.
+                    let val2 = parse_value(
+                        &mut stream,
+                        obj,
+                        &mut globals,
+                        line2,
+                        col2,
+                        depth,
+                        cur_brace,
+                        false,
+                    )?;
+
+                    if ch == '*' || ch == '/' {
+                        let (val1, line1, col1) = val_deque.pop_back().unwrap();
+                        let res = binary_op_on_values(val1, val2, ch, line2, col2)?;
+                        val_deque.push_back((res, line1, col1));
+                    } else {
+                        val_deque.push_back((val2, line2, col2));
+                        op_deque.push_back(ch);
+                    }
+                }
+                _ => break,
+            }
+        }
+
+        // Check for valid characters after the value.
+        check_value_end(stream, cur_brace)?;
+
+        while !op_deque.is_empty() {
+            let (val2, line2, col2) = val_deque.pop_back().unwrap();
+            let (val1, line1, col1) = val_deque.pop_back().unwrap();
+            let res = binary_op_on_values(val1, val2, op_deque.pop_back().unwrap(), line2, col2)?;
+            val_deque.push_back((res, line1, col1));
+        }
+        let (res, _, _) = val_deque.pop_back().unwrap();
+        Ok(res)
+    } else {
+        Ok(res)
+    }
+}
+
+fn parse_unary_op(
+    mut stream: &mut CharStream,
+    obj: &Obj,
+    mut globals: &mut Globals,
+    depth: usize,
+    cur_brace: Option<char>,
+    ch: char,
+) -> ParseResult<Value> {
+    let _ = stream.next();
+    let line = stream.line();
+    let col = stream.col();
+
+    let res = match stream.peek() {
+        Some(_) => {
+            parse_value(
+                &mut stream,
+                obj,
+                &mut globals,
+                line,
+                col,
+                depth,
+                cur_brace,
+                false,
+            )?
+        }
+        None => return Err(ParseError::UnexpectedEnd(line)),
+    };
+    unary_op_on_value(res, ch, line, col)
 }
 
 // Get the next numeric (either Int or Frac) in the character stream.
 fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResult<Value> {
     let mut s1 = String::new();
     let mut s2 = String::new();
-    let mut neg1 = false;
-    let mut first = true;
     let mut dec = false;
 
     while let Some(ch) = stream.peek() {
@@ -360,18 +455,6 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
                     s1.push(ch);
                 } else {
                     s2.push(ch);
-                }
-            }
-            '+' => {
-                if !first {
-                    break;
-                }
-            }
-            '-' => {
-                if !first {
-                    break;
-                } else {
-                    neg1 = true;
                 }
             }
             '.' => {
@@ -395,7 +478,6 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
         }
 
         let _ = stream.next();
-        first = false;
     }
 
     if dec {
@@ -419,7 +501,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
             (s2.parse().map_err(ParseError::from)?, s2.len())
         };
 
-        let f = frac_from_whole_and_dec(whole, decimal, dec_len, neg1);
+        let f = frac_from_whole_and_dec(whole, decimal, dec_len);
         Ok(f.into())
     } else {
         // Parse an Int.
@@ -427,10 +509,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
             return Err(ParseError::InvalidNumeric(line, col));
         }
 
-        let mut i: BigInt = s1.parse().map_err(ParseError::from)?;
-        if neg1 {
-            i = i * -1
-        }
+        let i: BigInt = s1.parse().map_err(ParseError::from)?;
         Ok(i.into())
     }
 }
@@ -439,7 +518,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
 fn parse_variable(
     stream: &mut CharStream,
     obj: &Obj,
-    globals: &HashMap<String, Value>,
+    globals: &Globals,
     line: usize,
     col: usize,
 ) -> ParseResult<Value> {
@@ -461,7 +540,7 @@ fn parse_variable(
                 return Err(ParseError::InvalidValueChar(
                     ch,
                     stream.line(),
-                    stream.col() - 1,
+                    stream.col(),
                 ))
             }
         }
@@ -592,6 +671,100 @@ fn parse_str(stream: &mut CharStream) -> ParseResult<Value> {
     Ok(s.into())
 }
 
+// Try to perform a unary operation on a single value.
+fn unary_op_on_value(val: Value, op: char, line: usize, col: usize) -> ParseResult<Value> {
+    use types::Type::*;
+
+    let t = val.get_type();
+
+    Ok(match op {
+        '+' => {
+            match t {
+                Int | Frac => val,
+                _ => return Err(ParseError::UnaryOperatorError(t, op, line, col)),
+            }
+        }
+        '-' => {
+            match t {
+                Int => (-val.get_int().unwrap()).into(),
+                Frac => (-val.get_frac().unwrap()).into(),
+                _ => return Err(ParseError::UnaryOperatorError(t, op, line, col)),
+            }
+        }
+        _ => return Err(ParseError::UnaryOperatorError(t, op, line, col)),
+    })
+}
+
+// Try to perform an operation on two values.
+fn binary_op_on_values(
+    mut val1: Value,
+    mut val2: Value,
+    op: char,
+    line: usize,
+    col: usize,
+) -> ParseResult<Value> {
+    use types::Type::*;
+
+    let (mut type1, mut type2) = (val1.get_type(), val2.get_type());
+
+    // If one value is an Int and the other is a Frac, promote the Int.
+    if type1 == Int && type2 == Frac {
+        val1 = Value::Frac(int_to_frac(&val1.get_int().unwrap()));
+        type1 = Frac;
+    } else if type1 == Frac && type2 == Int {
+        val2 = Value::Frac(int_to_frac(&val2.get_int().unwrap()));
+        type2 = Frac;
+    }
+
+    if type1 != type2 {
+        return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col));
+    }
+
+    Ok(match op {
+        '+' => {
+            match type1 {
+                Int => (val1.get_int().unwrap() + val2.get_int().unwrap()).into(),
+                Frac => (val1.get_frac().unwrap() + val2.get_frac().unwrap()).into(),
+                _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
+            }
+        }
+        '-' => {
+            match type1 {
+                Int => (val1.get_int().unwrap() - val2.get_int().unwrap()).into(),
+                Frac => (val1.get_frac().unwrap() - val2.get_frac().unwrap()).into(),
+                _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
+            }
+        }
+        '*' => {
+            match type1 {
+                Int => (val1.get_int().unwrap() * val2.get_int().unwrap()).into(),
+                Frac => (val1.get_frac().unwrap() * val2.get_frac().unwrap()).into(),
+                _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
+            }
+        }
+        '/' => {
+            match type1 {
+                Int => {
+                    let (int1, int2) = (val1.get_int().unwrap(), val2.get_int().unwrap());
+                    if int2.is_zero() {
+                        return Err(ParseError::InvalidNumeric(line, col));
+                    }
+                    two_ints_to_frac(&int1, &int2).into()
+                }
+                Frac => {
+                    let (frac1, frac2) = (val1.get_frac().unwrap(), val2.get_frac().unwrap());
+                    if frac2.is_zero() {
+                        return Err(ParseError::InvalidNumeric(line, col));
+                    }
+                    (frac1 / frac2).into()
+                }
+                _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
+            }
+        }
+        _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
+    })
+}
+
 // Find the next non-whitespace character, ignoring comments, and update stream position.
 // Return true if such a character was found or false if we got to the end of the stream.
 fn find_char(mut stream: CharStream) -> bool {
@@ -619,7 +792,7 @@ fn find_char(mut stream: CharStream) -> bool {
     false
 }
 
-// Helper function to make sure values are followed by whitespace or a correct end delimiter.
+// Helper function to make sure values are followed by a correct end delimiter.
 fn check_value_end(stream: &CharStream, cur_brace: Option<char>) -> ParseResult<()> {
     match stream.peek() {
         Some(ch) => {

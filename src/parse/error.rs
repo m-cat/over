@@ -10,10 +10,12 @@ use std::error::Error;
 use std::fmt;
 use std::io;
 use std::num::ParseIntError;
+use types::Type;
 
 /// Parse error type.
 #[derive(Debug)]
 pub enum ParseError {
+    BinaryOperatorError(Type, Type, char, usize, usize),
     DuplicateField(String, usize, usize),
     DuplicateGlobal(String, usize, usize),
     GlobalNotFound(String, usize, usize),
@@ -26,6 +28,7 @@ pub enum ParseError {
     InvalidValueChar(char, usize, usize),
     MaxDepth(usize, usize),
     NoWhitespaceAfterField(usize, usize),
+    UnaryOperatorError(Type, char, usize, usize),
     UnexpectedEnd(usize),
     VariableNotFound(String, usize, usize),
 
@@ -39,6 +42,17 @@ impl fmt::Display for ParseError {
         use self::ParseError::*;
 
         match *self {
+            BinaryOperatorError(ref found, ref expected, ref op, ref line, ref col) => {
+                write!(
+                    f,
+                    "Could not apply operator {} on types {} and {} at line {}, column {}",
+                    op,
+                    expected,
+                    found,
+                    line,
+                    col,
+                )
+            }
             DuplicateField(ref field, ref line, ref col) => {
                 write!(
                     f,
@@ -145,6 +159,16 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
+            UnaryOperatorError(ref found, ref op, ref line, ref col) => {
+                write!(
+                    f,
+                    "Could not apply operator {} on type {} at line {}, column {}",
+                    op,
+                    found,
+                    line,
+                    col,
+                )
+            }
             UnexpectedEnd(ref line) => {
                 write!(
                     f,
@@ -174,6 +198,8 @@ impl Error for ParseError {
         use self::ParseError::*;
 
         match *self {
+            BinaryOperatorError(_, _, _, _, _) |
+            UnaryOperatorError(_, _, _, _) => "Could not apply operator",
             DuplicateField(_, _, _) => "Duplicate field",
             DuplicateGlobal(_, _, _) => "Duplicate global",
             GlobalNotFound(_, _, _) => "Global could not be found",

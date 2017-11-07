@@ -132,7 +132,7 @@ fn globals() {
 
     let sub = obj.get_obj("sub").unwrap();
 
-    assert_eq!(sub.get_int("a").unwrap().to_i64(), Some(1));
+    assert_eq!(sub.get_int("a").unwrap(), int!(1));
     assert_eq!(get_int(&sub, "b"), 2);
     assert_eq!(sub.len(), 2);
 
@@ -150,19 +150,55 @@ fn numbers() {
     assert_eq!(obj.get_frac("neg_zero").unwrap().to_f32(), Some(0f32));
     assert_eq!(obj.get_frac("pos_zero").unwrap().to_f32(), Some(0f32));
 
-    assert_eq!(
-        obj.get("frac_from_dec").unwrap(),
-        BigFraction::new(13u8, 10u8)
-    );
-    assert_eq!(
-        obj.get("neg_ffd").unwrap(),
-        BigFraction::new_neg(13u8, 10u8)
-    );
+    assert_eq!(obj.get("frac_from_dec").unwrap(), frac!(13, 10));
+    assert_eq!(obj.get("neg_ffd").unwrap(), frac!(-13, 10));
     assert_eq!(obj.get("pos_ffd").unwrap(), BigFraction::new(13u8, 10u8));
+
+    assert_eq!(obj.get("add_dec").unwrap(), BigFraction::new(3u8, 1u8));
+    assert_eq!(obj.get("sub_dec").unwrap(), BigFraction::new_neg(3u8, 1u8));
 
     let frac = obj.get_frac("big_frac").unwrap();
     assert!(frac > BigFraction::new(91_000_000u64, 1u8));
     assert!(frac < BigFraction::new(92_000_000u64, 1u8));
+
+    assert_eq!(obj.get("frac1").unwrap(), BigFraction::new(1u8, 2u8));
+    assert_eq!(obj.get("frac2").unwrap(), BigFraction::new(1u8, 2u8));
+    assert_eq!(obj.get("frac3").unwrap(), BigFraction::new(0u8, 10u8));
+    assert_eq!(obj.get("frac4").unwrap(), BigFraction::new_neg(5u8, 4u8));
+    assert_eq!(obj.get("frac5").unwrap(), BigFraction::new(1u8, 1u8));
+
+    assert_eq!(obj.get("whole_frac").unwrap(), BigFraction::new(3u8, 2u8));
+    assert_eq!(
+        obj.get("neg_whole_frac").unwrap(),
+        BigFraction::new_neg(21u8, 4u8)
+    );
+    assert_eq!(obj.get("dec_frac").unwrap(), BigFraction::new(1u8, 2u8));
+    assert_eq!(
+        obj.get("dec_frac2").unwrap(),
+        BigFraction::new_neg(1u8, 2u8)
+    );
+
+    assert_eq!(
+        obj.get("array").unwrap(),
+        arr![
+            obj.get_frac("whole_frac").unwrap(),
+            BigFraction::new_neg(1u8, 2u8),
+            BigFraction::new(3u8, 2u8),
+            BigFraction::new(1u8, 1u8),
+        ]
+    );
+
+    assert_eq!(
+        obj.get("tup").unwrap(),
+        tup!(
+            BigFraction::new_neg(1u8,2u8),
+            obj.get_frac("whole_frac").unwrap(),
+            BigFraction::new(1u8,1u8),
+            BigFraction::new(3u8,2u8),
+        )
+    );
+
+    assert_eq!(obj.get("var_frac").unwrap(), BigFraction::new_neg(1u8, 2u8));
 }
 
 // TODO: Test includes.over
@@ -172,7 +208,7 @@ fn numbers() {
 // Test writing objects to files.
 #[test]
 fn write() {
-    let path1 = "tests/test_files/read.over";
+    let path1 = "tests/test_files/basic.over";
     let path2 = "tests/test_files/write.over";
     let obj1 = Obj::from_file(path1).unwrap();
 
@@ -201,7 +237,7 @@ fn errors() {
                             panic!("Error in {}: {:?}", $filename, s);
                         }
                     }
-                    res => panic!("{:?}", res),
+                    res => panic!("No error occurred in {}: {:?}", $filename, res),
                 }
             }
         }
@@ -227,7 +263,7 @@ fn errors() {
     );
     error_helper!(
         "empty_number.over",
-        "Invalid numeric value at line 1, column 6"
+        "Invalid character \'\\n\' for value at line 1, column 7"
     );
     error_helper!(
         "field_true.over",
@@ -269,6 +305,15 @@ fn errors() {
     error_helper!(
         "fuzz9.over",
         "Type mismatch: found Null, expected Obj at line 18, col 4"
+    );
+    error_helper!("fuzz10.over", "Unexpected end when reading value at line 1");
+    error_helper!(
+        "op_end.over",
+        "Invalid character \'\\n\' for value at line 3, column 9"
+    );
+    error_helper!(
+        "op_error.over",
+        "Could not apply operator + on types Str and Int at line 1, column 16"
     );
     error_helper!(
         "unexpected_end1.over",

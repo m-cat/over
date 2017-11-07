@@ -231,7 +231,20 @@ Coming in the next release!
 
 ### Arithmetic on Values and Variables
 
-Coming soon!
+Basic arithmetic is possible on values and variables. The available operators are `+`, `-`, `*`, `/`, and `%`, though not all operators can be applied to all types. The operators `*`, `/`, and `%` have a higher precedence than `+` and `-`.
+
+Note that operators and their operands cannot be separated by spaces. The semantics of the language are such that a space after a value denotes the end of that value.
+
+Here's an example:
+
+```
+grid: 16
+x: 18 y: 20
+width: 4
+height: 6
+
+rectangle: (x-x%grid y-y%grid width*grid height*grid)
+```
 
 ### String Substitutions
 
@@ -257,7 +270,7 @@ An arbitrary-length signed integer type. Any token beginning with `-`, `+`, or a
 
 A sane representation of decimal values. Forget about float types and use fractions instead.
 
-**Examples:** `-1/3`, `-5,1/4`, `+2,1/2`, `42,6/1`
+**Examples:** `-1/3`, `-5-1/4`, `2+1/2`, `42+6/1`
 
 Fracs can also be written as decimals, which get converted automatically to fraction representation.
 
