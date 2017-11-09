@@ -21,10 +21,12 @@ frac5: +4/+4
 
 whole_frac: 1+1/2
 neg_whole_frac: -5-1/4
-dec_frac: 0.+1/2
-dec_frac2: .0-1/+2
+dec_frac: 0,+1/2
+dec_frac2: ,0-1/+2
 
-array: [whole_frac -1/2 1+0.5 -1/-1]
+array: [whole_frac -1/2 1+0,5 -1/-1]
 tup: (-1/2 whole_frac -1/-1 1+0.5)
 
 var_frac: -frac1/frac5
+
+fmt_check: [ -1, +1. -0, +0. ]

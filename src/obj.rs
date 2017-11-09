@@ -75,7 +75,11 @@ impl Obj {
     /// Also note that shorthand in the original file, including variables and file includes,
     /// is not preserved when parsing the file, and will not appear when writing to another file.
     pub fn write_to_file(&self, path: &str) -> OverResult<()> {
-        write_file_str(path, &self.format(false, 0)).map_err(OverError::from)
+        write_file_str(path, &self.write_str()).map_err(OverError::from)
+    }
+
+    pub fn write_str(&self) -> String {
+        self.format(false, 0)
     }
 
     /// Iterates over each `(String, Value)` pair in `self`, applying `f`.
@@ -230,7 +234,7 @@ impl PartialEq for Obj {
         if inner.parent.is_some() && other_inner.parent.is_some() {
             let parent = self.get_parent().unwrap();
             let other_parent = other.get_parent().unwrap();
-            if !parent.ptr_eq(&other_parent) {
+            if parent != other_parent {
                 return false;
             }
         } else if !(inner.parent.is_none() && other_inner.parent.is_none()) {

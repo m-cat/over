@@ -1,6 +1,7 @@
 //! Module containing functions for formatting output of objects.
 
 use arr::Arr;
+use fraction::BigFraction;
 use obj::Obj;
 use tup::Tup;
 use value::Value;
@@ -44,6 +45,18 @@ pub trait Format {
     fn format(&self, full: bool, indent_amt: usize) -> String;
 }
 
+impl Format for BigFraction {
+    fn format(&self, _full: bool, _indent_amt: usize) -> String {
+        let frac_fmt = format!("{}", *self);
+
+        if !frac_fmt.contains('/') {
+            format!("{}.0", frac_fmt)
+        } else {
+            frac_fmt
+        }
+    }
+}
+
 impl Format for char {
     fn format(&self, _full: bool, _indent_amt: usize) -> String {
         if let Some(s) = get_char_map(*self) {
@@ -74,8 +87,8 @@ impl Format for Value {
             }
 
             Value::Int(ref inner) => format!("{}", inner),
-            Value::Frac(ref inner) => format!("{}", inner),
 
+            Value::Frac(ref inner) => inner.format(true, indent_amt),
             Value::Char(ref inner) => inner.format(true, indent_amt),
             Value::Str(ref inner) => inner.format(true, indent_amt),
             Value::Arr(ref inner) => inner.format(true, indent_amt),

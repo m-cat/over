@@ -208,21 +208,28 @@ fn numbers() {
 // Test writing objects to files.
 #[test]
 fn write() {
-    let path1 = "tests/test_files/basic.over";
-    let path2 = "tests/test_files/write.over";
-    let obj1 = Obj::from_file(path1).unwrap();
+    let write_path = "tests/test_files/write.over";
 
-    obj1.write_to_file(path2).unwrap();
+    macro_rules! write_helper {
+        ( $filename:expr ) => {
+            {
+                let obj1 = Obj::from_file($filename).unwrap();
+                obj1.write_to_file(write_path).unwrap();
 
-    let obj2 = Obj::from_file(path2).unwrap();
+                let obj2 = Obj::from_file(write_path).unwrap();
+                assert_eq!(obj1, obj2);
+            }
+        }
+    }
 
-    assert_eq!(obj1, obj2);
-}
+    write_helper!("tests/test_files/basic.over");
+    write_helper!("tests/test_files/obj.over");
+    write_helper!("tests/test_files/numbers.over");
+    write_helper!("tests/test_files/example.over");
 
-// Test fuzz files; just make sure there was no error in parsing.
-#[test]
-fn fuzz() {
-    let _ = Obj::from_file("tests/test_files/fuzz1.over").unwrap();
+    write_helper!("tests/test_files/fuzz1.over");
+    write_helper!("tests/test_files/fuzz2.over");
+    write_helper!("tests/test_files/fuzz3.over");
 }
 
 // Test that parsing malformed .over files results in correct errors being returned.

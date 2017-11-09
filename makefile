@@ -29,8 +29,11 @@ graph:
 	cargo graph | dot -Tpng > deps.png
 
 # Run fuzz
-fuzz:
+fuzz: fuzz1 fuzz2
+fuzz1:
 	cargo fuzz run fuzz_target_1 -- -max_len=4128 -max_total_time=600
+fuzz2:
+	cargo fuzz run fuzz_target_write -- -max_len=4128 -max_total_time=600
 
 clean:
 	rm **/*.bk
