@@ -13,26 +13,15 @@ macro_rules! int {
     );
 }
 
-/// Given two ints, returns a `BigFraction`.
+/// Given two ints, returns a `BigRational`.
 /// This is a convenience macro and should not be used where performance is important.
 #[macro_export]
 macro_rules! frac {
     ( $int1:expr, $int2:expr ) => (
         {
-            use fraction::BigFraction;
-            use num::Signed;
-            use num::bigint::BigUint;
+            use num::rational::BigRational;
 
-            #[allow(unknown_lints)]
-            #[allow(eq_op)]
-            let neg = ($int1 < 0) ^ ($int2 < 0);
-            let (int1, int2): (BigUint, BigUint) = (($int1.abs() as u64).into(),
-                                                    ($int2.abs() as u64).into());
-            if neg {
-                BigFraction::new_neg(int1, int2)
-            } else {
-                BigFraction::new(int1, int2)
-            }
+            BigRational::new($int1.into(), $int2.into())
         }
     );
 }

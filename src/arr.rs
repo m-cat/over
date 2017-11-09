@@ -48,6 +48,11 @@ impl Arr {
         Ok(Arr { inner: Rc::new(RefCell::new(ArrInner { vec, t })) })
     }
 
+    /// Returns the vector of values in this `Arr`.
+    pub fn to_vec(&self) -> Vec<Value> {
+        self.inner.borrow().vec.clone()
+    }
+
     /// Iterates over each `Value` in `self`, applying `Fn` `f`.
     pub fn with_each<F>(&self, mut f: F)
     where

@@ -1,9 +1,7 @@
-extern crate fraction;
 extern crate num;
 #[macro_use]
 extern crate over;
 
-use fraction::BigFraction;
 use num::ToPrimitive;
 use over::OverError;
 use over::obj::Obj;
@@ -70,12 +68,12 @@ fn example() {
         arr![
             obj!{"part_no" => "A4786",
                  "descrip" => "Water Bucket (Filled)",
-                 "price" => 1.47,
+                 "price" => frac!(147,100),
                  "quantity" => 4},
             obj!{"part_no" => "E1628",
                  "descrip" => "High Heeled \"Ruby\" Slippers",
                  "size" => 8,
-                 "price" => 133.7,
+                 "price" => frac!(1337,10),
                  "quantity" => 1},
         ]
     );
@@ -146,59 +144,53 @@ fn numbers() {
     let obj = Obj::from_file("tests/test_files/numbers.over").unwrap();
 
     assert_eq!(get_int(&obj, "neg"), -4);
-    assert_eq!(obj.get_frac("pos").unwrap().to_f32(), Some(4f32));
-    assert_eq!(obj.get_frac("neg_zero").unwrap().to_f32(), Some(0f32));
-    assert_eq!(obj.get_frac("pos_zero").unwrap().to_f32(), Some(0f32));
+    assert_eq!(obj.get_frac("pos").unwrap(), frac!(4, 1));
+    assert_eq!(obj.get_frac("neg_zero").unwrap(), frac!(0, 1));
+    assert_eq!(obj.get_frac("pos_zero").unwrap(), frac!(0, 1));
 
     assert_eq!(obj.get("frac_from_dec").unwrap(), frac!(13, 10));
     assert_eq!(obj.get("neg_ffd").unwrap(), frac!(-13, 10));
-    assert_eq!(obj.get("pos_ffd").unwrap(), BigFraction::new(13u8, 10u8));
+    assert_eq!(obj.get("pos_ffd").unwrap(), frac!(13, 10));
 
-    assert_eq!(obj.get("add_dec").unwrap(), BigFraction::new(3u8, 1u8));
-    assert_eq!(obj.get("sub_dec").unwrap(), BigFraction::new_neg(3u8, 1u8));
+    assert_eq!(obj.get("add_dec").unwrap(), frac!(3, 1));
+    assert_eq!(obj.get("sub_dec").unwrap(), frac!(-3, 1));
 
     let frac = obj.get_frac("big_frac").unwrap();
-    assert!(frac > BigFraction::new(91_000_000u64, 1u8));
-    assert!(frac < BigFraction::new(92_000_000u64, 1u8));
+    assert!(frac > frac!(91_000_000, 1));
+    assert!(frac < frac!(92_000_000, 1));
 
-    assert_eq!(obj.get("frac1").unwrap(), BigFraction::new(1u8, 2u8));
-    assert_eq!(obj.get("frac2").unwrap(), BigFraction::new(1u8, 2u8));
-    assert_eq!(obj.get("frac3").unwrap(), BigFraction::new(0u8, 10u8));
-    assert_eq!(obj.get("frac4").unwrap(), BigFraction::new_neg(5u8, 4u8));
-    assert_eq!(obj.get("frac5").unwrap(), BigFraction::new(1u8, 1u8));
+    assert_eq!(obj.get("frac1").unwrap(), frac!(1, 2));
+    assert_eq!(obj.get("frac2").unwrap(), frac!(1, 2));
+    assert_eq!(obj.get("frac3").unwrap(), frac!(0, 10));
+    assert_eq!(obj.get("frac4").unwrap(), frac!(-5, 4));
+    assert_eq!(obj.get("frac5").unwrap(), frac!(1, 1));
 
-    assert_eq!(obj.get("whole_frac").unwrap(), BigFraction::new(3u8, 2u8));
-    assert_eq!(
-        obj.get("neg_whole_frac").unwrap(),
-        BigFraction::new_neg(21u8, 4u8)
-    );
-    assert_eq!(obj.get("dec_frac").unwrap(), BigFraction::new(1u8, 2u8));
-    assert_eq!(
-        obj.get("dec_frac2").unwrap(),
-        BigFraction::new_neg(1u8, 2u8)
-    );
+    assert_eq!(obj.get("whole_frac").unwrap(), frac!(3, 2));
+    assert_eq!(obj.get("neg_whole_frac").unwrap(), frac!(-21, 4));
+    assert_eq!(obj.get("dec_frac").unwrap(), frac!(1, 2));
+    assert_eq!(obj.get("dec_frac2").unwrap(), frac!(-1, 2));
 
     assert_eq!(
         obj.get("array").unwrap(),
         arr![
             obj.get_frac("whole_frac").unwrap(),
-            BigFraction::new_neg(1u8, 2u8),
-            BigFraction::new(3u8, 2u8),
-            BigFraction::new(1u8, 1u8),
+            frac!(-1, 2),
+            frac!(3, 2),
+            frac!(1, 1),
         ]
     );
 
     assert_eq!(
         obj.get("tup").unwrap(),
         tup!(
-            BigFraction::new_neg(1u8,2u8),
+            frac!(-1,2),
             obj.get_frac("whole_frac").unwrap(),
-            BigFraction::new(1u8,1u8),
-            BigFraction::new(3u8,2u8),
+            frac!(1,1),
+            frac!(3,2),
         )
     );
 
-    assert_eq!(obj.get("var_frac").unwrap(), BigFraction::new_neg(1u8, 2u8));
+    assert_eq!(obj.get("var_frac").unwrap(), frac!(-1, 2));
 }
 
 #[test]
@@ -327,6 +319,15 @@ fn errors() {
         "Type mismatch: found Null, expected Obj at line 18, col 4"
     );
     error_helper!("fuzz10.over", "Unexpected end when reading value at line 1");
+    error_helper!(
+        "fuzz11.over",
+        "Could not apply operator + on types Char and Int at line 14, column 5"
+    );
+    error_helper!("fuzz12.over", "Invalid numeric value at line 6, column 18");
+    error_helper!(
+        "fuzz13.over",
+        "Variable \"g\" at line 20, column 1 could not be found"
+    );
     error_helper!(
         "op_arr.over",
         "Could not apply operator + on types Arr(Int) and Arr(Char) at line 1, column 13"

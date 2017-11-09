@@ -1,8 +1,8 @@
 //! Utility functions used by the parser.
 
-use fraction::BigFraction;
-use num::bigint::{BigInt, BigUint};
-use num_traits::{FromPrimitive, Signed, pow};
+use num::bigint::BigInt;
+use num::rational::BigRational;
+use num_traits::{FromPrimitive, pow};
 
 /// If `ch` preceded by a backslash together form an escape character, then return this char.
 /// Otherwise, return None.
@@ -78,27 +78,7 @@ pub fn is_digit(ch: char) -> bool {
     }
 }
 
-pub fn int_to_frac(int: &BigInt) -> BigFraction {
-    if int.is_negative() {
-        BigFraction::new_neg(int.abs().to_biguint().unwrap(), 1u8)
-    } else {
-        BigFraction::new(int.to_biguint().unwrap(), 1u8)
-    }
-}
-
-pub fn two_ints_to_frac(int1: &BigInt, int2: &BigInt) -> BigFraction {
-    let neg = int1.is_negative() ^ int2.is_negative();
-    let int1 = int1.abs().to_biguint().unwrap();
-    let int2 = int2.abs().to_biguint().unwrap();
-
-    if neg {
-        BigFraction::new_neg(int1, int2)
-    } else {
-        BigFraction::new(int1, int2)
-    }
-}
-
-pub fn frac_from_whole_and_dec(whole: BigUint, decimal: BigUint, dec_len: usize) -> BigFraction {
-    let denom = pow(BigUint::from_u8(10).unwrap(), dec_len);
-    BigFraction::new(whole, 1u8) + BigFraction::new(decimal, denom)
+pub fn frac_from_whole_and_dec(whole: BigInt, decimal: BigInt, dec_len: usize) -> BigRational {
+    let denom = pow(BigInt::from_u8(10).unwrap(), dec_len);
+    BigRational::new(whole, 1.into()) + BigRational::new(decimal, denom)
 }

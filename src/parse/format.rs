@@ -1,15 +1,17 @@
 //! Module containing functions for formatting output of objects.
 
 use arr::Arr;
-use fraction::BigFraction;
+use num::bigint::BigInt;
+use num::rational::BigRational;
+use num_traits::One;
 use obj::Obj;
 use tup::Tup;
 use value::Value;
 
-/// Indent step in .over files.
+// Indent step in .over files.
 const INDENT_STEP: usize = 4;
 
-/// Returns a `String` with the given amount of spaces.
+// Returns a `String` with the given amount of spaces.
 fn indent(amount: usize) -> String {
     " ".repeat(amount)
 }
@@ -45,11 +47,11 @@ pub trait Format {
     fn format(&self, full: bool, indent_amt: usize) -> String;
 }
 
-impl Format for BigFraction {
+impl Format for BigRational {
     fn format(&self, _full: bool, _indent_amt: usize) -> String {
         let frac_fmt = format!("{}", *self);
 
-        if !frac_fmt.contains('/') {
+        if *self.denom() == BigInt::one() {
             format!("{}.0", frac_fmt)
         } else {
             frac_fmt

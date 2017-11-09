@@ -1,7 +1,6 @@
 //! Tests.
 
 use error::OverError;
-use fraction::BigFraction;
 use obj::Obj;
 use types::Type;
 use value::Value;
@@ -30,8 +29,8 @@ fn set_and_get() {
 
     // Frac
 
-    obj.set("frac", BigFraction::new_neg(1u8, 1u8).into());
-    assert_eq!(obj.get_frac("frac"), Ok(BigFraction::new_neg(1u8, 1u8)));
+    obj.set("frac", frac!(1, 1).into());
+    assert_eq!(obj.get_frac("frac"), Ok(frac!(1, 1)));
 
     // Char
 

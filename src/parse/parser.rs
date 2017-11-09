@@ -4,8 +4,9 @@ use super::{MAX_DEPTH, ParseResult};
 use super::char_stream::CharStream;
 use super::error::ParseError;
 use super::util::*;
-use arr::Arr;
-use num::bigint::{BigInt, BigUint};
+use arr::{self, Arr};
+use num::bigint::BigInt;
+use num::rational::BigRational;
 use num_traits::Zero;
 use obj::Obj;
 use std::collections::HashMap;
@@ -486,7 +487,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
             return Err(ParseError::InvalidNumeric(line, col));
         }
 
-        let whole: BigUint = if s1.is_empty() {
+        let whole: BigInt = if s1.is_empty() {
             0u8.into()
         } else {
             s1.parse().map_err(ParseError::from)?
@@ -495,7 +496,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
         // Remove trailing zeros.
         let s2 = s2.trim_right_matches('0');
 
-        let (decimal, dec_len): (BigUint, usize) = if s2.is_empty() {
+        let (decimal, dec_len): (BigInt, usize) = if s2.is_empty() {
             (0u8.into(), 1)
         } else {
             (s2.parse().map_err(ParseError::from)?, s2.len())
@@ -709,10 +710,10 @@ fn binary_op_on_values(
 
     // If one value is an Int and the other is a Frac, promote the Int.
     if type1 == Int && type2 == Frac {
-        val1 = Value::Frac(int_to_frac(&val1.get_int().unwrap()));
+        val1 = Value::Frac(BigRational::new(val1.get_int().unwrap(), 1.into()));
         type1 = Frac;
     } else if type1 == Frac && type2 == Int {
-        val2 = Value::Frac(int_to_frac(&val2.get_int().unwrap()));
+        val2 = Value::Frac(BigRational::new(val2.get_int().unwrap(), 1.into()));
         type2 = Frac;
     }
 
@@ -724,13 +725,14 @@ fn binary_op_on_values(
                     (val1.get_frac().unwrap() + val2.get_frac().unwrap()).into()
                 }
                 Arr(_) if type1 == type2 => {
-                    let (mut arr1, arr2) = (val1.get_arr().unwrap(), val2.get_arr().unwrap());
+                    let (arr1, arr2) = (val1.get_arr().unwrap(), val2.get_arr().unwrap());
+                    let mut new_arr = arr::Arr::from_vec(arr1.to_vec()).unwrap();
 
-                    // Push each val from arr2 to arr1.
+                    // Push each val from arr2 to new_arr.
                     // Because we know that the types are equal, we can safely unwrap below.
-                    arr2.with_each(|val| arr1.push(val.clone()).unwrap());
+                    arr2.with_each(|val| new_arr.push(val.clone()).unwrap());
 
-                    val1
+                    new_arr.into()
                 }
                 _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
             }
@@ -760,7 +762,7 @@ fn binary_op_on_values(
                     if int2.is_zero() {
                         return Err(ParseError::InvalidNumeric(line, col));
                     }
-                    two_ints_to_frac(&int1, &int2).into()
+                    BigRational::new(int1, int2).into()
                 }
                 Frac if type2 == Frac => {
                     let (frac1, frac2) = (val1.get_frac().unwrap(), val2.get_frac().unwrap());
@@ -774,7 +776,13 @@ fn binary_op_on_values(
         }
         '%' => {
             match type1 {
-                Int if type2 == Int => (val1.get_int().unwrap() % val2.get_int().unwrap()).into(),
+                Int if type2 == Int => {
+                    let int2 = val2.get_int().unwrap();
+                    if int2.is_zero() {
+                        return Err(ParseError::InvalidNumeric(line, col));
+                    }
+                    (val1.get_int().unwrap() % int2).into()
+                }
                 _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
             }
         }

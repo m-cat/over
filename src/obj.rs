@@ -7,8 +7,8 @@
 use OverResult;
 use arr::Arr;
 use error::OverError;
-use fraction::BigFraction;
 use num::bigint::BigInt;
+use num::rational::BigRational;
 use num_traits::Zero;
 use parse;
 use parse::format::Format;
@@ -80,6 +80,11 @@ impl Obj {
 
     pub fn write_str(&self) -> String {
         self.format(false, 0)
+    }
+
+    /// Returns the map of values in this `Arr`. Parent field/value pairs are excluded.
+    pub fn to_map(&self) -> HashMap<String, Value> {
+        self.inner.borrow().fields.clone()
     }
 
     /// Iterates over each `(String, Value)` pair in `self`, applying `f`.
@@ -158,7 +163,7 @@ impl Obj {
 
     get_fn!(get_bool, bool);
     get_fn!(get_int, BigInt);
-    get_fn!(get_frac, BigFraction);
+    get_fn!(get_frac, BigRational);
     get_fn!(get_char, char);
     get_fn!(get_str, String);
     get_fn!(get_arr, Arr);

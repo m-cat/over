@@ -40,6 +40,11 @@ impl Tup {
         Tup { inner: Rc::new(RefCell::new(TupInner { vec, tvec })) }
     }
 
+    /// Returns the vector of values in this `Tup`.
+    pub fn to_vec(&self) -> Vec<Value> {
+        self.inner.borrow().vec.clone()
+    }
+
     /// Iterates over each `Value` in `self`, applying `Fn` `f`.
     pub fn with_each<F>(&self, mut f: F)
     where

@@ -10,6 +10,5 @@ repository = "https://github.com/m-cat/over"
 version = "0.2.0"
 
 [dependencies]
-fraction = "0.3.6"
 num = "0.1.40"
 num-traits = "0.1.40"

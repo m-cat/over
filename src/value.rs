@@ -3,8 +3,8 @@
 use OverResult;
 use arr;
 use error::OverError;
-use fraction::BigFraction;
 use num::bigint::BigInt;
+use num::rational::BigRational;
 use obj;
 use parse::format::Format;
 use std::fmt;
@@ -23,7 +23,7 @@ pub enum Value {
     /// A signed integer value.
     Int(BigInt),
     /// A fractional value.
-    Frac(BigFraction),
+    Frac(BigRational),
     /// A character value.
     Char(char),
     /// A string value.
@@ -83,7 +83,7 @@ impl Value {
 
     /// Returns the `BigFraction` contained in this `Value`.
     /// Returns an error if this `Value` is not `Frac`.
-    pub fn get_frac(&self) -> OverResult<BigFraction> {
+    pub fn get_frac(&self) -> OverResult<BigRational> {
         if let Value::Frac(ref inner) = *self {
             Ok(inner.clone())
         } else {
@@ -177,7 +177,7 @@ macro_rules! impl_eq {
 
 impl_eq!(Bool, bool);
 impl_eq!(Int, BigInt);
-impl_eq!(Frac, BigFraction);
+impl_eq!(Frac, BigRational);
 impl_eq!(Char, char);
 impl_eq!(Str, String);
 impl_eq!(Arr, arr::Arr);
@@ -227,9 +227,19 @@ impl_from!(i32, Int);
 impl_from!(i64, Int);
 impl_from!(BigInt, Int);
 
-impl_from!(f32, Frac);
-impl_from!(f64, Frac);
-impl_from!(BigFraction, Frac);
+// This is commented because the resultant values don't pass equality checks.
+//
+// impl From<f32> for Value {
+//     fn from(inner: f32) -> Self {
+//         Value::Frac(BigRational::from_f32(inner).unwrap())
+//     }
+// }
+// impl From<f64> for Value {
+//     fn from(inner: f64) -> Self {
+//         Value::Frac(BigRational::from_f64(inner).unwrap())
+//     }
+// }
+impl_from!(BigRational, Frac);
 
 impl_from!(char, Char);
 
