@@ -457,7 +457,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
                     s2.push(ch);
                 }
             }
-            '.' => {
+            '.' | ',' => {
                 if !dec {
                     dec = true;
                 } else {

@@ -52,7 +52,7 @@ pub fn is_end_delimiter(ch: char) -> bool {
 pub fn is_numeric_char(ch: char) -> bool {
     match ch {
         _ch if is_digit(_ch) => true,
-        '.' => true,
+        '.' | ',' => true,
         _ => false,
     }
 }
