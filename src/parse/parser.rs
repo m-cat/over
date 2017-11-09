@@ -38,7 +38,7 @@ fn parse_obj_stream(mut stream: CharStream, depth: usize) -> ParseResult<Obj> {
         return Ok(obj);
     }
 
-    // Parse field/value pairs.
+    // Parse all field/value pairs for this Obj.
     while parse_field_value_pair(&mut stream, &mut obj, &mut globals, depth, None)? {}
 
     Ok(obj)
@@ -382,7 +382,7 @@ fn parse_value(
                         false,
                     )?;
 
-                    if ch == '*' || ch == '/' {
+                    if is_priority_operator(ch) {
                         let (val1, line1, col1) = val_deque.pop_back().unwrap();
                         let res = binary_op_on_values(val1, val2, ch, line2, col2)?;
                         val_deque.push_back((res, line1, col1));
@@ -716,48 +716,65 @@ fn binary_op_on_values(
         type2 = Frac;
     }
 
-    if type1 != type2 {
-        return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col));
-    }
-
     Ok(match op {
         '+' => {
             match type1 {
-                Int => (val1.get_int().unwrap() + val2.get_int().unwrap()).into(),
-                Frac => (val1.get_frac().unwrap() + val2.get_frac().unwrap()).into(),
+                Int if type2 == Int => (val1.get_int().unwrap() + val2.get_int().unwrap()).into(),
+                Frac if type2 == Frac => {
+                    (val1.get_frac().unwrap() + val2.get_frac().unwrap()).into()
+                }
+                Arr(_) if type1 == type2 => {
+                    let (mut arr1, arr2) = (val1.get_arr().unwrap(), val2.get_arr().unwrap());
+
+                    // Push each val from arr2 to arr1.
+                    // Because we know that the types are equal, we can safely unwrap below.
+                    arr2.with_each(|val| arr1.push(val.clone()).unwrap());
+
+                    val1
+                }
                 _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
             }
         }
         '-' => {
             match type1 {
-                Int => (val1.get_int().unwrap() - val2.get_int().unwrap()).into(),
-                Frac => (val1.get_frac().unwrap() - val2.get_frac().unwrap()).into(),
+                Int if type2 == Int => (val1.get_int().unwrap() - val2.get_int().unwrap()).into(),
+                Frac if type2 == Frac => {
+                    (val1.get_frac().unwrap() - val2.get_frac().unwrap()).into()
+                }
                 _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
             }
         }
         '*' => {
             match type1 {
-                Int => (val1.get_int().unwrap() * val2.get_int().unwrap()).into(),
-                Frac => (val1.get_frac().unwrap() * val2.get_frac().unwrap()).into(),
+                Int if type2 == Int => (val1.get_int().unwrap() * val2.get_int().unwrap()).into(),
+                Frac if type2 == Frac => {
+                    (val1.get_frac().unwrap() * val2.get_frac().unwrap()).into()
+                }
                 _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
             }
         }
         '/' => {
             match type1 {
-                Int => {
+                Int if type2 == Int => {
                     let (int1, int2) = (val1.get_int().unwrap(), val2.get_int().unwrap());
                     if int2.is_zero() {
                         return Err(ParseError::InvalidNumeric(line, col));
                     }
                     two_ints_to_frac(&int1, &int2).into()
                 }
-                Frac => {
+                Frac if type2 == Frac => {
                     let (frac1, frac2) = (val1.get_frac().unwrap(), val2.get_frac().unwrap());
                     if frac2.is_zero() {
                         return Err(ParseError::InvalidNumeric(line, col));
                     }
                     (frac1 / frac2).into()
                 }
+                _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
+            }
+        }
+        '%' => {
+            match type1 {
+                Int if type2 == Int => (val1.get_int().unwrap() % val2.get_int().unwrap()).into(),
                 _ => return Err(ParseError::BinaryOperatorError(type2, type1, op, line, col)),
             }
         }

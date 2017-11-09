@@ -201,6 +201,19 @@ fn numbers() {
     assert_eq!(obj.get("var_frac").unwrap(), BigFraction::new_neg(1u8, 2u8));
 }
 
+#[test]
+fn operations() {
+    let obj = Obj::from_file("tests/test_files/operations.over").unwrap();
+
+    assert_eq!(obj.get("mod1").unwrap(), int!(5));
+    assert_eq!(obj.get("mod2").unwrap(), int!(0));
+
+    assert_eq!(obj.get("arr1").unwrap(), arr![3, 4]);
+    assert_eq!(obj.get("arr2").unwrap(), arr![3, 4]);
+    assert_eq!(obj.get("arr3").unwrap(), arr![3, 4]);
+    assert_eq!(obj.get("arr4").unwrap(), arr![arr![1]]);
+}
+
 // TODO: Test includes.over
 
 // TODO: Test multi-line.over (need substitution)
@@ -314,6 +327,10 @@ fn errors() {
         "Type mismatch: found Null, expected Obj at line 18, col 4"
     );
     error_helper!("fuzz10.over", "Unexpected end when reading value at line 1");
+    error_helper!(
+        "op_arr.over",
+        "Could not apply operator + on types Arr(Int) and Arr(Char) at line 1, column 13"
+    );
     error_helper!(
         "op_end.over",
         "Invalid character \'\\n\' for value at line 3, column 9"

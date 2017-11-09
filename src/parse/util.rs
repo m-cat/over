@@ -57,9 +57,16 @@ pub fn is_numeric_char(ch: char) -> bool {
     }
 }
 
+pub fn is_priority_operator(ch: char) -> bool {
+    match ch {
+        '*' | '/' | '%' => true,
+        _ => false,
+    }
+}
+
 pub fn is_operator(ch: char) -> bool {
     match ch {
-        '+' | '-' | '*' | '/' => true,
+        '+' | '-' | '*' | '/' | '%' => true,
         _ => false,
     }
 }
