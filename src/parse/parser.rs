@@ -358,14 +358,9 @@ fn parse_value(
 
         loop {
             match stream.peek() {
-                // Ignore whitespace.
-                // if !find_char(stream.clone()) {
-                //     break;
-                // }
                 Some(ch) if is_operator(ch) => {
                     let _ = stream.next();
                     if stream.peek().is_none() {
-                        // if !find_char(stream.clone()) {
                         return Err(ParseError::UnexpectedEnd(stream.line()));
                     }
 
@@ -399,14 +394,12 @@ fn parse_value(
         // Check for valid characters after the value.
         check_value_end(stream, cur_brace)?;
 
+        let (mut val1, _, _) = val_deque.pop_front().unwrap();
         while !op_deque.is_empty() {
-            let (val2, line2, col2) = val_deque.pop_back().unwrap();
-            let (val1, line1, col1) = val_deque.pop_back().unwrap();
-            let res = binary_op_on_values(val1, val2, op_deque.pop_back().unwrap(), line2, col2)?;
-            val_deque.push_back((res, line1, col1));
+            let (val2, line2, col2) = val_deque.pop_front().unwrap();
+            val1 = binary_op_on_values(val1, val2, op_deque.pop_front().unwrap(), line2, col2)?;
         }
-        let (res, _, _) = val_deque.pop_back().unwrap();
-        Ok(res)
+        Ok(val1)
     } else {
         Ok(res)
     }
@@ -723,6 +716,34 @@ fn binary_op_on_values(
                 Int if type2 == Int => (val1.get_int().unwrap() + val2.get_int().unwrap()).into(),
                 Frac if type2 == Frac => {
                     (val1.get_frac().unwrap() + val2.get_frac().unwrap()).into()
+                }
+                Char if type2 == Char => {
+                    let mut s = String::with_capacity(2);
+                    s.push(val1.get_char().unwrap());
+                    s.push(val2.get_char().unwrap());
+                    s.into()
+                }
+                Char if type2 == Str => {
+                    let str2 = val2.get_str().unwrap();
+                    let mut s = String::with_capacity(1 + str2.len());
+                    s.push(val1.get_char().unwrap());
+                    s.push_str(&str2);
+                    s.into()
+                }
+                Str if type2 == Char => {
+                    let str1 = val1.get_str().unwrap();
+                    let mut s = String::with_capacity(str1.len() + 1);
+                    s.push_str(&str1);
+                    s.push(val2.get_char().unwrap());
+                    s.into()
+                }
+                Str if type2 == Str => {
+                    let str1 = val1.get_str().unwrap();
+                    let str2 = val2.get_str().unwrap();
+                    let mut s = String::with_capacity(str1.len() + str2.len());
+                    s.push_str(&str1);
+                    s.push_str(&str2);
+                    s.into()
                 }
                 Arr(_) if type1 == type2 => {
                     let (arr1, arr2) = (val1.get_arr().unwrap(), val2.get_arr().unwrap());

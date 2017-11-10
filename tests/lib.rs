@@ -204,6 +204,11 @@ fn operations() {
     assert_eq!(obj.get("arr2").unwrap(), arr![3, 4]);
     assert_eq!(obj.get("arr3").unwrap(), arr![3, 4]);
     assert_eq!(obj.get("arr4").unwrap(), arr![arr![1]]);
+
+    assert_eq!(obj.get("str1").unwrap(), "cat");
+    assert_eq!(obj.get("str2").unwrap(), "cat");
+    assert_eq!(obj.get("str3").unwrap(), "cat");
+    assert_eq!(obj.get("str4").unwrap(), "cat");
 }
 
 // TODO: Test includes.over
@@ -228,6 +233,7 @@ fn write() {
     }
 
     write_helper!("tests/test_files/basic.over");
+    write_helper!("tests/test_files/empty.over");
     write_helper!("tests/test_files/obj.over");
     write_helper!("tests/test_files/numbers.over");
     write_helper!("tests/test_files/example.over");
@@ -339,6 +345,10 @@ fn errors() {
     error_helper!(
         "op_error.over",
         "Could not apply operator + on types Str and Int at line 1, column 16"
+    );
+    error_helper!(
+        "op_multiple.over",
+        "Could not apply operator + on types Tup() and Frac at line 1, column 9"
     );
     error_helper!(
         "unexpected_end1.over",
