@@ -5,6 +5,7 @@ use arr;
 use error::OverError;
 use num::bigint::BigInt;
 use num::rational::BigRational;
+use num_traits::ToPrimitive;
 use obj;
 use parse::format::Format;
 use std::fmt;
@@ -201,6 +202,50 @@ impl<'a> PartialEq<Value> for &'a str {
         }
     }
 }
+
+// PartialEq for integers
+
+macro_rules! impl_eq_int {
+    ($type:ty, $fn:tt) => {
+        impl PartialEq<$type> for Value {
+            fn eq(&self, other: &$type) -> bool {
+                match *self {
+                    Value::Int(ref value) => {
+                        match value.$fn() {
+                            Some(value) => value == *other,
+                            None => false
+                        }
+                    }
+                    _ => false,
+                }
+            }
+        }
+
+        impl PartialEq<Value> for $type {
+            fn eq(&self, other: &Value) -> bool {
+                match *other {
+                    Value::Int(ref value) => {
+                        match value.$fn() {
+                            Some(value) => value == *self,
+                            None => false
+                        }
+                    }
+                    _ => false,
+                }
+            }
+        }
+    }
+}
+
+impl_eq_int!(usize, to_usize);
+impl_eq_int!(u8, to_u8);
+impl_eq_int!(u16, to_u16);
+impl_eq_int!(u32, to_u32);
+impl_eq_int!(u64, to_u64);
+impl_eq_int!(i8, to_i8);
+impl_eq_int!(i16, to_i16);
+impl_eq_int!(i32, to_i32);
+impl_eq_int!(i64, to_i64);
 
 // impl From
 
