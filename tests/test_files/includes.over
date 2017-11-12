@@ -1,10 +1,13 @@
-@file = "includes/str.over"
+@file: "includes/str.over"
 
-@include_priv: <Str "includes/str.over">
-include: <Str @file>
+# @include_priv: <Str "includes/str.over">
+# include: <Str @file>
 
-include2: @include_priv
+# include2: @include_priv
 
-substitution: "Woah $(@include_priv), a substitution!"
+# include_arr: <Arr "includes/arr.over"
 
-include_arr: <Arr "includes/arr.over"
+include_obj: <
+        Obj
+        "includes/obj1.over"
+    >

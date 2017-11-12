@@ -11,6 +11,7 @@ use std::str::Chars;
 
 #[derive(Clone, Debug)]
 struct Inner {
+    file: Option<String>,
     contents: String,
     stream: Peekable<Chars<'static>>,
     line: usize,
@@ -29,15 +30,20 @@ impl CharStream {
 
         file.read_to_string(&mut contents)?;
 
-        Self::from_string(contents)
+        Self::from_string_impl(Some(String::from(path)), contents)
     }
 
     pub fn from_string(contents: String) -> io::Result<CharStream> {
+        Self::from_string_impl(None, contents)
+    }
+
+    fn from_string_impl(file: Option<String>, contents: String) -> io::Result<CharStream> {
         let chars: Chars = unsafe { mem::transmute(contents.chars()) };
         let stream = chars.peekable();
 
         Ok(CharStream {
             inner: Rc::new(RefCell::new(Inner {
+                file,
                 contents,
                 stream,
                 line: 1,
@@ -51,20 +57,14 @@ impl CharStream {
         let opt = inner.stream.peek();
 
         match opt {
-            Some(ch) => {
-                // if cfg!(debug_assertions) {
-                //     use super::misc::format_char;
-                //     println!(
-                //         "peeking. ch: '{}', line: {}, col: {}",
-                //         &format_char(&ch),
-                //         self.line(),
-                //         self.col()
-                //     );
-                // }
-                Some(*ch)
-            }
+            Some(ch) => Some(*ch),
             None => None,
         }
+    }
+
+    pub fn file(&self) -> Option<String> {
+        let inner = self.inner.borrow();
+        inner.file.clone()
     }
 
     pub fn line(&self) -> usize {
@@ -99,15 +99,6 @@ impl Iterator for CharStream {
 
         match opt {
             Some(ch) => {
-                // if cfg!(debug_assertions) {
-                //     use super::misc::format_char;
-                //     println!(
-                //         "ch: '{}', line: {}, col: {}",
-                //         &format_char(&ch),
-                //         self.line(),
-                //         self.col()
-                //     );
-                // }
                 if ch == '\n' {
                     let line = self.line();
                     self.set_line(line + 1);

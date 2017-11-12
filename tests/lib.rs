@@ -211,7 +211,18 @@ fn operations() {
     assert_eq!(obj.get("str4").unwrap(), "cat");
 }
 
-// TODO: Test includes.over
+#[test]
+fn includes() {
+    let obj = Obj::from_file("tests/test_files/includes.over").unwrap();
+
+    assert_eq!(
+        obj.get("include_obj").unwrap(),
+        obj!{
+        "obj2" => obj!{"test" => 1},
+        "obj3" => obj!{"test" => 2}
+    }
+    );
+}
 
 // TODO: Test multi-line.over (need substitution)
 
@@ -249,9 +260,10 @@ fn errors() {
     macro_rules! error_helper {
         ( $filename:expr, $error:expr ) => {
             {
-                match Obj::from_file(&format!("tests/test_files/errors/{}", $filename)) {
+                let full = format!("tests/test_files/errors/{}", $filename);
+                match Obj::from_file(&full) {
                     Err(OverError::ParseError(s)) => {
-                        if s != $error {
+                        if s != format!("{}: {}", full, $error) {
                             panic!("Error in {}: {:?}", $filename, s);
                         }
                     }
@@ -269,7 +281,7 @@ fn errors() {
     error_helper!("decimal.over", "Invalid numeric value at line 1, column 10");
     error_helper!(
         "deep.over",
-        "Exceeded maximum depth (128) for a container at line 1, column 142"
+        "Exceeded maximum depth (64) for a container at line 1, column 78"
     );
     error_helper!(
         "dup_global.over",
@@ -288,10 +300,6 @@ fn errors() {
         "Invalid field name \"true\" at line 1, column 1"
     );
     error_helper!(
-        "field_whitespace.over",
-        "No whitespace after field at line 1, column 6"
-    );
-    error_helper!(
         "fuzz1.over",
         "Invalid closing bracket \')\' at line 20, column 1; expected \']\'"
     );
@@ -301,7 +309,7 @@ fn errors() {
     );
     error_helper!(
         "fuzz3.over",
-        "Invalid closing bracket \')\' at line 8, column 4; expected \']\'"
+        "Exceeded maximum depth (64) for a container at line 5, column 65"
     );
     error_helper!("fuzz4.over", "Duplicate field \"M\" at line 22, column 1");
     error_helper!(
@@ -324,7 +332,7 @@ fn errors() {
         "fuzz9.over",
         "Type mismatch: found Null, expected Obj at line 18, col 4"
     );
-    error_helper!("fuzz10.over", "Unexpected end when reading value at line 1");
+    error_helper!("fuzz10.over", "Unexpected end at line 1");
     error_helper!(
         "fuzz11.over",
         "Could not apply operator + on types Char and Int at line 14, column 5"
@@ -333,6 +341,18 @@ fn errors() {
     error_helper!(
         "fuzz13.over",
         "Variable \"g\" at line 20, column 1 could not be found"
+    );
+    error_helper!(
+        "include1.over",
+        "Invalid include token character \'\"\' at line 1, column 14"
+    );
+    error_helper!(
+        "include2.over",
+        "Expected Str at line 1, column 12; found Char"
+    );
+    error_helper!(
+        "include3.over",
+        "Invalid include path \"/\" at line 1, column 12"
     );
     error_helper!(
         "op_arr.over",
@@ -350,13 +370,7 @@ fn errors() {
         "op_multiple.over",
         "Could not apply operator + on types Tup() and Frac at line 1, column 9"
     );
-    error_helper!(
-        "unexpected_end1.over",
-        "Unexpected end when reading value at line 2"
-    );
-    error_helper!(
-        "unexpected_end2.over",
-        "Unexpected end when reading value at line 3"
-    );
+    error_helper!("unexpected_end1.over", "Unexpected end at line 2");
+    error_helper!("unexpected_end2.over", "Unexpected end at line 3");
     error_helper!("value_amp.over", "Invalid value \"@\" at line 1, column 8");
 }

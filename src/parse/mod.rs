@@ -13,7 +13,7 @@ use Obj;
 
 type ParseResult<T> = Result<T, ParseError>;
 
-const MAX_DEPTH: usize = 128;
+const MAX_DEPTH: usize = 64;
 
 /// Load an `Obj` from a file.
 pub fn load_from_file(path: &str) -> ParseResult<Obj> {

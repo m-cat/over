@@ -3,6 +3,7 @@
 #![allow(missing_docs)]
 
 use super::MAX_DEPTH;
+use super::ParseResult;
 use super::misc::format_char;
 use OverError;
 use num::bigint::ParseBigIntError;
@@ -12,22 +13,29 @@ use std::io;
 use std::num::ParseIntError;
 use types::Type;
 
-/// Parse error type.
+pub fn parse_err<T>(file: Option<String>, kind: ParseErrorKind) -> ParseResult<T> {
+    Err(ParseError { file, kind })
+}
+
+/// Error kind.
 #[derive(Debug)]
-pub enum ParseError {
+pub enum ParseErrorKind {
     BinaryOperatorError(Type, Type, char, usize, usize),
     DuplicateField(String, usize, usize),
     DuplicateGlobal(String, usize, usize),
+    ExpectedType(Type, Type, usize, usize),
     GlobalNotFound(String, usize, usize),
     InvalidClosingBracket(char, Option<char>, usize, usize),
     InvalidEscapeChar(char, usize, usize),
     InvalidFieldChar(char, usize, usize),
     InvalidFieldName(String, usize, usize),
+    InvalidIncludeChar(char, usize, usize),
+    InvalidIncludePath(String, usize, usize),
+    InvalidIncludeToken(String, usize, usize),
     InvalidNumeric(usize, usize),
     InvalidValue(String, usize, usize),
     InvalidValueChar(char, usize, usize),
     MaxDepth(usize, usize),
-    NoWhitespaceAfterField(usize, usize),
     UnaryOperatorError(Type, char, usize, usize),
     UnexpectedEnd(usize),
     VariableNotFound(String, usize, usize),
@@ -37,11 +45,24 @@ pub enum ParseError {
     ParseIntError(String),
 }
 
+/// Parse error.
+#[derive(Debug)]
+pub struct ParseError {
+    /// The file this error occurred in.
+    pub file: Option<String>,
+    /// Error kind.
+    pub kind: ParseErrorKind,
+}
+
 impl fmt::Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use self::ParseError::*;
+        use self::ParseErrorKind::*;
 
-        match *self {
+        if let Some(ref file) = (*self).file {
+            write!(f, "{}: ", file)?;
+        }
+
+        match (*self).kind {
             BinaryOperatorError(ref found, ref expected, ref op, ref line, ref col) => {
                 write!(
                     f,
@@ -69,6 +90,16 @@ impl fmt::Display for ParseError {
                     field,
                     line,
                     col
+                )
+            }
+            ExpectedType(ref found, ref expected, ref line, ref col) => {
+                write!(
+                    f,
+                    "Expected {} at line {}, column {}; found {}",
+                    expected,
+                    line,
+                    col,
+                    found
                 )
             }
             GlobalNotFound(ref var, ref line, ref col) => {
@@ -121,6 +152,34 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
+            InvalidIncludeChar(ref found, ref line, ref col) => {
+                write!(
+                    f,
+                    "Invalid include token character \'{}\' at line {}, column {}",
+                    found,
+                    line,
+                    col
+                )
+            }
+            InvalidIncludePath(ref path, ref line, ref col) => {
+                write!(
+                    f,
+                    "Invalid include path \"{}\" at line {}, column {}",
+                    path,
+                    line,
+                    col
+                )
+            }
+            InvalidIncludeToken(ref found, ref line, ref col) => {
+                write!(
+                    f,
+                    "Invalid include token \"{}\" at line {}, column {}; \
+                     expected \"Obj\", \"Arr\", \"Tup\", or \"Str\"",
+                    found,
+                    line,
+                    col
+                )
+            }
             InvalidNumeric(ref line, ref col) => {
                 write!(f, "Invalid numeric value at line {}, column {}", line, col)
             }
@@ -151,14 +210,6 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            NoWhitespaceAfterField(ref line, ref col) => {
-                write!(
-                    f,
-                    "No whitespace after field at line {}, column {}",
-                    line,
-                    col
-                )
-            }
             UnaryOperatorError(ref found, ref op, ref line, ref col) => {
                 write!(
                     f,
@@ -172,7 +223,7 @@ impl fmt::Display for ParseError {
             UnexpectedEnd(ref line) => {
                 write!(
                     f,
-                    "Unexpected end when reading value at line {}",
+                    "Unexpected end at line {}",
                     line,
                 )
             }
@@ -195,23 +246,26 @@ impl fmt::Display for ParseError {
 
 impl Error for ParseError {
     fn description(&self) -> &str {
-        use self::ParseError::*;
+        use self::ParseErrorKind::*;
 
-        match *self {
+        match (*self).kind {
             BinaryOperatorError(_, _, _, _, _) |
             UnaryOperatorError(_, _, _, _) => "Could not apply operator",
             DuplicateField(_, _, _) => "Duplicate field",
             DuplicateGlobal(_, _, _) => "Duplicate global",
+            ExpectedType(_, _, _, _) => "Expected different type",
             GlobalNotFound(_, _, _) => "Global could not be found",
             InvalidClosingBracket(_, _, _, _) => "Invalid closing bracket",
             InvalidEscapeChar(_, _, _) => "Invalid escape character",
             InvalidFieldChar(_, _, _) => "Invalid character for field",
             InvalidFieldName(_, _, _) => "Invalid field name",
+            InvalidIncludeChar(_, _, _) => "Invalid include character",
+            InvalidIncludePath(_, _, _) => "Invalid include path",
+            InvalidIncludeToken(_, _, _) => "Invalid include token",
             InvalidNumeric(_, _) => "Invalid numeric value",
             InvalidValue(_, _, _) => "Invalid value",
             InvalidValueChar(_, _, _) => "Invalid character for value",
             MaxDepth(_, _) => "Exceeded maximum depth for a container",
-            NoWhitespaceAfterField(_, _) => "No whitespace after field",
             UnexpectedEnd(_) => "Unexpected end when reading value",
             VariableNotFound(_, _, _) => "Variable could not be found",
 
@@ -224,25 +278,37 @@ impl Error for ParseError {
 
 impl ParseError {
     /// Convert an `OverError` to a `ParseError` given line and column numbers.
-    pub fn from_over(e: OverError, line: usize, col: usize) -> Self {
-        ParseError::OverError(format!("{} at line {}, col {}", e, line, col))
+    pub fn from_over(e: OverError, file: Option<String>, line: usize, col: usize) -> Self {
+        ParseError {
+            file,
+            kind: ParseErrorKind::OverError(format!("{} at line {}, col {}", e, line, col)),
+        }
     }
 }
 
 impl From<io::Error> for ParseError {
     fn from(e: io::Error) -> Self {
-        ParseError::IoError(format!("{}", e))
+        ParseError {
+            file: None,
+            kind: ParseErrorKind::IoError(format!("{}", e)),
+        }
     }
 }
 
 impl From<ParseIntError> for ParseError {
     fn from(e: ParseIntError) -> Self {
-        ParseError::ParseIntError(format!("{}", e))
+        ParseError {
+            file: None,
+            kind: ParseErrorKind::ParseIntError(format!("{}", e)),
+        }
     }
 }
 
 impl From<ParseBigIntError> for ParseError {
     fn from(e: ParseBigIntError) -> Self {
-        ParseError::ParseIntError(format!("{}", e))
+        ParseError {
+            file: None,
+            kind: ParseErrorKind::ParseIntError(format!("{}", e)),
+        }
     }
 }

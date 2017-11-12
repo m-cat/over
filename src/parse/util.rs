@@ -44,7 +44,7 @@ pub fn is_whitespace(ch: char) -> bool {
 
 pub fn is_end_delimiter(ch: char) -> bool {
     match ch {
-        ')' | ']' | '}' => true,
+        ')' | ']' | '}' | '>' => true,
         _ => false,
     }
 }
