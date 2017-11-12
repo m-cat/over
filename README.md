@@ -227,8 +227,70 @@ bar: {
 
 ### File Includes
 
-Coming in the next release!
+In the spirit of modularity, OVER provides a facility for splitting up files. This functionality is best illustrated through an example.
 
+Say we have two objects that we want in two separate files:
+
+**`obj1.over`:**
+```
+a: 1 
+b: 2 
+c: 3
+```
+
+**`obj2.over`:**
+```
+a: 2 
+b: 3 
+c: 1
+```
+
+We can have something akin to a "main" file that contains the two files as sub-objects:
+
+**`main.over`:**
+```
+obj1: <Obj "includes/obj1.over">
+obj2: <Obj "includes/obj2.over">
+```
+
+In the above example we could have simply parsed the two object files separately. The main benefit of doing this, when it comes to objects, is organizational. We can also put arrays and tuples in separate files, which makes it easy to include, say, automatically-generated whitespace-delimited values. Finally, strings can also be in their own files, in which case they are parsed verbatim; no escaping of characters is done. This is a quite convenient option for large strings.
+
+An example demonstrating inclusion of `Str`, `Arr`, and `Tup`:
+
+**`main.over`:**
+```
+str: <Str "includes/str.over">
+arr: <Arr "includes/arr.over">
+tup: <Tup "includes/tup.over">
+```
+
+**`str.over`:**
+```
+Multi-line string
+which should be included verbatim
+in another file. "Quotes" and $$$
+don't need to be escaped.
+```
+
+**`arr.over`:**
+```
+1 2 3 4 5
+```
+
+**`tup.over`:**
+```
+1
+2
+3
+4
+5
+```
+
+Some notes about file includes:
+  * Global variables are not valid across files.
+  * Files cannot be included in a circular manner; e.g. if file `main` includes `sub-obj`, then `sub-obj` cannot include `main`.
+  * Inclusion is only valid for `Obj`, `Str`, `Arr`, and `Tup`. 
+  
 ### Arithmetic on Values and Variables
 
 Basic arithmetic is possible on values and variables. The available operators are `+`, `-`, `*`, `/`, and `%`, though not all operators can be applied to all types. The operators `*`, `/`, and `%` have a higher precedence than `+` and `-`.

@@ -22,18 +22,18 @@ type Globals = HashMap<String, Value>;
 /// Parse given file as an `Obj`.
 pub fn parse_obj_file(path: &str) -> ParseResult<Obj> {
     let stream = CharStream::from_file(path).map_err(ParseError::from)?;
-    parse_obj_stream(stream, 1)
+    parse_obj_stream(stream)
 }
 
 /// Parse given &str as an `Obj`.
 pub fn parse_obj_str(contents: &str) -> ParseResult<Obj> {
     let contents = String::from(contents);
     let stream = CharStream::from_string(contents).map_err(ParseError::from)?;
-    parse_obj_stream(stream, 1)
+    parse_obj_stream(stream)
 }
 
 // Parse an Obj given a character stream.
-fn parse_obj_stream(mut stream: CharStream, depth: usize) -> ParseResult<Obj> {
+fn parse_obj_stream(mut stream: CharStream) -> ParseResult<Obj> {
     let mut obj = Obj::new();
     let mut globals: Globals = HashMap::new();
 
@@ -43,7 +43,7 @@ fn parse_obj_stream(mut stream: CharStream, depth: usize) -> ParseResult<Obj> {
     }
 
     // Parse all field/value pairs for this Obj.
-    while parse_field_value_pair(&mut stream, &mut obj, &mut globals, depth, None)? {}
+    while parse_field_value_pair(&mut stream, &mut obj, &mut globals, 1, None)? {}
 
     Ok(obj)
 }
@@ -151,6 +151,43 @@ fn parse_field_value_pair(
     Ok(true)
 }
 
+fn parse_arr_file(path: &str) -> ParseResult<Arr> {
+    let stream = CharStream::from_file(path).map_err(ParseError::from)?;
+    parse_arr_stream(stream)
+}
+
+fn parse_arr_stream(mut stream: CharStream) -> ParseResult<Arr> {
+    let mut arr = Arr::new();
+    let obj = Obj::new();
+    let mut globals: Globals = HashMap::new();
+
+    loop {
+        // Go to the first non-whitespace character, or error if there is none.
+        if !find_char(stream.clone()) {
+            break;
+        }
+
+        // At a non-whitespace character, parse value.
+        let (value_line, value_col) = (stream.line(), stream.col());
+        let value = parse_value(
+            &mut stream,
+            &obj,
+            &mut globals,
+            value_line,
+            value_col,
+            1,
+            Some(']'),
+            true,
+        )?;
+
+        arr.push(value).map_err(|e| {
+            ParseError::from_over(e, stream.file(), value_line, value_col)
+        })?;
+    }
+
+    Ok(arr)
+}
+
 // Parse a sub-Arr in a file. It *must* start with [ and end with ].
 fn parse_arr(
     mut stream: &mut CharStream,
@@ -205,6 +242,41 @@ fn parse_arr(
     }
 
     Ok(arr.into())
+}
+
+fn parse_tup_file(path: &str) -> ParseResult<Tup> {
+    let stream = CharStream::from_file(path).map_err(ParseError::from)?;
+    parse_tup_stream(stream)
+}
+
+fn parse_tup_stream(mut stream: CharStream) -> ParseResult<Tup> {
+    let mut vec: Vec<Value> = Vec::new();
+    let obj = Obj::new();
+    let mut globals: Globals = HashMap::new();
+
+    loop {
+        // Go to the first non-whitespace character, or error if there is none.
+        if !find_char(stream.clone()) {
+            break;
+        }
+
+        // At a non-whitespace character, parse value.
+        let (value_line, value_col) = (stream.line(), stream.col());
+        let value = parse_value(
+            &mut stream,
+            &obj,
+            &mut globals,
+            value_line,
+            value_col,
+            1,
+            Some(']'),
+            true,
+        )?;
+
+        vec.push(value);
+    }
+
+    Ok(vec.into())
 }
 
 // Parse a sub-Tup in a file. It *must* start with ( and end with ).
@@ -615,6 +687,10 @@ fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
     Ok(ch.into())
 }
 
+fn parse_str_file(path: &str) -> ParseResult<String> {
+    read_file_str(path).map_err(ParseError::from)
+}
+
 // Get the next Str in the character stream.
 // Assumes the Str starts and ends with quotation marks and does not include them in the Str.
 // '"', '\' and '$' must be escaped with '\'.
@@ -713,6 +789,9 @@ fn parse_include(
     }
     let value: Value = match token.as_str() {
         "Obj" => parse_obj_file(path_str)?.into(),
+        "Str" => parse_str_file(path_str)?.into(),
+        "Arr" => parse_arr_file(path_str)?.into(),
+        "Tup" => parse_tup_file(path_str)?.into(),
         _ => return parse_err(stream.file(), InvalidIncludeToken(token, tok_line, tok_col)),
     };
 

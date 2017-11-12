@@ -3,6 +3,9 @@
 use num::bigint::BigInt;
 use num::rational::BigRational;
 use num_traits::{FromPrimitive, pow};
+use std::fs::File;
+use std::io;
+use std::io::Read;
 
 /// If `ch` preceded by a backslash together form an escape character, then return this char.
 /// Otherwise, return None.
@@ -81,4 +84,15 @@ pub fn is_digit(ch: char) -> bool {
 pub fn frac_from_whole_and_dec(whole: BigInt, decimal: BigInt, dec_len: usize) -> BigRational {
     let denom = pow(BigInt::from_u8(10).unwrap(), dec_len);
     BigRational::new(whole, 1.into()) + BigRational::new(decimal, denom)
+}
+
+/// Reads a file and returns its contents in a string.
+pub fn read_file_str(fname: &str) -> io::Result<String> {
+    // Open a file in read-only mode
+    let mut file = File::open(fname)?;
+
+    let mut contents = String::new();
+    let _ = file.read_to_string(&mut contents)?;
+
+    Ok(contents)
 }

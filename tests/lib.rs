@@ -218,9 +218,22 @@ fn includes() {
     assert_eq!(
         obj.get("include_obj").unwrap(),
         obj!{
-        "obj2" => obj!{"test" => 1},
-        "obj3" => obj!{"test" => 2}
-    }
+            "obj2" => obj!{"test" => 1},
+            "obj3" => obj!{"test" => 2},
+        }
+    );
+
+    let s = "Multi-line string\nwhich should be included verbatim\n\
+             in another file. \"Quotes\" and $$$\ndon't need to be escaped.\n";
+
+    assert_eq!(obj.get("include").unwrap(), s);
+    assert_eq!(obj.get("include2").unwrap(), obj.get("include").unwrap());
+
+    assert_eq!(obj.get("include_arr").unwrap(), arr![1, 2, 3, 4, 5]);
+
+    assert_eq!(
+        obj.get("include_tup").unwrap(),
+        tup!("hello", 1, 'c', frac!(3, 3))
     );
 }
 
@@ -353,6 +366,11 @@ fn errors() {
     error_helper!(
         "include3.over",
         "Invalid include path \"/\" at line 1, column 12"
+    );
+    error_helper!(
+        "include4.over",
+        "Invalid include token \"Blah\" at line 1, column 8; \
+         expected \"Obj\", \"Arr\", \"Tup\", or \"Str\""
     );
     error_helper!(
         "op_arr.over",

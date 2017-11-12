@@ -126,3 +126,9 @@ impl PartialEq for Tup {
         inner.vec == other_inner.vec
     }
 }
+
+impl From<Vec<Value>> for Tup {
+    fn from(vec: Vec<Value>) -> Self {
+        Self::from_vec(vec)
+    }
+}
