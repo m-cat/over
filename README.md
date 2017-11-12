@@ -170,11 +170,15 @@ OVER has three container types:
 
 The following is a valid array, as each sub-tuple is the same type:
 
-`[ ("Alex" 10) ("Alice" 12) ]`
+```
+[ ("Alex" 10) ("Alice" 12) ]
+```
 
 The following is not a valid array. Can you see why?
 
-`[ ("Morgan" 13) ("Alan" 15 16) ]`
+```
+[ ("Morgan" 13) ("Alan" 15 16) ]
+```
 
 ### Variables
 
@@ -231,14 +235,14 @@ In the spirit of modularity, OVER provides a facility for splitting up files. Th
 
 Say we have two objects that we want in two separate files:
 
-**`obj1.over`:**
+**`includes/obj1.over`:**
 ```
 a: 1 
 b: 2 
 c: 3
 ```
 
-**`obj2.over`:**
+**`includes/obj2.over`:**
 ```
 a: 2 
 b: 3 
@@ -253,7 +257,7 @@ obj1: <Obj "includes/obj1.over">
 obj2: <Obj "includes/obj2.over">
 ```
 
-In the above example we could have simply parsed the two object files separately. The main benefit of doing this, when it comes to objects, is organizational. We can also put arrays and tuples in separate files, which makes it easy to include, say, automatically-generated whitespace-delimited values. Finally, strings can also be in their own files, in which case they are parsed verbatim; no escaping of characters is done. This is a quite convenient option for large strings.
+In the above example we could have simply parsed the two object files separately. The main benefit of doing includes, when it comes to objects, is organizational. We can also put arrays and tuples in separate files, which makes it easy to include, say, automatically-generated whitespace-delimited values. Finally, strings can also be in their own files, in which case they are parsed verbatim; no escaping of characters is done. This is a quite convenient option for large strings.
 
 An example demonstrating inclusion of `Str`, `Arr`, and `Tup`:
 
@@ -264,7 +268,7 @@ arr: <Arr "includes/arr.over">
 tup: <Tup "includes/tup.over">
 ```
 
-**`str.over`:**
+**`includes/str.over`:**
 ```
 Multi-line string
 which should be included verbatim
@@ -272,12 +276,12 @@ in another file. "Quotes" and $$$
 don't need to be escaped.
 ```
 
-**`arr.over`:**
+**`includes/arr.over`:**
 ```
 1 2 3 4 5
 ```
 
-**`tup.over`:**
+**`includes/tup.over`:**
 ```
 1
 2

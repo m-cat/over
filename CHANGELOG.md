@@ -6,8 +6,8 @@
 - `Obj::get_with_source()`.
 - `Obj::write_to_file()` implemented.
 - New macros: `int!` and `frac!`.
-- Commas can now be used in decimals instead of periods.
-- `Arr::to_vec()`, `Tup::to_vec()`, and `Obj::to_map().
+- Commas can now be used in decimals as well as periods.
+- `Arr::to_vec()`, `Tup::to_vec()`, and `Obj::to_map()`.
 - Arithmetic on values.
 - `Value` now implements `PartialEq` against primitive integers.
 - File inclusion for `Obj`, `Str`, `Arr`, and `Tup`.
