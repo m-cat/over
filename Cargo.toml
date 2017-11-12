@@ -2,12 +2,18 @@
 authors = ["Marcin S. <scatman@bu.edu>"]
 description = "OVER: the best data format."
 documentation = "https://docs.rs/over"
+keywords = [
+    "config",
+    "format",
+    "minimal",
+    "intuitive",
+    "powerful",
+]
 license = "MIT"
-keywords = ["config", "format", "minimal", "intuitive", "powerful"]
 name = "over"
 readme = "README.md"
 repository = "https://github.com/m-cat/over"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
 num = "0.1.40"
