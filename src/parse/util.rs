@@ -28,13 +28,13 @@ pub fn is_value_end_char(ch: char) -> bool {
 }
 
 /// Returns true if the given char is valid for a field, given whether it is the first char or not.
-/// The first character must be alphabetic.
-/// Subsequent characters are allowed to be alphabetic, a digit, or '_'.
+/// The first character must be alphabetic or '_'.
+/// Subsequent characters are allowed to be alphabetic, digits, or '_'.
 pub fn is_valid_field_char(ch: char, first: bool) -> bool {
     match ch {
         ch if ch.is_alphabetic() => true,
         ch if is_digit(ch) => !first,
-        '_' => !first,
+        '_' => true,
         '^' => first,
         _ => false,
     }

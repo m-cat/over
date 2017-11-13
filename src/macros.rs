@@ -14,7 +14,6 @@ macro_rules! int {
 }
 
 /// Given two ints, returns a `BigRational`.
-/// This is a convenience macro and should not be used where performance is important.
 #[macro_export]
 macro_rules! frac {
     ( $int1:expr, $int2:expr ) => (

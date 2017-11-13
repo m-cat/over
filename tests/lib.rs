@@ -25,9 +25,9 @@ fn empty() {
 fn basic() {
     let obj = Obj::from_file("tests/test_files/basic.over").unwrap();
 
-    assert_eq!(get_int(&obj, "a1"), 1);
+    assert_eq!(get_int(&obj, "_a1"), 1);
     assert_eq!(get_int(&obj, "a2"), 2);
-    assert_eq!(get_int(&obj, "aa"), 0);
+    assert_eq!(get_int(&obj, "_"), 0);
     assert_eq!(obj.get("b").unwrap(), "Smörgåsbord");
     assert_eq!(get_int(&obj, "c"), 10);
     assert_eq!(get_int(&obj, "d"), 20);
@@ -258,6 +258,7 @@ fn write() {
 
     write_helper!("tests/test_files/basic.over");
     write_helper!("tests/test_files/empty.over");
+    write_helper!("tests/test_files/includes.over");
     write_helper!("tests/test_files/obj.over");
     write_helper!("tests/test_files/numbers.over");
     write_helper!("tests/test_files/example.over");

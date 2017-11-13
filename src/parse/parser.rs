@@ -405,8 +405,10 @@ fn parse_value(
         '@' => parse_variable(&mut stream, obj, globals, line, col)?,
         '<' => parse_include(&mut stream, obj, &mut globals, depth)?,
         ch @ '+' | ch @ '-' => parse_unary_op(&mut stream, obj, globals, depth, cur_brace, ch)?,
-        ch if ch.is_alphabetic() => parse_variable(&mut stream, obj, globals, line, col)?,
         ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
+        ch if is_valid_field_char(ch, true) => {
+            parse_variable(&mut stream, obj, globals, line, col)?
+        }
         ch => {
             return parse_err(stream.file(), InvalidValueChar(ch, line, col));
         }
