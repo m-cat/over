@@ -1,0 +1,3 @@
+obj: {}
+six: 6
+dot: obj.six

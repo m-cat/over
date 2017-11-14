@@ -1,7 +1,7 @@
 //! `Tup` module.
 //! A tuple container which can hold elements of different types.
 
-use {OverError, OverResult};
+use {INDENT_STEP, OverError, OverResult};
 use parse::format::Format;
 use std::cell::RefCell;
 use std::fmt;
@@ -110,7 +110,7 @@ impl Default for Tup {
 
 impl fmt::Display for Tup {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.format(true, 0))
+        write!(f, "{}", self.format(true, INDENT_STEP))
     }
 }
 

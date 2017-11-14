@@ -1,5 +1,6 @@
 //! Module containing functions for formatting output of objects.
 
+use INDENT_STEP;
 use arr::Arr;
 use num::bigint::BigInt;
 use num::rational::BigRational;
@@ -7,9 +8,6 @@ use num_traits::One;
 use obj::Obj;
 use tup::Tup;
 use value::Value;
-
-// Indent step in .over files.
-const INDENT_STEP: usize = 4;
 
 // Returns a `String` with the given amount of spaces.
 fn indent(amount: usize) -> String {
@@ -130,7 +128,12 @@ impl Format for Arr {
                 });
 
                 if full {
-                    s.push_str(&format!("{}]", indent(indent_amt - INDENT_STEP)));
+                    let actual_indent_amt = if indent_amt == 0 {
+                        0
+                    } else {
+                        indent_amt - INDENT_STEP
+                    };
+                    s.push_str(&format!("{}]", indent(actual_indent_amt)));
                 }
                 s
             }

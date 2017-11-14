@@ -164,6 +164,11 @@ fn types() {
         Type::Arr(Box::new(Type::Arr(Box::new(Type::Bool))))
     );
 
+    assert_ne!(
+        Type::Arr(Box::new(Type::Arr(Box::new(Type::Int)))),
+        Type::Arr(Box::new(Type::Int))
+    );
+
     // Tup
 
     let tup_type = Type::Tup(vec![

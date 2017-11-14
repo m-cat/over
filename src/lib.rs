@@ -26,3 +26,6 @@ pub use obj::Obj;
 
 /// Result type for this crate.
 pub type OverResult<T> = Result<T, OverError>;
+
+// Indent step in .over files.
+const INDENT_STEP: usize = 4;

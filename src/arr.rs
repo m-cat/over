@@ -1,7 +1,7 @@
 //! `Arr` module.
 //! An array container which can hold an arbitrary number of elements of a single type.
 
-use {OverError, OverResult};
+use {INDENT_STEP, OverError, OverResult};
 use parse::format::Format;
 use std::cell::RefCell;
 use std::fmt;
@@ -32,16 +32,24 @@ impl Arr {
         }
     }
 
+    fn is_any(t: &Type) -> bool {
+        match *t {
+            Type::Any => true,
+            Type::Arr(ref t) => Self::is_any(t),
+            _ => false,
+        }
+    }
+
     /// Returns a new `Arr` with the given value vector as elements.
     pub fn from_vec(vec: Vec<Value>) -> OverResult<Arr> {
         let mut t = Type::Any;
 
         for value in &vec {
             let tnew = value.get_type();
-            if let Type::Any = t {
-                t = tnew.clone()
-            } else if t != tnew {
+            if t != tnew {
                 return Err(OverError::ArrTypeMismatch(tnew, t));
+            } else if Self::is_any(&t) {
+                t = tnew.clone()
             }
         }
 
@@ -104,8 +112,20 @@ impl Arr {
         if index >= inner.vec.len() {
             Err(OverError::ArrOutOfBounds(index))
         } else {
-            inner.vec[index] = value;
-            Ok(())
+            let inner_type = inner.t.clone();
+            let val_type = value.get_type();
+
+            if val_type != inner_type {
+                Err(OverError::ArrTypeMismatch(val_type, inner_type))
+            } else {
+                // Update type of this `Arr`.
+                if Self::is_any(&inner_type) {
+                    inner.t = val_type;
+                }
+
+                inner.vec[index] = value;
+                Ok(())
+            }
         }
     }
 
@@ -121,7 +141,7 @@ impl Arr {
             Err(OverError::ArrTypeMismatch(val_type, inner_type))
         } else {
             // Update type of this `Arr`.
-            if inner_type.is(&Type::Any) {
+            if Self::is_any(&inner_type) {
                 inner.t = val_type;
             }
 
@@ -147,7 +167,7 @@ impl Arr {
             Err(OverError::ArrTypeMismatch(val_type, inner_type))
         } else {
             // Update type of this `Arr`.
-            if inner_type.is(&Type::Any) {
+            if Self::is_any(&inner_type) {
                 inner.t = val_type;
             }
 
@@ -185,7 +205,7 @@ impl Default for Arr {
 
 impl fmt::Display for Arr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.format(true, 0))
+        write!(f, "{}", self.format(true, INDENT_STEP))
     }
 }
 

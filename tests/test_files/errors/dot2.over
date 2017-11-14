@@ -1,0 +1,2 @@
+tire: { o: 2 }
+dot: tire. o

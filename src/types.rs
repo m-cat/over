@@ -42,9 +42,9 @@ impl Type {
             Frac => if let Frac = *other { true } else { false },
             Char => if let Char = *other { true } else { false },
             Str => if let Str = *other { true } else { false },
-            Arr(ref box1) => {
-                if let Arr(ref box2) = *other {
-                    box1.is(box2)
+            Arr(ref t1) => {
+                if let Arr(ref t2) = *other {
+                    t1.is(t2)
                 } else {
                     false
                 }

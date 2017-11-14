@@ -4,7 +4,7 @@
 #![allow(missing_docs)]
 #![allow(unused_imports)] // will complain about num_traits::Zero otherwise
 
-use OverResult;
+use {INDENT_STEP, OverResult};
 use arr::Arr;
 use error::OverError;
 use num::bigint::BigInt;
@@ -219,7 +219,7 @@ impl Default for Obj {
 
 impl fmt::Display for Obj {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.format(true, 0))
+        write!(f, "{}", self.format(true, INDENT_STEP))
     }
 }
 

@@ -1,6 +1,6 @@
 //! Module for values.
 
-use OverResult;
+use {INDENT_STEP, OverResult};
 use arr;
 use error::OverError;
 use num::bigint::BigInt;
@@ -148,7 +148,7 @@ impl Value {
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.format(true, 0))
+        write!(f, "{}", self.format(true, INDENT_STEP))
     }
 }
 

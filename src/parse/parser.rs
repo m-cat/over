@@ -579,7 +579,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
 
 // Parse a variable name and get a value from the corresponding variable.
 fn parse_variable(
-    stream: &mut CharStream,
+    mut stream: &mut CharStream,
     obj: &Obj,
     globals: &Globals,
     line: usize,
@@ -587,6 +587,7 @@ fn parse_variable(
 ) -> ParseResult<Value> {
     let mut var = String::new();
     let mut is_global = false;
+    let mut dot = false;
 
     let ch = stream.peek().unwrap();
     if ch == '@' {
@@ -597,8 +598,27 @@ fn parse_variable(
 
     while let Some(ch) = stream.peek() {
         match ch {
+            '.' => {
+                let _ = stream.next();
+                match stream.peek() {
+                    Some(ch) if is_valid_field_char(ch, true) => (),
+                    Some(ch) => {
+                        return parse_err(
+                            stream.file(),
+                            InvalidValueChar(ch, stream.line(), stream.col()),
+                        )
+                    }
+                    None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
+                }
+
+                dot = true;
+                break;
+            }
             ch if is_value_end_char(ch) => break,
-            ch if is_valid_field_char(ch, false) => var.push(ch),
+            ch if is_valid_field_char(ch, false) => {
+                let _ = stream.next();
+                var.push(ch);
+            }
             ch => {
                 return parse_err(
                     stream.file(),
@@ -606,36 +626,51 @@ fn parse_variable(
                 )
             }
         }
-
-        let _ = stream.next();
     }
 
-    match var.as_str() {
-        "true" => Ok(Value::Bool(true)),
-        "false" => Ok(Value::Bool(false)),
-        "null" => Ok(Value::Null),
-        var @ "@" => parse_err(stream.file(), InvalidValue(var.into(), line, col)),
+    let mut value = match var.as_str() {
+        "true" => Value::Bool(true),
+        "false" => Value::Bool(false),
+        "null" => Value::Null,
+        var @ "@" => return parse_err(stream.file(), InvalidValue(var.into(), line, col)),
         var if is_global => {
             // Global variable, get value from globals map.
             match globals.get(var) {
-                Some(value) => Ok(value.clone()),
+                Some(value) => value.clone(),
                 None => {
                     let var = String::from(var);
-                    parse_err(stream.file(), GlobalNotFound(var, line, col))
+                    return parse_err(stream.file(), GlobalNotFound(var, line, col));
                 }
             }
         }
         var => {
             // Regular variable, get value from the current Obj.
             match obj.get(var) {
-                Some(value) => Ok(value),
+                Some(value) => value,
                 None => {
                     let var = String::from(var);
-                    parse_err(stream.file(), VariableNotFound(var, line, col))
+                    return parse_err(stream.file(), VariableNotFound(var, line, col));
                 }
             }
         }
+    };
+
+    if dot {
+        value = match value {
+            Value::Obj(obj) => {
+                let (line, col) = (stream.line(), stream.col());
+                parse_variable(&mut stream, &obj, globals, line, col)?
+            }
+            _ => {
+                return parse_err(
+                    stream.file(),
+                    ExpectedType(value.get_type(), Type::Obj, line, col),
+                )
+            }
+        }
     }
+
+    Ok(value)
 }
 
 // Get the next Char in the character stream.
@@ -908,7 +943,7 @@ fn binary_op_on_values(
 
                     // Push each val from arr2 to new_arr.
                     // Because we know that the types are equal, we can safely unwrap below.
-                    arr2.with_each(|val| new_arr.push(val.clone()).unwrap());
+                    arr2.with_each(|val| { new_arr.push(val.clone()).unwrap(); });
 
                     new_arr.into()
                 }

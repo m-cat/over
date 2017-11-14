@@ -121,6 +121,9 @@ fn obj() {
 
     let obj_arr = obj.get_obj("obj_arr").unwrap();
     assert_eq!(obj_arr.get("arr").unwrap(), arr![1, 2, 3]);
+
+    assert_eq!(obj.get_int("dot").unwrap(), int!(1));
+    assert_eq!(obj.get_bool("dot_glob").unwrap(), true);
 }
 
 // Test that globals are referenced correctly and don't get included as fields.
@@ -204,6 +207,11 @@ fn operations() {
     assert_eq!(obj.get("arr2").unwrap(), arr![3, 4]);
     assert_eq!(obj.get("arr3").unwrap(), arr![3, 4]);
     assert_eq!(obj.get("arr4").unwrap(), arr![arr![1]]);
+
+    assert_eq!(
+        obj.get("arr_complex").unwrap(),
+        arr![arr![arr![1, 2]], arr![arr![3]]]
+    );
 
     assert_eq!(obj.get("str1").unwrap(), "cat");
     assert_eq!(obj.get("str2").unwrap(), "cat");
@@ -297,6 +305,20 @@ fn errors() {
         "deep.over",
         "Exceeded maximum depth (64) for a container at line 1, column 78"
     );
+    error_helper!("dot1.over", "Expected Obj at line 1, column 6; found Bool");
+    error_helper!(
+        "dot2.over",
+        "Invalid character \' \' for value at line 2, column 11"
+    );
+    error_helper!(
+        "dot3.over",
+        "Variable \"none\" at line 1, column 6 could not be found"
+    );
+    error_helper!(
+        "dot4.over",
+        "Variable \"six\" at line 3, column 10 could not be found"
+    );
+    error_helper!("dot5.over", "Unexpected end at line 2");
     error_helper!(
         "dup_global.over",
         "Duplicate global \"@global\" at line 2, column 1"
@@ -355,6 +377,11 @@ fn errors() {
     error_helper!(
         "fuzz13.over",
         "Variable \"g\" at line 20, column 1 could not be found"
+    );
+    error_helper!(
+        "fuzz14.over",
+        "Could not apply operator + on types Arr(Arr(Int)) and Arr(Arr(Arr(Int))) \
+         at line 8, column 5"
     );
     error_helper!(
         "include1.over",

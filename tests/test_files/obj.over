@@ -13,3 +13,6 @@ outie: {
     d: {}}
 
 obj_arr: {arr: [1 2 3]}
+
+dot_glob: @bools.t
+dot: outie.inner.z
