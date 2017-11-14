@@ -15,8 +15,9 @@ OVER: the best data format.
         - [Containers](#containers)
         - [Variables](#variables)
         - [Parents](#parents)
-        - [File Includes](#file-includes)
+        - [Object Field Access](#object-field-access)
         - [Arithmetic on Values and Variables](#arithmetic-on-values-and-variables)
+        - [File Includes](#file-includes)
         - [String Substitutions](#string-substitutions)
     - [Types](#types)
         - [Null](#null)
@@ -229,6 +230,52 @@ bar: {
 }
 ```
 
+### Object Field Access
+
+The fields of an object can be access using dot notation. This is valid as long as the object in question is in scope and the field exists. Example:
+
+```
+obj: {
+    sub_obj: {
+        secret_value: 0
+    }
+}
+
+value: obj.sub_obj.secret_value
+```
+
+This allows for some nice namespacing possibilities:
+
+```
+@colors: {
+    red:   "#FF0000"
+    green: "#00FF00"
+    blue:  "#0000FF"
+}
+
+obj: {
+    name: "Red monster"
+    color: @colors.red
+}
+```
+  
+### Arithmetic on Values and Variables
+
+Basic arithmetic is possible on values and variables. The available operators are `+`, `-`, `*`, `/`, and `%`, though not all operators can be applied to all types. The operators `*`, `/`, and `%` have a higher precedence than `+` and `-`.
+
+Note that operators and their operands cannot be separated by spaces. The semantics of the language are such that a space after a value denotes the end of that value.
+
+Here's an example:
+
+```
+grid: 16
+x: 18 y: 20
+width: 4
+height: 6
+
+rectangle: (x-x%grid y-y%grid width*grid height*grid)
+```
+
 ### File Includes
 
 In the spirit of modularity, OVER provides a facility for splitting up files. This functionality is best illustrated through an example.
@@ -294,23 +341,6 @@ Some notes about file includes:
   * Global variables are not valid across files.
   * Files cannot be included in a circular manner; e.g. if file `main` includes `sub-obj`, then `sub-obj` cannot include `main`.
   * Inclusion is only valid for `Obj`, `Str`, `Arr`, and `Tup`. 
-  
-### Arithmetic on Values and Variables
-
-Basic arithmetic is possible on values and variables. The available operators are `+`, `-`, `*`, `/`, and `%`, though not all operators can be applied to all types. The operators `*`, `/`, and `%` have a higher precedence than `+` and `-`.
-
-Note that operators and their operands cannot be separated by spaces. The semantics of the language are such that a space after a value denotes the end of that value.
-
-Here's an example:
-
-```
-grid: 16
-x: 18 y: 20
-width: 4
-height: 6
-
-rectangle: (x-x%grid y-y%grid width*grid height*grid)
-```
 
 ### String Substitutions
 
