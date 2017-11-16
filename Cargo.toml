@@ -16,5 +16,5 @@ repository = "https://github.com/m-cat/over"
 version = "0.3.0"
 
 [dependencies]
-num = "0.1.40"
-num-traits = "0.1.40"
+num = "0.1.*"
+num-traits = "0.1.*"

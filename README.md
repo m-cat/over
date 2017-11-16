@@ -10,8 +10,8 @@ OVER: the best data format.
 - [OVER](#over)
     - [About](#about)
     - [Usage](#usage)
-    - [Examples](#examples)
-        - [The Basics](#the-basics)
+    - [Example](#example)
+    - [Features](#features)
         - [Containers](#containers)
         - [Variables](#variables)
         - [Parents](#parents)
@@ -45,6 +45,55 @@ OVER is a general-purpose data format like XML or JSON, but much better. Here ar
 * It has an elegant and versatile type system which can safely represent all common data.
 * It is resilient to errors by design and has no weird behavior or syntax like YAML or TOML. 
 
+## Example
+
+A basic usage of OVER as a data format might look like this:
+
+```
+receipt: "Oz-Ware Purchase Invoice"
+date:    "2012-08-06"
+customer: {
+    first_name:  "Dorothy"
+    family_name: "Gale"
+}
+
+items: [{
+         part_no:  "A4786"
+         descrip:  "Water Bucket (Filled)"
+         price:    01.47
+         quantity: 4
+        }
+        {
+         part_no:  "E1628"
+         descrip:  "High Heeled \"Ruby\" Slippers"
+         size:     8
+         price:    133.70
+         quantity: 1
+        }
+       ]
+       
+bill_to: {
+    street: 
+    # A multi-line string. Can also be written as "123 Tornado Alley\nSuite16"
+"123 Tornado Alley
+Suite 16"
+    city:  "East Centerville"
+    state: "KS"
+}
+
+ship_to: bill_to
+
+specialDelivery:
+"Follow the Yellow Brick Road to the Emerald City. Pay no attention to the man behind the curtain."
+```
+
+This basic example already demonstrates a lot of nice features about OVER:
+
+* You can immediately tell what kind of data each field contains.
+* Multi-line strings require no special syntax; see `bill_to.street`.
+* Variables; see `ship_to`.
+* Comments (sounds simple, but JSON doesn't have them).
+
 ## Usage
 
 Add OVER to your `Cargo.toml`:
@@ -54,7 +103,7 @@ Add OVER to your `Cargo.toml`:
 over = "*"
 ```
 
-Example Rust code reading the first example ("The Basics") from this README:
+Rust code reading the above example data:
 
 ```rust
 extern crate fraction;
@@ -111,56 +160,7 @@ fn example() {
 
 Currently OVER has only been implemented for Rust; more languages may be supported in the future.
 
-## Examples
-
-### The Basics
-
-A basic usage of OVER as a data format might look like this:
-
-```
-receipt: "Oz-Ware Purchase Invoice"
-date:    "2012-08-06"
-customer: {
-    first_name:  "Dorothy"
-    family_name: "Gale"
-}
-
-items: [{
-         part_no:  "A4786"
-         descrip:  "Water Bucket (Filled)"
-         price:    01.47
-         quantity: 4
-        }
-        {
-         part_no:  "E1628"
-         descrip:  "High Heeled \"Ruby\" Slippers"
-         size:     8
-         price:    133.70
-         quantity: 1
-        }
-       ]
-       
-bill_to: {
-    street: 
-    # A multi-line string. Can also be written as "123 Tornado Alley\nSuite16"
-"123 Tornado Alley
-Suite 16"
-    city:  "East Centerville"
-    state: "KS"
-}
-
-ship_to: bill_to
-
-specialDelivery:
-"Follow the Yellow Brick Road to the Emerald City. Pay no attention to the man behind the curtain."
-```
-
-This basic example already demonstrates a lot of nice features about OVER:
-
-* You can immediately tell what kind of data each field contains.
-* Multi-line strings require no special syntax; see `bill_to.street`.
-* Variables; see `ship_to`.
-* Comments (sounds simple, but JSON doesn't have them).
+## Features
 
 ### Containers
 
@@ -331,9 +331,9 @@ don't need to be escaped.
 **`includes/tup.over`:**
 ```
 1
-2
+'a'
 3
-4
+'b'
 5
 ```
 
