@@ -5,7 +5,7 @@
 macro_rules! int {
     ( $int:expr ) => (
         {
-            use ::num::bigint::BigInt;
+            use ::num_bigint::BigInt;
 
             let _b: BigInt = $int.into();
             _b
@@ -18,7 +18,7 @@ macro_rules! int {
 macro_rules! frac {
     ( $int1:expr, $int2:expr ) => (
         {
-            ::num::rational::BigRational::new($int1.into(), $int2.into())
+            ::num_rational::BigRational::new($int1.into(), $int2.into())
         }
     );
 }

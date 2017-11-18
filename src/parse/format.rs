@@ -2,8 +2,8 @@
 
 use INDENT_STEP;
 use arr::Arr;
-use num::bigint::BigInt;
-use num::rational::BigRational;
+use num_bigint::BigInt;
+use num_rational::BigRational;
 use num_traits::One;
 use obj::Obj;
 use tup::Tup;

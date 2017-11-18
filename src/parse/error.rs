@@ -6,7 +6,7 @@ use super::MAX_DEPTH;
 use super::ParseResult;
 use super::misc::format_char;
 use OverError;
-use num::bigint::ParseBigIntError;
+use num_bigint::ParseBigIntError;
 use std::error::Error;
 use std::fmt;
 use std::io;

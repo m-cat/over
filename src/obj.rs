@@ -6,8 +6,8 @@
 use {INDENT_STEP, OverResult};
 use arr::Arr;
 use error::OverError;
-use num::bigint::BigInt;
-use num::rational::BigRational;
+use num_bigint::BigInt;
+use num_rational::BigRational;
 use num_traits::Zero;
 use parse;
 use parse::format::Format;

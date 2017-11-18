@@ -1,7 +1,7 @@
 //! Utility functions used by the parser.
 
-use num::bigint::BigInt;
-use num::rational::BigRational;
+use num_bigint::BigInt;
+use num_rational::BigRational;
 use num_traits::{FromPrimitive, pow};
 use std::fs::File;
 use std::io;

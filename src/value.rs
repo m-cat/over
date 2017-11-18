@@ -3,8 +3,8 @@
 use {INDENT_STEP, OverResult};
 use arr;
 use error::OverError;
-use num::bigint::BigInt;
-use num::rational::BigRational;
+use num_bigint::BigInt;
+use num_rational::BigRational;
 use num_traits::ToPrimitive;
 use obj;
 use parse::format::Format;

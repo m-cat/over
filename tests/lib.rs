@@ -1,8 +1,10 @@
-extern crate num;
+extern crate num_bigint;
+extern crate num_rational;
+extern crate num_traits;
 #[macro_use]
 extern crate over;
 
-use num::ToPrimitive;
+use num_traits::ToPrimitive;
 use over::OverError;
 use over::obj::Obj;
 use over::types::Type;
