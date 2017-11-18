@@ -106,11 +106,9 @@ over = "*"
 Rust code reading the above example data:
 
 ```rust
-extern crate fraction;
 #[macro_use]
 extern crate over;
 
-use fraction::Fraction;
 use over::obj::Obj;
 
 #[test]
@@ -130,12 +128,12 @@ fn example() {
         arr![
             obj!{"part_no" => "A4786",
                  "descrip" => "Water Bucket (Filled)",
-                 "price" => 1.47,
+                 "price" => frac!(147,100),
                  "quantity" => 4},
             obj!{"part_no" => "E1628",
                  "descrip" => "High Heeled \"Ruby\" Slippers",
                  "size" => 8,
-                 "price" => 133.7,
+                 "price" => frac!(1337,10),
                  "quantity" => 1},
         ]
     );

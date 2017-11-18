@@ -10,48 +10,53 @@ use num::bigint::BigInt;
 use num::rational::BigRational;
 use num_traits::Zero;
 use obj::Obj;
-use std::collections::HashMap;
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
+use std::ops::Deref;
 use std::path::Path;
 use tup::Tup;
 use types::Type;
 use value::Value;
 
-type Globals = HashMap<String, Value>;
+type ObjMap = HashMap<String, Value>;
+type GlobalMap = HashMap<String, Value>;
 
-/// Parse given file as an `Obj`.
+/// Parses given file as an `Obj`.
 pub fn parse_obj_file(path: &str) -> ParseResult<Obj> {
     let stream = CharStream::from_file(path).map_err(ParseError::from)?;
     parse_obj_stream(stream)
 }
 
-/// Parse given &str as an `Obj`.
+/// Parses given &str as an `Obj`.
 pub fn parse_obj_str(contents: &str) -> ParseResult<Obj> {
     let contents = String::from(contents);
     let stream = CharStream::from_string(contents).map_err(ParseError::from)?;
     parse_obj_stream(stream)
 }
 
-// Parse an Obj given a character stream.
+// Parses an Obj given a character stream.
 fn parse_obj_stream(mut stream: CharStream) -> ParseResult<Obj> {
-    let mut obj = Obj::new();
-    let mut globals: Globals = HashMap::new();
+    let mut obj: ObjMap = HashMap::new();
+    let mut globals: GlobalMap = HashMap::new();
+    let mut parent = None;
 
     // Go to the first non-whitespace character, or return if there is none.
     if !find_char(stream.clone()) {
-        return Ok(obj);
+        return Ok(Obj::from_map_unchecked(obj));
     }
 
     // Parse all field/value pairs for this Obj.
-    while parse_field_value_pair(&mut stream, &mut obj, &mut globals, 1, None)? {}
+    while parse_field_value_pair(&mut stream, &mut obj, &mut globals, &mut parent, 1, None)? {}
 
-    Ok(obj)
+    Ok(match parent {
+        Some(parent) => Obj::from_map_with_parent_unchecked(obj, parent),
+        None => Obj::from_map_unchecked(obj),
+    })
 }
 
-// Parse a sub-Obj in a file. It *must* start with { and end with }.
+// Parses a sub-Obj in a file. It *must* start with { and end with }.
 fn parse_obj(
     mut stream: &mut CharStream,
-    globals: &mut Globals,
+    globals: &mut GlobalMap,
     depth: usize,
 ) -> ParseResult<Value> {
     // Check depth.
@@ -68,19 +73,33 @@ fn parse_obj(
         return parse_err(stream.file(), UnexpectedEnd(stream.line()));
     }
 
-    let mut obj = Obj::new();
+    let mut obj: ObjMap = HashMap::new();
+    let mut parent = None;
 
     // Parse field/value pairs.
-    while parse_field_value_pair(&mut stream, &mut obj, globals, depth, Some('}'))? {}
+    while parse_field_value_pair(
+        &mut stream,
+        &mut obj,
+        globals,
+        &mut parent,
+        depth,
+        Some('}'),
+    )?
+    {}
 
+    let obj = match parent {
+        Some(parent) => Obj::from_map_with_parent_unchecked(obj, parent),
+        None => Obj::from_map_unchecked(obj),
+    };
     Ok(obj.into())
 }
 
 // Parses a field/value pair.
 fn parse_field_value_pair(
     mut stream: &mut CharStream,
-    obj: &mut Obj,
-    mut globals: &mut Globals,
+    obj: &mut ObjMap,
+    mut globals: &mut GlobalMap,
+    parent: &mut Option<Obj>,
     depth: usize,
     cur_brace: Option<char>,
 ) -> ParseResult<bool> {
@@ -92,7 +111,7 @@ fn parse_field_value_pair(
     } else if is_end_delimiter(peek) {
         return parse_err(
             stream.file(),
-            InvalidClosingBracket(peek, cur_brace, stream.line(), stream.col()),
+            InvalidClosingBracket(cur_brace, peek, stream.line(), stream.col()),
         );
     }
 
@@ -101,8 +120,14 @@ fn parse_field_value_pair(
 
     // Parse field.
     let (field, is_global, is_parent) = parse_field(stream.clone(), field_line, field_col)?;
-    if !is_global && !is_parent && obj.contains(&field) {
+
+    if !is_global && !is_parent && obj.contains_key(&field) {
         return parse_err(stream.file(), DuplicateField(field, field_line, field_col));
+    } else if is_parent && parent.is_some() {
+        return parse_err(
+            stream.file(),
+            DuplicateField("^".into(), field_line, field_col),
+        );
     }
 
     // Deal with extra whitespace between field and value.
@@ -130,14 +155,12 @@ fn parse_field_value_pair(
         }
         globals.insert(field, value);
     } else if is_parent {
-        let parent = value.get_obj().map_err(|e| {
+        let par = value.get_obj().map_err(|e| {
             ParseError::from_over(e, stream.file(), value_line, value_col)
         })?;
-        obj.set_parent(&parent).map_err(|e| {
-            ParseError::from_over(e, stream.file(), value_line, value_col)
-        })?;
+        *parent = Some(par);
     } else {
-        obj.set(&field, value);
+        obj.insert(field, value);
     }
 
     // Go to the next non-whitespace character.
@@ -157,9 +180,12 @@ fn parse_arr_file(path: &str) -> ParseResult<Arr> {
 }
 
 fn parse_arr_stream(mut stream: CharStream) -> ParseResult<Arr> {
-    let mut arr = Arr::new();
-    let obj = Obj::new();
-    let mut globals: Globals = HashMap::new();
+    let obj: ObjMap = HashMap::new();
+    let mut globals: GlobalMap = HashMap::new();
+
+    let mut vec = Vec::new();
+    let mut tcur = Type::Any;
+    let mut has_any = true;
 
     loop {
         // Go to the first non-whitespace character, or error if there is none.
@@ -176,23 +202,45 @@ fn parse_arr_stream(mut stream: CharStream) -> ParseResult<Arr> {
             value_line,
             value_col,
             1,
-            Some(']'),
+            None,
             true,
         )?;
 
-        arr.push(value).map_err(|e| {
-            ParseError::from_over(e, stream.file(), value_line, value_col)
-        })?;
+        let tnew = value.get_type();
+
+        if has_any {
+            match Type::most_specific(&tcur, &tnew) {
+                Some((t, any)) => {
+                    tcur = t;
+                    has_any = any;
+                }
+                None => {
+                    return parse_err(
+                        stream.file(),
+                        ExpectedType(tcur, tnew, value_line, value_col),
+                    )
+                }
+            }
+        } else if tcur != tnew {
+            return parse_err(
+                stream.file(),
+                ExpectedType(tcur, tnew, value_line, value_col),
+            );
+        }
+
+        vec.push(value);
     }
 
-    Ok(arr)
+    let arr = Arr::from_vec_unchecked(vec, tcur);
+
+    Ok(arr.into())
 }
 
-// Parse a sub-Arr in a file. It *must* start with [ and end with ].
+// Parses a sub-Arr in a file. It *must* start with [ and end with ].
 fn parse_arr(
     mut stream: &mut CharStream,
-    obj: &Obj,
-    mut globals: &mut Globals,
+    obj: &ObjMap,
+    mut globals: &mut GlobalMap,
     depth: usize,
 ) -> ParseResult<Value> {
     // Check depth.
@@ -204,7 +252,9 @@ fn parse_arr(
     let ch = stream.next().unwrap();
     assert_eq!(ch, '[');
 
-    let mut arr = Arr::new();
+    let mut vec = Vec::new();
+    let mut tcur = Type::Any;
+    let mut has_any = true;
 
     loop {
         // Go to the first non-whitespace character, or error if there is none.
@@ -219,7 +269,7 @@ fn parse_arr(
         } else if is_end_delimiter(peek) {
             return parse_err(
                 stream.file(),
-                InvalidClosingBracket(peek, Some(']'), stream.line(), stream.col()),
+                InvalidClosingBracket(Some(']'), peek, stream.line(), stream.col()),
             );
         }
 
@@ -236,10 +286,32 @@ fn parse_arr(
             true,
         )?;
 
-        arr.push(value).map_err(|e| {
-            ParseError::from_over(e, stream.file(), value_line, value_col)
-        })?;
+        let tnew = value.get_type();
+
+        if has_any {
+            match Type::most_specific(&tcur, &tnew) {
+                Some((t, any)) => {
+                    tcur = t;
+                    has_any = any;
+                }
+                None => {
+                    return parse_err(
+                        stream.file(),
+                        ExpectedType(tcur, tnew, value_line, value_col),
+                    )
+                }
+            }
+        } else if tcur != tnew {
+            return parse_err(
+                stream.file(),
+                ExpectedType(tcur, tnew, value_line, value_col),
+            );
+        }
+
+        vec.push(value);
     }
+
+    let arr = Arr::from_vec_unchecked(vec, tcur);
 
     Ok(arr.into())
 }
@@ -251,8 +323,8 @@ fn parse_tup_file(path: &str) -> ParseResult<Tup> {
 
 fn parse_tup_stream(mut stream: CharStream) -> ParseResult<Tup> {
     let mut vec: Vec<Value> = Vec::new();
-    let obj = Obj::new();
-    let mut globals: Globals = HashMap::new();
+    let obj: ObjMap = HashMap::new();
+    let mut globals: GlobalMap = HashMap::new();
 
     loop {
         // Go to the first non-whitespace character, or error if there is none.
@@ -269,7 +341,7 @@ fn parse_tup_stream(mut stream: CharStream) -> ParseResult<Tup> {
             value_line,
             value_col,
             1,
-            Some(']'),
+            None,
             true,
         )?;
 
@@ -279,11 +351,11 @@ fn parse_tup_stream(mut stream: CharStream) -> ParseResult<Tup> {
     Ok(vec.into())
 }
 
-// Parse a sub-Tup in a file. It *must* start with ( and end with ).
+// Parses a sub-Tup in a file. It *must* start with ( and end with ).
 fn parse_tup(
     mut stream: &mut CharStream,
-    obj: &Obj,
-    mut globals: &mut Globals,
+    obj: &ObjMap,
+    mut globals: &mut GlobalMap,
     depth: usize,
 ) -> ParseResult<Value> {
     // Check depth.
@@ -310,7 +382,7 @@ fn parse_tup(
         } else if is_end_delimiter(peek) {
             return parse_err(
                 stream.file(),
-                InvalidClosingBracket(peek, Some(')'), stream.line(), stream.col()),
+                InvalidClosingBracket(Some(')'), peek, stream.line(), stream.col()),
             );
         }
 
@@ -335,7 +407,8 @@ fn parse_tup(
     Ok(tup.into())
 }
 
-// Get the next field in the char stream.
+// Gets the next field in the char stream.
+// Returns Option<(field_name, is_global, is_parent)>.
 fn parse_field(
     mut stream: CharStream,
     line: usize,
@@ -357,7 +430,7 @@ fn parse_field(
             ':' if !first => {
                 break;
             }
-            ch if is_valid_field_char(ch, first) => field.push(ch),
+            ch if Obj::is_valid_field_char(ch, first) => field.push(ch),
             ch => {
                 return parse_err(
                     stream.file(),
@@ -382,13 +455,13 @@ fn parse_field(
     }
 }
 
-// Get the next value in the char stream.
+// Gets the next value in the char stream.
 #[allow(unknown_lints)]
 #[allow(too_many_arguments)]
 fn parse_value(
     mut stream: &mut CharStream,
-    obj: &Obj,
-    mut globals: &mut Globals,
+    obj: &ObjMap,
+    mut globals: &mut GlobalMap,
     line: usize,
     col: usize,
     depth: usize,
@@ -406,7 +479,7 @@ fn parse_value(
         '<' => parse_include(&mut stream, obj, &mut globals, depth)?,
         ch @ '+' | ch @ '-' => parse_unary_op(&mut stream, obj, globals, depth, cur_brace, ch)?,
         ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
-        ch if is_valid_field_char(ch, true) => {
+        ch if Obj::is_valid_field_char(ch, true) => {
             parse_variable(&mut stream, obj, globals, line, col)?
         }
         ch => {
@@ -478,8 +551,8 @@ fn parse_value(
 
 fn parse_unary_op(
     mut stream: &mut CharStream,
-    obj: &Obj,
-    mut globals: &mut Globals,
+    obj: &ObjMap,
+    mut globals: &mut GlobalMap,
     depth: usize,
     cur_brace: Option<char>,
     ch: char,
@@ -506,7 +579,7 @@ fn parse_unary_op(
     unary_op_on_value(stream, res, ch, line, col)
 }
 
-// Get the next numeric (either Int or Frac) in the character stream.
+// Gets the next numeric (either Int or Frac) in the character stream.
 fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResult<Value> {
     let mut s1 = String::new();
     let mut s2 = String::new();
@@ -577,11 +650,11 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
     }
 }
 
-// Parse a variable name and get a value from the corresponding variable.
+// Parses a variable name and get a value from the corresponding variable.
 fn parse_variable(
     mut stream: &mut CharStream,
-    obj: &Obj,
-    globals: &Globals,
+    obj: &ObjMap,
+    globals: &GlobalMap,
     line: usize,
     col: usize,
 ) -> ParseResult<Value> {
@@ -601,7 +674,7 @@ fn parse_variable(
             '.' => {
                 let _ = stream.next();
                 match stream.peek() {
-                    Some(ch) if is_valid_field_char(ch, true) => (),
+                    Some(ch) if Obj::is_valid_field_char(ch, true) => (),
                     Some(ch) => {
                         return parse_err(
                             stream.file(),
@@ -615,7 +688,7 @@ fn parse_variable(
                 break;
             }
             ch if is_value_end_char(ch) => break,
-            ch if is_valid_field_char(ch, false) => {
+            ch if Obj::is_valid_field_char(ch, false) => {
                 let _ = stream.next();
                 var.push(ch);
             }
@@ -646,7 +719,7 @@ fn parse_variable(
         var => {
             // Regular variable, get value from the current Obj.
             match obj.get(var) {
-                Some(value) => value,
+                Some(value) => value.clone(),
                 None => {
                     let var = String::from(var);
                     return parse_err(stream.file(), VariableNotFound(var, line, col));
@@ -659,12 +732,12 @@ fn parse_variable(
         value = match value {
             Value::Obj(obj) => {
                 let (line, col) = (stream.line(), stream.col());
-                parse_variable(&mut stream, &obj, globals, line, col)?
+                parse_variable(&mut stream, obj.map_ref(), globals, line, col)?
             }
             _ => {
                 return parse_err(
                     stream.file(),
-                    ExpectedType(value.get_type(), Type::Obj, line, col),
+                    ExpectedType(Type::Obj, value.get_type(), line, col),
                 )
             }
         }
@@ -673,7 +746,7 @@ fn parse_variable(
     Ok(value)
 }
 
-// Get the next Char in the character stream.
+// Gets the next Char in the character stream.
 // Assumes the Char starts and ends with single quote marks.
 // '\', '\n', '\r', and '\t' must be escaped with '\'.
 // ''' do not need to be escaped, although they can be.
@@ -728,7 +801,7 @@ fn parse_str_file(path: &str) -> ParseResult<String> {
     read_file_str(path).map_err(ParseError::from)
 }
 
-// Get the next Str in the character stream.
+// Gets the next Str in the character stream.
 // Assumes the Str starts and ends with quotation marks and does not include them in the Str.
 // '"', '\' and '$' must be escaped with '\'.
 // Newlines can be escaped with '\n', but this is NOT necessary.
@@ -770,8 +843,8 @@ fn parse_str(stream: &mut CharStream) -> ParseResult<Value> {
 
 fn parse_include(
     mut stream: &mut CharStream,
-    obj: &Obj,
-    mut globals: &mut Globals,
+    obj: &ObjMap,
+    mut globals: &mut GlobalMap,
     depth: usize,
 ) -> ParseResult<Value> {
     let ch = stream.next().unwrap();
@@ -803,10 +876,11 @@ fn parse_include(
         true,
     )?;
 
+    // Check type of the filename string.
     if value.get_type() != Type::Str {
         return parse_err(
             stream.file(),
-            ExpectedType(value.get_type(), Type::Str, line, col),
+            ExpectedType(Type::Str, value.get_type(), line, col),
         );
     }
 
@@ -842,7 +916,7 @@ fn parse_include(
         ch => {
             return parse_err(
                 stream.file(),
-                InvalidClosingBracket(ch, Some('>'), stream.line(), stream.col() - 1),
+                InvalidClosingBracket(Some('>'), ch, stream.line(), stream.col() - 1),
             )
         }
     }
@@ -850,7 +924,7 @@ fn parse_include(
     Ok(value)
 }
 
-// Try to perform a unary operation on a single value.
+// Tries to perform a unary operation on a single value.
 fn unary_op_on_value(
     stream: &CharStream,
     val: Value,
@@ -880,7 +954,7 @@ fn unary_op_on_value(
     })
 }
 
-// Try to perform an operation on two values.
+// Tries to perform an operation on two values.
 fn binary_op_on_values(
     stream: &CharStream,
     mut val1: Value,
@@ -937,20 +1011,38 @@ fn binary_op_on_values(
                     s.push_str(&str2);
                     s.into()
                 }
-                Arr(_) if type1 == type2 => {
-                    let (arr1, arr2) = (val1.get_arr().unwrap(), val2.get_arr().unwrap());
-                    let mut new_arr = arr::Arr::from_vec(arr1.to_vec()).unwrap();
+                Arr(_) => {
+                    match Type::most_specific(&type1, &type2) {
+                        Some((t, _)) => {
+                            let (arr1, arr2) = (val1.get_arr().unwrap(), val2.get_arr().unwrap());
+                            let (mut vec1, mut vec2) = (arr1.to_vec(), arr2.to_vec());
 
-                    // Push each val from arr2 to new_arr.
-                    // Because we know that the types are equal, we can safely unwrap below.
-                    arr2.with_each(|val| { new_arr.push(val.clone()).unwrap(); });
+                            let mut vec = Vec::with_capacity(vec1.len() + vec2.len());
+                            vec.append(&mut vec1);
+                            vec.append(&mut vec2);
 
-                    new_arr.into()
+                            // Get the inner type.
+                            let arr = if let Arr(ref t) = t {
+                                // Because we know the type already, we can safely use `_unchecked`.
+                                arr::Arr::from_vec_unchecked(vec, t.deref().clone())
+                            } else {
+                                panic!("Logic error")
+                            };
+
+                            arr.into()
+                        }
+                        None => {
+                            return parse_err(
+                                stream.file(),
+                                BinaryOperatorError(type1, type2, op, line, col),
+                            )
+                        }
+                    }
                 }
                 _ => {
                     return parse_err(
                         stream.file(),
-                        BinaryOperatorError(type2, type1, op, line, col),
+                        BinaryOperatorError(type1, type2, op, line, col),
                     )
                 }
             }
@@ -964,7 +1056,7 @@ fn binary_op_on_values(
                 _ => {
                     return parse_err(
                         stream.file(),
-                        BinaryOperatorError(type2, type1, op, line, col),
+                        BinaryOperatorError(type1, type2, op, line, col),
                     )
                 }
             }
@@ -978,7 +1070,7 @@ fn binary_op_on_values(
                 _ => {
                     return parse_err(
                         stream.file(),
-                        BinaryOperatorError(type2, type1, op, line, col),
+                        BinaryOperatorError(type1, type2, op, line, col),
                     )
                 }
             }
@@ -1002,7 +1094,7 @@ fn binary_op_on_values(
                 _ => {
                     return parse_err(
                         stream.file(),
-                        BinaryOperatorError(type2, type1, op, line, col),
+                        BinaryOperatorError(type1, type2, op, line, col),
                     )
                 }
             }
@@ -1019,7 +1111,7 @@ fn binary_op_on_values(
                 _ => {
                     return parse_err(
                         stream.file(),
-                        BinaryOperatorError(type2, type1, op, line, col),
+                        BinaryOperatorError(type1, type2, op, line, col),
                     )
                 }
             }
@@ -1027,14 +1119,14 @@ fn binary_op_on_values(
         _ => {
             return parse_err(
                 stream.file(),
-                BinaryOperatorError(type2, type1, op, line, col),
+                BinaryOperatorError(type1, type2, op, line, col),
             )
         }
     })
 }
 
-// Find the next non-whitespace character, ignoring comments, and update stream position.
-// Return true if such a character was found or false if we got to the end of the stream.
+// Finds the next non-whitespace character, ignoring comments, and update stream position.
+// Returns true if such a character was found or false if we got to the end of the stream.
 fn find_char(mut stream: CharStream) -> bool {
     while let Some(ch) = stream.peek() {
         match ch {
@@ -1101,7 +1193,7 @@ fn check_value_end(stream: &CharStream, cur_brace: Option<char>) -> ParseResult<
                     if is_end_delimiter(ch) && Some(ch) != cur_brace {
                         parse_err(
                             stream.file(),
-                            InvalidClosingBracket(ch, cur_brace, stream.line(), stream.col()),
+                            InvalidClosingBracket(cur_brace, ch, stream.line(), stream.col()),
                         )
                     } else {
                         Ok(())

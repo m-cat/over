@@ -2,7 +2,7 @@
 
 use std::fmt;
 
-/// Enum of possible types for `Value`.
+/// Enum of possible types for `Value`s.
 #[derive(Clone, Debug)]
 pub enum Type {
     /// A type used to indicate an empty Arr.
@@ -31,17 +31,21 @@ pub enum Type {
 
 impl Type {
     /// Returns true if this type is strictly the same as `other`.
+    /// Usually you want to use `eq()` instead.
     pub fn is(&self, other: &Type) -> bool {
         use self::Type::*;
 
         match *self {
             Any => if let Any = *other { true } else { false },
+
             Null => if let Null = *other { true } else { false },
             Bool => if let Bool = *other { true } else { false },
             Int => if let Int = *other { true } else { false },
             Frac => if let Frac = *other { true } else { false },
             Char => if let Char = *other { true } else { false },
             Str => if let Str = *other { true } else { false },
+            Obj => if let Obj = *other { true } else { false },
+
             Arr(ref t1) => {
                 if let Arr(ref t2) = *other {
                     t1.is(t2)
@@ -49,6 +53,7 @@ impl Type {
                     false
                 }
             }
+
             Tup(ref tvec1) => {
                 if let Tup(ref tvec2) = *other {
                     if tvec1.len() != tvec2.len() {
@@ -59,7 +64,97 @@ impl Type {
                     false
                 }
             }
-            Obj => if let Obj = *other { true } else { false },
+        }
+    }
+
+    /// Returns true if this `Type` contains `Any`.
+    pub fn has_any(&self) -> bool {
+        match *self {
+            Type::Any => true,
+            Type::Arr(ref t) => Self::has_any(t),
+            Type::Tup(ref tvec) => tvec.iter().any(|t| Self::has_any(t)),
+            _ => false,
+        }
+    }
+
+    /// Returns a type with the most specificity that can be applied to the two input types
+    /// as well as `true` if the type is not maximally specific, that is, it contains `Any`.
+    /// If no single type can be applied to both input types (e.g. the types are Str and Int),
+    /// returns `None`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # #[macro_use] extern crate over;
+    /// # fn main() {
+    ///
+    /// use over::types::Type;
+    /// use over::types::Type::*;
+    /// use over::value::Value;
+    ///
+    /// let val1: Value = tup!(arr![], arr![2]).into();
+    /// let val2: Value = tup!(arr!['c'], arr![]).into();
+    ///
+    /// let (specific_type, has_any) =
+    ///     Type::most_specific(&val1.get_type(), &val2.get_type()).unwrap();
+    ///
+    /// assert_eq!(specific_type, Tup(vec![Arr(Box::new(Char)), Arr(Box::new(Int))]));
+    /// assert!(has_any);
+    ///
+    /// # }
+    /// ```
+    pub fn most_specific(type1: &Type, type2: &Type) -> Option<(Type, bool)> {
+        use self::Type::*;
+
+        if let Any = *type2 {
+            return Some((type1.clone(), true));
+        }
+
+        match *type1 {
+            Any => Some((type2.clone(), true)),
+
+            Arr(ref t1) => {
+                if let Arr(ref t2) = *type2 {
+                    Self::most_specific(t1, t2).map(|(t, any)| (Arr(Box::new(t)), any))
+                } else {
+                    None
+                }
+            }
+
+            Tup(ref tvec1) => {
+                if let Tup(ref tvec2) = *type2 {
+                    if tvec1.len() == tvec2.len() {
+                        let mut has_any = false;
+
+                        let tvec: Option<Vec<Type>> = tvec1
+                            .iter()
+                            .zip(tvec2.iter())
+                            .map(|(t1, t2)| {
+                                Self::most_specific(t1, t2).map(|(t, any)| {
+                                    if !has_any && any {
+                                        has_any = any;
+                                    }
+                                    t
+                                })
+                            })
+                            .collect();
+
+                        tvec.map(|tvec| (Tup(tvec), has_any))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+
+            ref t => {
+                if t == type2 {
+                    Some((t.clone(), false))
+                } else {
+                    None
+                }
+            }
         }
     }
 }

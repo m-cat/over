@@ -39,8 +39,21 @@ pub enum Value {
     Obj(obj::Obj),
 }
 
+macro_rules! get_fn {
+    ( $doc:expr, $name:tt, $type:ty, $variant:ident ) => {
+        #[doc=$doc]
+        pub fn $name(&self) -> OverResult<$type> {
+            if let Value::$variant(ref inner) = *self {
+                Ok(inner.clone())
+            } else {
+                Err(OverError::TypeMismatch(Type::$variant, self.get_type()))
+            }
+        }
+    }
+}
+
 impl Value {
-    /// Returns true iff this `Value` is null.
+    /// Returns true if this `Value` is null.
     pub fn is_null(&self) -> bool {
         if let Value::Null = *self { true } else { false }
     }
@@ -56,61 +69,54 @@ impl Value {
             Frac(_) => Type::Frac,
             Char(_) => Type::Char,
             Str(_) => Type::Str,
-            Arr(ref arr) => Type::Arr(Box::new(arr.get_type())),
-            Tup(ref tup) => Type::Tup(tup.get_type()),
+            Arr(ref arr) => Type::Arr(Box::new(arr.inner_type())),
+            Tup(ref tup) => Type::Tup(tup.inner_type_vec()),
             Obj(_) => Type::Obj,
         }
     }
 
-    /// Returns the `bool` contained in this `Value`.
-    /// Returns an error if this `Value` is not `Bool`.
-    pub fn get_bool(&self) -> OverResult<bool> {
-        if let Value::Bool(inner) = *self {
-            Ok(inner)
-        } else {
-            Err(OverError::TypeMismatch(self.get_type(), Type::Bool))
-        }
-    }
-
-    /// Returns the `BigInt` contained in this `Value`.
-    /// Returns an error if this `Value` is not `Int`.
-    pub fn get_int(&self) -> OverResult<BigInt> {
-        if let Value::Int(ref inner) = *self {
-            Ok(inner.clone())
-        } else {
-            Err(OverError::TypeMismatch(self.get_type(), Type::Int))
-        }
-    }
-
-    /// Returns the `BigFraction` contained in this `Value`.
-    /// Returns an error if this `Value` is not `Frac`.
-    pub fn get_frac(&self) -> OverResult<BigRational> {
-        if let Value::Frac(ref inner) = *self {
-            Ok(inner.clone())
-        } else {
-            Err(OverError::TypeMismatch(self.get_type(), Type::Frac))
-        }
-    }
-
-    /// Returns the `char` contained in this `Value`.
-    /// Returns an error if this `Value` is not `Char`.
-    pub fn get_char(&self) -> OverResult<char> {
-        if let Value::Char(inner) = *self {
-            Ok(inner)
-        } else {
-            Err(OverError::TypeMismatch(self.get_type(), Type::Char))
-        }
-    }
-
-    /// Returns the `String` contained in this `Value`.
-    /// Returns an error if this `Value` is not `Str`.
-    pub fn get_str(&self) -> OverResult<String> {
-        if let Value::Str(ref inner) = *self {
-            Ok(inner.clone())
-        } else {
-            Err(OverError::TypeMismatch(self.get_type(), Type::Str))
-        }
-    }
+    get_fn!(
+        "Returns the `bool` contained in this `Value`. \
+             Returns an error if this `Value` is not `Bool`.",
+        get_bool,
+        bool,
+        Bool
+    );
+    get_fn!(
+        "Returns the `BigInt` contained in this `Value`. \
+             Returns an error if this `Value` is not `Int`.",
+        get_int,
+        BigInt,
+        Int
+    );
+    get_fn!(
+        "Returns the `BigRational` contained in this `Value`. \
+             Returns an error if this `Value` is not `Frac`.",
+        get_frac,
+        BigRational,
+        Frac
+    );
+    get_fn!(
+        "Returns the `char` contained in this `Value`. \
+             Returns an error if this `Value` is not `Char`.",
+        get_char,
+        char,
+        Char
+    );
+    get_fn!(
+        "Returns the `String` contained in this `Value`. \
+             Returns an error if this `Value` is not `Str`.",
+        get_str,
+        String,
+        Str
+    );
+    get_fn!(
+        "Returns the `Obj` contained in this `Value`. \
+             Returns an error if this `Value` is not `Obj`.",
+        get_obj,
+        obj::Obj,
+        Obj
+    );
 
     /// Returns the `Arr` contained in this `Value`.
     /// Returns an error if this `Value` is not `Arr`.
@@ -119,8 +125,8 @@ impl Value {
             Ok(inner.clone())
         } else {
             Err(OverError::TypeMismatch(
-                self.get_type(),
                 Type::Arr(Box::new(Type::Any)),
+                self.get_type(),
             ))
         }
     }
@@ -131,17 +137,7 @@ impl Value {
         if let Value::Tup(ref inner) = *self {
             Ok(inner.clone())
         } else {
-            Err(OverError::TypeMismatch(self.get_type(), Type::Tup(vec![])))
-        }
-    }
-
-    /// Returns the `Obj` contained in this `Value`.
-    /// Returns an error if this `Value` is not `Obj`.
-    pub fn get_obj(&self) -> OverResult<obj::Obj> {
-        if let Value::Obj(ref inner) = *self {
-            Ok(inner.clone())
-        } else {
-            Err(OverError::TypeMismatch(self.get_type(), Type::Obj))
+            Err(OverError::TypeMismatch(Type::Tup(vec![]), self.get_type()))
         }
     }
 }

@@ -1,7 +1,6 @@
 //! `Obj` module.
 //! A hashmap of keys to values, where values can be any type, including other objects.
 
-#![allow(missing_docs)]
 #![allow(unused_imports)] // will complain about num_traits::Zero otherwise
 
 use {INDENT_STEP, OverResult};
@@ -12,7 +11,6 @@ use num::rational::BigRational;
 use num_traits::Zero;
 use parse;
 use parse::format::Format;
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert;
 use std::fmt;
@@ -21,23 +19,25 @@ use std::rc::Rc;
 use std::str::FromStr;
 use tup::Tup;
 use types::Type;
+use util::is_digit;
 use util::write_file_str;
 use value::Value;
 
 #[derive(Clone, Debug)]
 struct ObjInner {
-    fields: HashMap<String, Value>,
+    map: HashMap<String, Value>,
     parent: Option<Obj>,
 }
 
 /// `Obj` struct.
 #[derive(Clone, Debug)]
 pub struct Obj {
-    inner: Rc<RefCell<ObjInner>>,
+    inner: Rc<ObjInner>,
 }
 
 macro_rules! get_fn {
-    ( $name:tt, $type:ty ) => {
+    ( $doc:expr, $name:tt, $type:ty ) => {
+        #[doc=$doc]
         pub fn $name(&self, field: &str) -> OverResult<$type> {
             match self.get(field) {
                 Some(value) => {
@@ -53,14 +53,84 @@ macro_rules! get_fn {
 }
 
 impl Obj {
-    /// Returns a new empty `Obj`.
-    pub fn new() -> Obj {
-        Obj {
-            inner: Rc::new(RefCell::new(ObjInner {
-                fields: HashMap::new(),
-                parent: None,
-            })),
+    /// Returns a new `Obj` created from the given `HashMap`.
+    ///
+    /// Returns an error if the map contains an invalid field name.
+    /// A valid field name must start with an alphabetic character or '_' and subsequent characters
+    /// must be alphabetic, numeric, or '_'.
+    pub fn from_map(obj_map: HashMap<String, Value>) -> OverResult<Obj> {
+        for field in obj_map.keys() {
+            if !Self::is_valid_field(field) {
+                return Err(OverError::InvalidFieldName((*field).clone()));
+            }
         }
+
+        Ok(Obj {
+            inner: Rc::new(ObjInner {
+                map: obj_map,
+                parent: None,
+            }),
+        })
+    }
+
+    /// Returns a new `Obj` created from the given `HashMap` with given `parent`.
+    ///
+    /// Returns an error if the map contains an invalid field name.
+    ///
+    /// See [`from_map`] for more details.
+    pub fn from_map_with_parent(obj_map: HashMap<String, Value>, parent: Obj) -> OverResult<Obj> {
+        for field in obj_map.keys() {
+            if !Self::is_valid_field(field) {
+                return Err(OverError::InvalidFieldName(field.clone()));
+            }
+        }
+
+        Ok(Obj {
+            inner: Rc::new(ObjInner {
+                map: obj_map,
+                parent: Some(parent),
+            }),
+        })
+    }
+
+    /// Returns a new `Obj` created from the given `HashMap`.
+    ///
+    /// It is faster than the safe version, [`from_map`], if you know every field has a valid name.
+    /// You can check ahead of time whether a field is valid with [`is_valid_field`].
+    ///
+    /// See [`from_map`] for more details.
+    pub fn from_map_unchecked(obj_map: HashMap<String, Value>) -> Obj {
+        Obj {
+            inner: Rc::new(ObjInner {
+                map: obj_map,
+                parent: None,
+            }),
+        }
+    }
+
+    /// Returns a new `Obj` created from the given `HashMap` with given `parent`.
+    ///
+    /// It is faster than the safe version, [`from_map_with_parent`], if you know every field has
+    /// a valid name. You can check ahead of time whether a field is valid with [`is_valid_field`].
+    ///
+    /// See [`from_map`] for more details.
+    pub fn from_map_with_parent_unchecked(obj_map: HashMap<String, Value>, parent: Obj) -> Obj {
+        Obj {
+            inner: Rc::new(ObjInner {
+                map: obj_map,
+                parent: Some(parent),
+            }),
+        }
+    }
+
+    /// Returns the map of values in this `Obj`. Parent field/value pairs are excluded.
+    pub fn to_map(&self) -> HashMap<String, Value> {
+        self.inner.map.clone()
+    }
+
+    /// Returns a reference to the inner map of this `Obj`.
+    pub fn map_ref(&self) -> &HashMap<String, Value> {
+        &self.inner.map
     }
 
     /// Returns a new `Obj` loaded from a file.
@@ -78,13 +148,12 @@ impl Obj {
         write_file_str(path, &self.write_str()).map_err(OverError::from)
     }
 
+    /// Writes this `Obj` to a `String`.
+    ///
+    /// # Notes
+    /// See `write_to_file`.
     pub fn write_str(&self) -> String {
         self.format(false, 0)
-    }
-
-    /// Returns the map of values in this `Arr`. Parent field/value pairs are excluded.
-    pub fn to_map(&self) -> HashMap<String, Value> {
-        self.inner.borrow().fields.clone()
     }
 
     /// Iterates over each `(String, Value)` pair in `self`, applying `f`.
@@ -92,19 +161,19 @@ impl Obj {
     where
         F: FnMut(&String, &Value),
     {
-        for (field, value) in &self.inner.borrow().fields {
+        for (field, value) in &self.inner.map {
             f(field, value)
         }
     }
 
-    /// Returns the number of fields for this `Obj` (children/parents not included).
+    /// Returns the number of fields for this `Obj` (parent fields not included).
     pub fn len(&self) -> usize {
-        self.inner.borrow().fields.len()
+        self.inner.map.len()
     }
 
     /// Returns whether this `Obj` is empty.
     pub fn is_empty(&self) -> bool {
-        self.inner.borrow().fields.is_empty()
+        self.inner.map.is_empty()
     }
 
     /// Returns whether `self` and `other` point to the same data.
@@ -112,32 +181,17 @@ impl Obj {
         Rc::ptr_eq(&self.inner, &other.inner)
     }
 
-    /// Returns true iff the `Obj` contains `field`.
+    /// Returns true if this `Obj` contains `field`.
     pub fn contains(&self, field: &str) -> bool {
-        self.inner.borrow().fields.contains_key(field)
-    }
-
-    /// Removes a field and its associated value from the `Obj`.
-    pub fn remove(&mut self, field: &str) -> Option<Value> {
-        match self.inner.borrow_mut().fields.remove(field) {
-            Some(value) => Some(value),
-            None => None,
-        }
-    }
-
-    /// Clears all fields from the `Obj`.
-    pub fn clear(&mut self) {
-        self.inner.borrow_mut().fields.clear();
+        self.inner.map.contains_key(field)
     }
 
     /// Gets the `Value` associated with `field`.
     pub fn get(&self, field: &str) -> Option<Value> {
-        let inner = self.inner.borrow();
-
-        match inner.fields.get(field) {
+        match self.inner.map.get(field) {
             Some(value) => Some(value.clone()),
             None => {
-                match inner.parent {
+                match self.inner.parent {
                     Some(ref parent) => parent.get(field),
                     None => None,
                 }
@@ -148,12 +202,10 @@ impl Obj {
     /// Gets the `Value` associated with `field` and the `Obj` where it was found (either `self` or
     /// one of its parents).
     pub fn get_with_source(&self, field: &str) -> Option<(Value, Obj)> {
-        let inner = self.inner.borrow();
-
-        match inner.fields.get(field) {
+        match self.inner.map.get(field) {
             Some(value) => Some((value.clone(), self.clone())),
             None => {
-                match inner.parent {
+                match self.inner.parent {
                     Some(ref parent) => parent.get_with_source(field),
                     None => None,
                 }
@@ -161,59 +213,115 @@ impl Obj {
         }
     }
 
-    get_fn!(get_bool, bool);
-    get_fn!(get_int, BigInt);
-    get_fn!(get_frac, BigRational);
-    get_fn!(get_char, char);
-    get_fn!(get_str, String);
-    get_fn!(get_arr, Arr);
-    get_fn!(get_tup, Tup);
-    get_fn!(get_obj, Obj);
-
-    /// Sets the `Value` for `field`.
-    pub fn set(&mut self, field: &str, value: Value) {
-        let _ = self.inner.borrow_mut().fields.insert(
-            String::from(field),
-            value,
-        );
-    }
+    get_fn!(
+        "Returns the `bool` found at `field`. \
+             Returns an error if the field was not found \
+             or if the `Value` at `field` is not `Bool`.",
+        get_bool,
+        bool
+    );
+    get_fn!(
+        "Returns the `BigInt` found at `field`. \
+             Returns an error if the field was not found \
+             or if the `Value` at `field` is not `Int`.",
+        get_int,
+        BigInt
+    );
+    get_fn!(
+        "Returns the `BigRational` found at `field`. \
+             Returns an error if the field was not found \
+             or if the `Value` at `field` is not `Frac`.",
+        get_frac,
+        BigRational
+    );
+    get_fn!(
+        "Returns the `char` found at `field`. \
+             Returns an error if the field was not found \
+             or if the `Value` at `field` is not `Char`.",
+        get_char,
+        char
+    );
+    get_fn!(
+        "Returns the `String` found at `field`. \
+             Returns an error if the field was not found \
+             or if the `Value` at `field` is not `Str`.",
+        get_str,
+        String
+    );
+    get_fn!(
+        "Returns the `Arr` found at `field`. \
+             Returns an error if the field was not found \
+             or if the `Value` at `field` is not `Arr`.",
+        get_arr,
+        Arr
+    );
+    get_fn!(
+        "Returns the `Tup` found at `field`. \
+             Returns an error if the field was not found \
+             or if the `Value` at `field` is not `Tup`.",
+        get_tup,
+        Tup
+    );
+    get_fn!(
+        "Returns the `Obj` found at `field`. \
+             Returns an error if the field was not found \
+             or if the `Value` at `field` is not `Obj`.",
+        get_obj,
+        Obj
+    );
 
     /// Returns whether this `Obj` has a parent.
     pub fn has_parent(&self) -> bool {
-        self.inner.borrow().parent.is_some()
+        self.inner.parent.is_some()
     }
 
     /// Returns the parent for this `Obj`.
     pub fn get_parent(&self) -> Option<Obj> {
-        match self.inner.borrow().parent {
+        match self.inner.parent {
             Some(ref parent) => Some(parent.clone()),
             None => None,
         }
     }
 
-    /// Sets the parent for this `Obj`.
-    /// Circular references in parents are not allowed.
-    pub fn set_parent(&mut self, parent: &Obj) -> OverResult<()> {
-        // Test for a circular reference.
-        let mut cur_parent = parent.clone();
-        if self.ptr_eq(&cur_parent) {
-            return Err(OverError::CircularParentReferences);
-        }
-        while cur_parent.has_parent() {
-            cur_parent = cur_parent.get_parent().unwrap();
-            if self.ptr_eq(&cur_parent) {
-                return Err(OverError::CircularParentReferences);
+    /// Returns true if `field` is a valid field name for an `Obj`.
+    ///
+    /// The first character must be alphabetic or '_'. Subsequent characters are allowed to be
+    /// alphabetic, digits, or '_'.
+    pub fn is_valid_field(field: &str) -> bool {
+        let mut first = true;
+
+        for ch in field.chars() {
+            if first {
+                if !Self::is_valid_field_char(ch, true) {
+                    return false;
+                }
+                first = false;
+            } else if !Self::is_valid_field_char(ch, false) {
+                return false;
             }
         }
 
-        self.inner.borrow_mut().parent = Some(parent.clone());
-        Ok(())
+        true
+    }
+
+    /// Returns true if the given char is valid for a field, depending on whether it is the first
+    /// char or not.
+    ///
+    /// See [`is_valid_field`] for more details.
+    pub fn is_valid_field_char(ch: char, first: bool) -> bool {
+        match ch {
+            ch if ch.is_alphabetic() => true,
+            ch if is_digit(ch) => !first,
+            '_' => true,
+            '^' => first,
+            _ => false,
+        }
     }
 }
 
 impl Default for Obj {
     fn default() -> Self {
-        Self::new()
+        Self::from_map_unchecked(map!{})
     }
 }
 
@@ -231,11 +339,15 @@ impl FromStr for Obj {
     }
 }
 
+/// For two Objs to be equal, the following two checks must pass:
+/// 1. If either Obj has a parent, then both must have parents and the parents must be equal.
+/// 2. The two Objs must have all the same fields pointing to the same values.
 impl PartialEq for Obj {
     fn eq(&self, other: &Self) -> bool {
-        let inner = self.inner.borrow();
-        let other_inner = other.inner.borrow();
+        let inner = &self.inner;
+        let other_inner = &other.inner;
 
+        // Check parent equality.
         if inner.parent.is_some() && other_inner.parent.is_some() {
             let parent = self.get_parent().unwrap();
             let other_parent = other.get_parent().unwrap();
@@ -246,6 +358,7 @@ impl PartialEq for Obj {
             return false;
         }
 
-        inner.fields == other_inner.fields
+        // Check HashMap equality.
+        inner.map == other_inner.map
     }
 }

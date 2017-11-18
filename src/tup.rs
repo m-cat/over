@@ -3,7 +3,6 @@
 
 use {INDENT_STEP, OverError, OverResult};
 use parse::format::Format;
-use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
 use types::Type;
@@ -12,37 +11,36 @@ use value::Value;
 #[derive(Clone, Debug)]
 struct TupInner {
     vec: Vec<Value>,
-    tvec: Vec<Type>,
+    inner_tvec: Vec<Type>,
 }
 
 /// `Tup` struct.
 #[derive(Clone, Debug)]
 pub struct Tup {
-    inner: Rc<RefCell<TupInner>>,
+    inner: Rc<TupInner>,
 }
 
 impl Tup {
-    /// Creates a new, empty Tup.
-    pub fn new() -> Tup {
-        Tup {
-            inner: Rc::new(RefCell::new(TupInner {
-                vec: Vec::new(),
-                tvec: Vec::new(),
-            })),
-        }
-    }
-
-    /// Creates and returns a new `Tup` from a vector of values.
+    /// Returns a new `Tup` from the given vector of `Value`s.
     pub fn from_vec(values: Vec<Value>) -> Tup {
         let tvec: Vec<Type> = values.iter().map(|val| val.get_type()).collect();
-        let vec = values;
 
-        Tup { inner: Rc::new(RefCell::new(TupInner { vec, tvec })) }
+        Tup {
+            inner: Rc::new(TupInner {
+                vec: values,
+                inner_tvec: tvec,
+            }),
+        }
     }
 
     /// Returns the vector of values in this `Tup`.
     pub fn to_vec(&self) -> Vec<Value> {
-        self.inner.borrow().vec.clone()
+        self.inner.vec.clone()
+    }
+
+    /// Returns a reference to the inner vec of this `Tup`.
+    pub fn vec_ref(&self) -> &Vec<Value> {
+        &self.inner.vec
     }
 
     /// Iterates over each `Value` in `self`, applying `Fn` `f`.
@@ -50,61 +48,45 @@ impl Tup {
     where
         F: FnMut(&Value),
     {
-        for value in &self.inner.borrow().vec {
+        for value in &self.inner.vec {
             f(value)
         }
-    }
-
-    /// Returns the type vector of this `Tup`.
-    pub fn get_type(&self) -> Vec<Type> {
-        self.inner.borrow().tvec.clone()
     }
 
     /// Gets the value at `index`.
     /// Returns an error if `index` is out of bounds.
     pub fn get(&self, index: usize) -> OverResult<Value> {
-        let inner = self.inner.borrow();
-
-        if index >= inner.vec.len() {
+        if index >= self.inner.vec.len() {
             Err(OverError::TupOutOfBounds(index))
         } else {
-            Ok(inner.vec[index].clone())
+            Ok(self.inner.vec[index].clone())
         }
     }
 
+    /// Returns the type vector of this `Tup`.
+    pub fn inner_type_vec(&self) -> Vec<Type> {
+        self.inner.inner_tvec.clone()
+    }
+
     /// Returns the length of this `Tup`.
-    // TODO: test this
     pub fn len(&self) -> usize {
-        self.inner.borrow().vec.len()
+        self.inner.vec.len()
     }
 
     /// Returns whether this `Tup` is empty.
     pub fn is_empty(&self) -> bool {
-        self.inner.borrow().vec.is_empty()
+        self.inner.vec.is_empty()
     }
 
     /// Returns whether `self` and `other` point to the same data.
     pub fn ptr_eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.inner, &other.inner)
     }
-
-    /// Sets the value at `index` to `value`.
-    /// Returns an error if `index` is out of bounds.
-    pub fn set(&mut self, index: usize, value: Value) -> OverResult<()> {
-        let mut inner = self.inner.borrow_mut();
-
-        if index >= inner.vec.len() {
-            Err(OverError::TupOutOfBounds(index))
-        } else {
-            inner.vec[index] = value;
-            Ok(())
-        }
-    }
 }
 
 impl Default for Tup {
     fn default() -> Self {
-        Self::new()
+        Self::from_vec(vec![])
     }
 }
 
@@ -114,21 +96,19 @@ impl fmt::Display for Tup {
     }
 }
 
-impl PartialEq for Tup {
-    fn eq(&self, other: &Self) -> bool {
-        let inner = self.inner.borrow();
-        let other_inner = other.inner.borrow();
-
-        if inner.tvec != other_inner.tvec {
-            return false;
-        }
-
-        inner.vec == other_inner.vec
-    }
-}
-
 impl From<Vec<Value>> for Tup {
     fn from(vec: Vec<Value>) -> Self {
         Self::from_vec(vec)
+    }
+}
+
+impl PartialEq for Tup {
+    fn eq(&self, other: &Self) -> bool {
+        // Quickly return false if the types don't match.
+        if self.inner.inner_tvec != other.inner.inner_tvec {
+            return false;
+        }
+
+        self.inner.vec == other.inner.vec
     }
 }

@@ -25,7 +25,7 @@ pub enum ParseErrorKind {
     DuplicateGlobal(String, usize, usize),
     ExpectedType(Type, Type, usize, usize),
     GlobalNotFound(String, usize, usize),
-    InvalidClosingBracket(char, Option<char>, usize, usize),
+    InvalidClosingBracket(Option<char>, char, usize, usize),
     InvalidEscapeChar(char, usize, usize),
     InvalidFieldChar(char, usize, usize),
     InvalidFieldName(String, usize, usize),
@@ -63,7 +63,7 @@ impl fmt::Display for ParseError {
         }
 
         match (*self).kind {
-            BinaryOperatorError(ref found, ref expected, ref op, ref line, ref col) => {
+            BinaryOperatorError(ref expected, ref found, ref op, ref line, ref col) => {
                 write!(
                     f,
                     "Could not apply operator {} on types {} and {} at line {}, column {}",
@@ -92,7 +92,7 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            ExpectedType(ref found, ref expected, ref line, ref col) => {
+            ExpectedType(ref expected, ref found, ref line, ref col) => {
                 write!(
                     f,
                     "Expected {} at line {}, column {}; found {}",
@@ -111,7 +111,7 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            InvalidClosingBracket(ref found, ref expected, ref line, ref col) => {
+            InvalidClosingBracket(ref expected, ref found, ref line, ref col) => {
                 write!(
                     f,
                     "Invalid closing bracket '{}' at line {}, column {}; expected {}",

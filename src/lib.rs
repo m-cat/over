@@ -6,6 +6,8 @@ extern crate num;
 extern crate num_traits;
 
 #[macro_use]
+mod util;
+#[macro_use]
 pub mod macros;
 
 pub mod arr;
@@ -16,7 +18,6 @@ pub mod types;
 pub mod value;
 
 mod parse;
-mod util;
 
 #[cfg(test)]
 mod tests;

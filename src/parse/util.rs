@@ -27,19 +27,6 @@ pub fn is_value_end_char(ch: char) -> bool {
     is_whitespace(ch) || is_end_delimiter(ch) || is_operator(ch)
 }
 
-/// Returns true if the given char is valid for a field, given whether it is the first char or not.
-/// The first character must be alphabetic or '_'.
-/// Subsequent characters are allowed to be alphabetic, digits, or '_'.
-pub fn is_valid_field_char(ch: char, first: bool) -> bool {
-    match ch {
-        ch if ch.is_alphabetic() => true,
-        ch if is_digit(ch) => !first,
-        '_' => true,
-        '^' => first,
-        _ => false,
-    }
-}
-
 /// Returns true if the character is either whitespace or '#' (start of a comment).
 pub fn is_whitespace(ch: char) -> bool {
     ch.is_whitespace() || ch == '#'

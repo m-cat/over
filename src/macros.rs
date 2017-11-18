@@ -5,10 +5,10 @@
 macro_rules! int {
     ( $int:expr ) => (
         {
-            use num::bigint::BigInt;
+            use ::num::bigint::BigInt;
 
-            let b: BigInt = $int.into();
-            b
+            let _b: BigInt = $int.into();
+            _b
         }
     );
 }
@@ -18,9 +18,7 @@ macro_rules! int {
 macro_rules! frac {
     ( $int1:expr, $int2:expr ) => (
         {
-            use num::rational::BigRational;
-
-            BigRational::new($int1.into(), $int2.into())
+            ::num::rational::BigRational::new($int1.into(), $int2.into())
         }
     );
 }
@@ -33,14 +31,14 @@ macro_rules! frac {
 #[macro_export]
 macro_rules! arr {
     [] => {
-        $crate::arr::Arr::new()
+        $crate::arr::Arr::from_vec(vec![]).unwrap()
     };
     [ $( $elem:expr ),+ , ] => {
         // Rule with trailing comma.
-        try_arr![$( $elem ),+].unwrap()
+        try_arr![ $( $elem ),+ ].unwrap()
     };
     [ $( $elem:expr ),+ ] => {
-        try_arr![$( $elem ),+].unwrap()
+        try_arr![ $( $elem ),+ ].unwrap()
     };
 }
 
@@ -51,13 +49,11 @@ macro_rules! arr {
 macro_rules! try_arr {
     [ $( $elem:expr ),+ , ] => {
         // Rule with trailing comma.
-        try_arr![$( $elem ),+]
+        try_arr![ $( $elem ),+ ]
     };
     [ $( $elem:expr ),+ ] => {
         {
-            use $crate::arr::Arr;
-
-            Arr::from_vec(vec![ $( $elem.into() ),+ ])
+            $crate::arr::Arr::from_vec(vec![ $( $elem.into() ),+ ])
         }
     };
 }
@@ -67,35 +63,67 @@ macro_rules! try_arr {
 #[macro_export]
 macro_rules! tup {
     ( $( $elem:expr ),* , ) => {
-        tup!($( $elem ),*)
+        tup!( $( $elem ),* )
     };
     ( $( $elem:expr ),* ) => {
         {
-            use $crate::tup::Tup;
-
-            Tup::from_vec(vec![ $( $elem.into() ),+ ])
+            $crate::tup::Tup::from_vec(vec![ $( $elem.into() ),+ ])
         }
     };
 }
 
 /// Given an array of field/value pairs, returns an `Obj` containing each pair.
+/// For a non-panicking version, see `try_obj!`.
+///
+/// # Panics
+/// Panics if a field name is invalid.
 #[macro_export]
 macro_rules! obj {
-    { $( $field:expr => $inner:expr ),* , } => {
-        // Rule with trailing comma.
-        obj!{ $( $field => $inner ),* };
+    {} => {
+        $crate::obj::Obj::from_map_unchecked(::std::collections::HashMap::new())
     };
-    { $( $field:expr => $inner:expr ),* } => {
+    { $( $field:expr => $inner:expr ),+ , } => {
+        // Rule with trailing comma.
+        try_obj!{ $( $field => $inner ),+ }.unwrap()
+    };
+    { $( $field:expr => $inner:expr ),+ } => {
+        try_obj!{ $( $field => $inner ),+ }.unwrap()
+    };
+}
+
+/// Given a list of field to value pairs, returns an `Obj` with the fields and values.
+/// Returns an `OverResult` instead of panicking on error. To create an empty `Obj`, use `obj!` as
+/// it will never fail.
+#[macro_export]
+macro_rules! try_obj {
+    { $( $field:expr => $inner:expr ),+ , } => {
+        // Rule with trailing comma.
+        try_obj!{ $( $field => $inner ),* };
+    };
+    { $( $field:expr => $inner:expr ),+ } => {
+        #[allow(unknown_lints)]
+        #[allow(useless_let_if_seq)]
         {
             use $crate::obj::Obj;
 
-            let mut obj = Obj::new();
+            let mut _map = ::std::collections::HashMap::new();
+            let mut _parent: Option<$crate::value::Value> = None;
 
             $(
-                obj.set($field, $inner.into());
+                if $field == "^" {
+                    _parent = Some($inner.into());
+                } else {
+                    _map.insert($field.into(), $inner.into());
+                }
             )*
 
-            obj
+            match _parent {
+                Some(parent) => match parent.get_obj() {
+                    Ok(parent) => Obj::from_map_with_parent(_map, parent),
+                    e @ Err(_) => e,
+                }
+                None => Obj::from_map(_map),
+            }
         }
     };
 }
@@ -125,25 +153,26 @@ mod tests {
         assert_eq!(
             try_arr![arr![1, 1], arr!['c']],
             Err(OverError::ArrTypeMismatch(
-                Arr(Box::new(Char)),
                 Arr(Box::new(Int)),
+                Arr(Box::new(Char)),
             ))
         );
-        assert_eq!(try_arr![1, 'c'], Err(OverError::ArrTypeMismatch(Char, Int)));
+        assert_eq!(try_arr![1, 'c'], Err(OverError::ArrTypeMismatch(Int, Char)));
     }
 
     #[test]
     fn obj_basic() {
-        let mut obj = Obj::new();
-        obj.set("a", 1.into());
-        obj.set("b", arr![1, 2].into());
+        let obj = Obj::from_map_unchecked(
+            map!{"a".into() => 1.into(),
+                                               "b".into() => arr![1, 2].into()},
+        );
 
         assert_eq!(
             obj,
             obj!{
-            "a" => 1,
-            "b" => arr![1, 2]
-        }
+                "a" => 1,
+                "b" => arr![1, 2]
+            }
         );
     }
 }

@@ -13,11 +13,12 @@ use types::Type;
 pub enum OverError {
     ArrOutOfBounds(usize),
     ArrTypeMismatch(Type, Type),
-    CircularParentReferences,
     FieldNotFound(String),
+    InvalidFieldName(String),
     NoParentFound,
     ParseError(String),
     TupOutOfBounds(usize),
+    TupTypeMismatch(Type, Type, usize),
     TypeMismatch(Type, Type),
 
     IoError(String),
@@ -29,22 +30,29 @@ impl fmt::Display for OverError {
 
         match *self {
             ArrOutOfBounds(ref index) => write!(f, "Arr index out of bounds: {}", index),
-            ArrTypeMismatch(ref found, ref expected) => {
+            ArrTypeMismatch(ref expected, ref found) => {
                 write!(
                     f,
-                    "Arr inner types do not match: found {}, expected {}",
-                    found,
-                    expected
+                    "Arr inner types do not match: expected {}, found {}",
+                    expected,
+                    found
                 )
             }
-            CircularParentReferences => {
-                write!(f, "Circular references among parents are not allowed")
-            }
             FieldNotFound(ref field) => write!(f, "Field not found: {}", field),
+            InvalidFieldName(ref field) => write!(f, "Invalid field name: {}", field),
             NoParentFound => write!(f, "No parent found for this obj"),
             TupOutOfBounds(ref index) => write!(f, "Tup index out of bounds: {}", index),
-            TypeMismatch(ref found, ref expected) => {
-                write!(f, "Type mismatch: found {}, expected {}", found, expected)
+            TupTypeMismatch(ref expected, ref found, ref index) => {
+                write!(
+                    f,
+                    "Tup inner types do not match at index {}: expected {}, found {}",
+                    index,
+                    expected,
+                    found
+                )
+            }
+            TypeMismatch(ref expected, ref found) => {
+                write!(f, "Type mismatch: expected {}, found {}", expected, found)
             }
 
             ParseError(ref error) |
@@ -60,10 +68,11 @@ impl Error for OverError {
         match *self {
             ArrOutOfBounds(_) => "Arr index out of bounds",
             ArrTypeMismatch(_, _) => "Arr inner types do not match",
-            CircularParentReferences => "Circular references among parents are not allowed",
             FieldNotFound(_) => "Field not found",
+            InvalidFieldName(_) => "Invalid field name",
             NoParentFound => "No parent found for this obj",
             TupOutOfBounds(_) => "Tup index out of bounds",
+            TupTypeMismatch(_, _, _) => "Tup inner types do not match",
             TypeMismatch(_, _) => "Type mismatch",
 
             ParseError(ref error) |

@@ -5,8 +5,23 @@ extern crate over;
 use num::ToPrimitive;
 use over::OverError;
 use over::obj::Obj;
+use over::types::Type;
 use over::value::Value;
 
+// Display nicely-formatted values on failure.
+macro_rules! test_eq {
+    ( $left:expr, $right:expr ) => {
+        {
+            if $left != $right {
+                panic!(format!("Left did not equal right.\nLeft: {}\nRight: {}\n",
+                       $left,
+                       $right));
+            }
+        }
+    }
+}
+
+// Make comparisons with ints a bit more concise.
 fn get_int(obj: &Obj, field: &str) -> i64 {
     obj.get_int(field).unwrap().to_i64().unwrap()
 }
@@ -16,7 +31,7 @@ fn get_int(obj: &Obj, field: &str) -> i64 {
 fn empty() {
     let obj = Obj::from_file("tests/test_files/empty.over").unwrap();
 
-    assert_eq!(obj.len(), 0);
+    test_eq!(obj.len(), 0);
 }
 
 // Test reading basic Ints, Strs, Bools, and Null.
@@ -25,29 +40,29 @@ fn empty() {
 fn basic() {
     let obj = Obj::from_file("tests/test_files/basic.over").unwrap();
 
-    assert_eq!(get_int(&obj, "_a1"), 1);
-    assert_eq!(get_int(&obj, "a2"), 2);
-    assert_eq!(get_int(&obj, "_"), 0);
-    assert_eq!(obj.get("b").unwrap(), "Smörgåsbord");
-    assert_eq!(get_int(&obj, "c"), 10);
-    assert_eq!(get_int(&obj, "d"), 20);
-    assert_eq!(get_int(&obj, "eee"), 2);
-    assert_eq!(get_int(&obj, "f"), 3);
-    assert_eq!(get_int(&obj, "g_"), 4);
-    assert_eq!(obj.get("Hello").unwrap(), "Hello");
-    assert_eq!(obj.get("i_robot").unwrap(), "not #a comment");
-    assert_eq!(get_int(&obj, "j"), 4);
-    assert_eq!(obj.get("k").unwrap(), "hi");
-    assert_eq!(obj.get("l").unwrap(), "$\\\"");
-    assert_eq!(obj.get("m").unwrap(), "m");
-    assert_eq!(obj.get("n").unwrap(), true);
-    assert_eq!(obj.get("o").unwrap(), false);
-    assert_eq!(obj.get("p").unwrap(), "Hello");
-    assert_eq!(get_int(&obj, "q"), 0);
-    assert_eq!(obj.get("r").unwrap(), Value::Null);
-    assert_eq!(obj.get("s").unwrap(), '\'');
-    assert_eq!(obj.get("t").unwrap(), '\n');
-    assert_eq!(obj.get("u").unwrap(), ' ');
+    test_eq!(get_int(&obj, "_a1"), 1);
+    test_eq!(get_int(&obj, "a2"), 2);
+    test_eq!(get_int(&obj, "_"), 0);
+    test_eq!(obj.get("b").unwrap(), "Smörgåsbord");
+    test_eq!(get_int(&obj, "c"), 10);
+    test_eq!(get_int(&obj, "d"), 20);
+    test_eq!(get_int(&obj, "eee"), 2);
+    test_eq!(get_int(&obj, "f"), 3);
+    test_eq!(get_int(&obj, "g_"), 4);
+    test_eq!(obj.get("Hello").unwrap(), "Hello");
+    test_eq!(obj.get("i_robot").unwrap(), "not #a comment");
+    test_eq!(get_int(&obj, "j"), 4);
+    test_eq!(obj.get("k").unwrap(), "hi");
+    test_eq!(obj.get("l").unwrap(), "$\\\"");
+    test_eq!(obj.get("m").unwrap(), "m");
+    test_eq!(obj.get("n").unwrap(), true);
+    test_eq!(obj.get("o").unwrap(), false);
+    test_eq!(obj.get("p").unwrap(), "Hello");
+    test_eq!(get_int(&obj, "q"), 0);
+    test_eq!(obj.get("r").unwrap(), Value::Null);
+    test_eq!(obj.get("s").unwrap(), '\'');
+    test_eq!(obj.get("t").unwrap(), '\n');
+    test_eq!(obj.get("u").unwrap(), ' ');
 }
 
 // Test the example from the README.
@@ -100,30 +115,28 @@ fn example() {
 fn obj() {
     let obj = Obj::from_file("tests/test_files/obj.over").unwrap();
 
-    assert_eq!(obj.get_obj("empty").unwrap().len(), 0);
-    assert_eq!(obj.get_obj("empty2").unwrap().len(), 0);
+    test_eq!(obj.get_obj("empty").unwrap().len(), 0);
+    test_eq!(obj.get_obj("empty2").unwrap().len(), 0);
 
     assert!(!obj.contains("bools"));
-    let mut bools = Obj::new();
-    bools.set("t", true.into());
-    bools.set("f", false.into());
+    let bools = obj!{"t" => true, "f" => false};
 
     let outie = obj.get_obj("outie").unwrap();
-    assert_eq!(outie.get_parent().unwrap(), bools);
-    assert_eq!(get_int(&outie, "z"), 0);
+    test_eq!(outie.get_parent().unwrap(), bools);
+    test_eq!(get_int(&outie, "z"), 0);
     let inner = outie.get_obj("inner").unwrap();
-    assert_eq!(get_int(&inner, "z"), 1);
+    test_eq!(get_int(&inner, "z"), 1);
     let innie = inner.get_obj("innie").unwrap();
-    assert_eq!(get_int(&innie, "a"), 1);
-    assert_eq!(inner.get("b").unwrap(), tup!(1, 2,));
-    assert_eq!(get_int(&outie, "c"), 3);
-    assert_eq!(outie.get("d").unwrap(), Obj::new());
+    test_eq!(get_int(&innie, "a"), 1);
+    test_eq!(inner.get("b").unwrap(), tup!(1, 2,));
+    test_eq!(get_int(&outie, "c"), 3);
+    test_eq!(outie.get("d").unwrap(), obj!{});
 
     let obj_arr = obj.get_obj("obj_arr").unwrap();
-    assert_eq!(obj_arr.get("arr").unwrap(), arr![1, 2, 3]);
+    test_eq!(obj_arr.get("arr").unwrap(), arr![1, 2, 3]);
 
-    assert_eq!(obj.get_int("dot").unwrap(), int!(1));
-    assert_eq!(obj.get_bool("dot_glob").unwrap(), true);
+    test_eq!(obj.get_int("dot").unwrap(), int!(1));
+    test_eq!(obj.get_bool("dot_glob").unwrap(), true);
 }
 
 // Test that globals are referenced correctly and don't get included as fields.
@@ -133,12 +146,12 @@ fn globals() {
 
     let sub = obj.get_obj("sub").unwrap();
 
-    assert_eq!(sub.get_int("a").unwrap(), int!(1));
-    assert_eq!(get_int(&sub, "b"), 2);
-    assert_eq!(sub.len(), 2);
+    test_eq!(sub.get_int("a").unwrap(), int!(1));
+    test_eq!(get_int(&sub, "b"), 2);
+    test_eq!(sub.len(), 2);
 
-    assert_eq!(get_int(&obj, "c"), 2);
-    assert_eq!(obj.len(), 2);
+    test_eq!(get_int(&obj, "c"), 2);
+    test_eq!(obj.len(), 2);
 }
 
 // Test parsing of numbers.
@@ -146,34 +159,34 @@ fn globals() {
 fn numbers() {
     let obj = Obj::from_file("tests/test_files/numbers.over").unwrap();
 
-    assert_eq!(get_int(&obj, "neg"), -4);
-    assert_eq!(obj.get_frac("pos").unwrap(), frac!(4, 1));
-    assert_eq!(obj.get_frac("neg_zero").unwrap(), frac!(0, 1));
-    assert_eq!(obj.get_frac("pos_zero").unwrap(), frac!(0, 1));
+    test_eq!(get_int(&obj, "neg"), -4);
+    test_eq!(obj.get_frac("pos").unwrap(), frac!(4, 1));
+    test_eq!(obj.get_frac("neg_zero").unwrap(), frac!(0, 1));
+    test_eq!(obj.get_frac("pos_zero").unwrap(), frac!(0, 1));
 
-    assert_eq!(obj.get("frac_from_dec").unwrap(), frac!(13, 10));
-    assert_eq!(obj.get("neg_ffd").unwrap(), frac!(-13, 10));
-    assert_eq!(obj.get("pos_ffd").unwrap(), frac!(13, 10));
+    test_eq!(obj.get("frac_from_dec").unwrap(), frac!(13, 10));
+    test_eq!(obj.get("neg_ffd").unwrap(), frac!(-13, 10));
+    test_eq!(obj.get("pos_ffd").unwrap(), frac!(13, 10));
 
-    assert_eq!(obj.get("add_dec").unwrap(), frac!(3, 1));
-    assert_eq!(obj.get("sub_dec").unwrap(), frac!(-3, 1));
+    test_eq!(obj.get("add_dec").unwrap(), frac!(3, 1));
+    test_eq!(obj.get("sub_dec").unwrap(), frac!(-3, 1));
 
     let frac = obj.get_frac("big_frac").unwrap();
     assert!(frac > frac!(91_000_000, 1));
     assert!(frac < frac!(92_000_000, 1));
 
-    assert_eq!(obj.get("frac1").unwrap(), frac!(1, 2));
-    assert_eq!(obj.get("frac2").unwrap(), frac!(1, 2));
-    assert_eq!(obj.get("frac3").unwrap(), frac!(0, 10));
-    assert_eq!(obj.get("frac4").unwrap(), frac!(-5, 4));
-    assert_eq!(obj.get("frac5").unwrap(), frac!(1, 1));
+    test_eq!(obj.get("frac1").unwrap(), frac!(1, 2));
+    test_eq!(obj.get("frac2").unwrap(), frac!(1, 2));
+    test_eq!(obj.get("frac3").unwrap(), frac!(0, 10));
+    test_eq!(obj.get("frac4").unwrap(), frac!(-5, 4));
+    test_eq!(obj.get("frac5").unwrap(), frac!(1, 1));
 
-    assert_eq!(obj.get("whole_frac").unwrap(), frac!(3, 2));
-    assert_eq!(obj.get("neg_whole_frac").unwrap(), frac!(-21, 4));
-    assert_eq!(obj.get("dec_frac").unwrap(), frac!(1, 2));
-    assert_eq!(obj.get("dec_frac2").unwrap(), frac!(-1, 2));
+    test_eq!(obj.get("whole_frac").unwrap(), frac!(3, 2));
+    test_eq!(obj.get("neg_whole_frac").unwrap(), frac!(-21, 4));
+    test_eq!(obj.get("dec_frac").unwrap(), frac!(1, 2));
+    test_eq!(obj.get("dec_frac2").unwrap(), frac!(-1, 2));
 
-    assert_eq!(
+    test_eq!(
         obj.get("array").unwrap(),
         arr![
             obj.get_frac("whole_frac").unwrap(),
@@ -183,7 +196,7 @@ fn numbers() {
         ]
     );
 
-    assert_eq!(
+    test_eq!(
         obj.get("tup").unwrap(),
         tup!(
             frac!(-1,2),
@@ -193,37 +206,60 @@ fn numbers() {
         )
     );
 
-    assert_eq!(obj.get("var_frac").unwrap(), frac!(-1, 2));
+    test_eq!(obj.get("var_frac").unwrap(), frac!(-1, 2));
 }
 
 #[test]
 fn operations() {
     let obj = Obj::from_file("tests/test_files/operations.over").unwrap();
 
-    assert_eq!(obj.get("mod1").unwrap(), int!(5));
-    assert_eq!(obj.get("mod2").unwrap(), int!(0));
+    test_eq!(obj.get("mod1").unwrap(), int!(5));
+    test_eq!(obj.get("mod2").unwrap(), int!(0));
 
-    assert_eq!(obj.get("arr1").unwrap(), arr![3, 4]);
-    assert_eq!(obj.get("arr2").unwrap(), arr![3, 4]);
-    assert_eq!(obj.get("arr3").unwrap(), arr![3, 4]);
-    assert_eq!(obj.get("arr4").unwrap(), arr![arr![1]]);
+    test_eq!(obj.get("arr1").unwrap(), arr![3, 4]);
+    test_eq!(obj.get("arr2").unwrap(), arr![3, 4]);
+    test_eq!(obj.get("arr3").unwrap(), arr![3, 4]);
+    test_eq!(obj.get("arr4").unwrap(), arr![arr![1]]);
 
-    assert_eq!(
+    test_eq!(
         obj.get("arr_complex").unwrap(),
         arr![arr![arr![1, 2]], arr![arr![3]]]
     );
 
-    assert_eq!(obj.get("str1").unwrap(), "cat");
-    assert_eq!(obj.get("str2").unwrap(), "cat");
-    assert_eq!(obj.get("str3").unwrap(), "cat");
-    assert_eq!(obj.get("str4").unwrap(), "cat");
+    test_eq!(obj.get("str1").unwrap(), "cat");
+    test_eq!(obj.get("str2").unwrap(), "cat");
+    test_eq!(obj.get("str3").unwrap(), "cat");
+    test_eq!(obj.get("str4").unwrap(), "cat");
+
+    test_eq!(
+        obj.get("tup_complex").unwrap(),
+        tup!(arr![arr![], arr![arr![], arr![1, 2, 3], arr![]]])
+    );
+}
+
+#[test]
+fn any_type() {
+    let obj = Obj::from_file("tests/test_files/any_type.over").unwrap();
+
+    let arr1 = obj.get("arr1").unwrap();
+    let arr2 = arr![arr![arr![]], arr![arr![2]], arr![arr![]]];
+    test_eq!(arr1.get_type(), Type::Arr(Box::new(arr2.inner_type())));
+    test_eq!(arr1, arr2);
+
+    test_eq!(
+        obj.get("arr2").unwrap(),
+        arr![
+            tup!(arr![arr![]], arr![arr![2]]),
+            tup!(arr![arr![2]], arr![arr![]]),
+        ]
+    );
 }
 
 #[test]
 fn includes() {
     let obj = Obj::from_file("tests/test_files/includes.over").unwrap();
 
-    assert_eq!(
+    test_eq!(
         obj.get("include_obj").unwrap(),
         obj!{
             "obj2" => obj!{"test" => 1},
@@ -234,12 +270,12 @@ fn includes() {
     let s = "Multi-line string\nwhich should be included verbatim\n\
              in another file. \"Quotes\" and $$$\ndon't need to be escaped.\n";
 
-    assert_eq!(obj.get("include").unwrap(), s);
-    assert_eq!(obj.get("include2").unwrap(), obj.get("include").unwrap());
+    test_eq!(obj.get("include").unwrap(), s);
+    test_eq!(obj.get("include2").unwrap(), obj.get("include").unwrap());
 
-    assert_eq!(obj.get("include_arr").unwrap(), arr![1, 2, 3, 4, 5]);
+    test_eq!(obj.get("include_arr").unwrap(), arr![1, 2, 3, 4, 5]);
 
-    assert_eq!(
+    test_eq!(
         obj.get("include_tup").unwrap(),
         tup!("hello", 1, 'c', frac!(3, 3))
     );
@@ -259,7 +295,7 @@ fn write() {
                 obj1.write_to_file(write_path).unwrap();
 
                 let obj2 = Obj::from_file(write_path).unwrap();
-                assert_eq!(obj1, obj2);
+                test_eq!(obj1, obj2);
             }
         }
     }
@@ -296,9 +332,23 @@ fn errors() {
     }
 
     error_helper!(
+        "any1.over",
+        "Could not apply operator + on types Arr(Arr(Arr(Int))) and \
+         Arr(Arr(Arr(Char))) at line 1, column 26"
+    );
+    error_helper!(
+        "any2.over",
+        "Expected Tup(Arr(Arr(Int)), Arr(Arr(Int))) at line 4, column 5; \
+         found Tup(Arr(Arr(Char)), Arr(Arr(Char)))"
+    );
+    error_helper!(
+        "any3.over",
+        "Could not apply operator + on types Arr(Tup(Arr(Arr(Int)), Arr(Arr(Int)))) \
+         and Arr(Tup(Arr(Arr(Char)), Arr(Arr(Char)))) at line 5, column 16"
+    );
+    error_helper!(
         "arr_types.over",
-        "Arr inner types do not match: found Arr(Tup(Int, Char)), \
-         expected Arr(Tup(Int, Int)) at line 2, col 37"
+        "Expected Arr(Tup(Int, Int)) at line 2, column 37; found Arr(Tup(Int, Char))"
     );
     error_helper!("decimal.over", "Invalid numeric value at line 1, column 10");
     error_helper!(
@@ -322,6 +372,10 @@ fn errors() {
     error_helper!(
         "dup_global.over",
         "Duplicate global \"@global\" at line 2, column 1"
+    );
+    error_helper!(
+        "dup_parents.over",
+        "Duplicate field \"^\" at line 5, column 9"
     );
     error_helper!(
         "empty_field.over",
@@ -354,7 +408,7 @@ fn errors() {
     );
     error_helper!(
         "fuzz6.over",
-        "Arr inner types do not match: found Frac, expected Int at line 22, col 1"
+        "Expected Int at line 22, column 1; found Frac"
     );
     error_helper!(
         "fuzz7.over",
@@ -366,7 +420,7 @@ fn errors() {
     );
     error_helper!(
         "fuzz9.over",
-        "Type mismatch: found Null, expected Obj at line 18, col 4"
+        "Type mismatch: expected Obj, found Null at line 18, col 4"
     );
     error_helper!("fuzz10.over", "Unexpected end at line 1");
     error_helper!(
@@ -403,6 +457,10 @@ fn errors() {
     error_helper!(
         "op_arr.over",
         "Could not apply operator + on types Arr(Int) and Arr(Char) at line 1, column 13"
+    );
+    error_helper!(
+        "op_arr_tup.over",
+        "Could not apply operator + on types Arr(Any) and Tup() at line 1, column 11"
     );
     error_helper!(
         "op_end.over",

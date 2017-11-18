@@ -1,68 +1,73 @@
 //! Tests.
 
 use error::OverError;
-use obj::Obj;
 use types::Type;
 use value::Value;
+
+// Display nicely-formatted values on failure.
+macro_rules! test_eq {
+    ( $left:expr, $right:expr ) => {
+        {
+            if $left != $right {
+                panic!(format!("Left did not equal right.\nLeft: {}\nRight: {}\n",
+                       $left,
+                       $right));
+            }
+        }
+    }
+}
 
 // Test setting and getting values.
 #[test]
 fn set_and_get() {
-    let mut obj = Obj::new();
+    let obj =
+        obj!{
+            "null" => Value::Null,
+            "bool" => true,
+            "int" => -5,
+            "frac" => frac!(1, 1),
+            "char" => 'x',
+            "str1" => "hello",
+            "str2" => "yo",
+            "arr" => arr![-5, 0, 1],
+        };
 
     // Null
 
-    obj.set("null", Value::Null);
-    assert_eq!(obj.get("null").unwrap(), Value::Null);
+    test_eq!(obj.get("null").unwrap(), Value::Null);
     assert!(obj.get("null").unwrap().is_null());
 
     // Bool
 
-    obj.set("bool", true.into());
-    assert_eq!(obj.get_bool("bool").unwrap(), true);
+    test_eq!(obj.get_bool("bool").unwrap(), true);
     assert_eq!(obj.get_bool("bool"), Ok(true));
 
     // Int
 
-    obj.set("int", (-5).into());
     assert_eq!(obj.get_int("int"), Ok((-5).into()));
 
     // Frac
 
-    obj.set("frac", frac!(1, 1).into());
     assert_eq!(obj.get_frac("frac"), Ok(frac!(1, 1)));
 
     // Char
 
-    obj.set("char", 'x'.into());
     assert_eq!(obj.get_char("char"), Ok('x'));
 
     // String
 
-    obj.set("str1", "hello".into());
-    obj.set("str2", "yo".into());
-
-    assert_eq!(obj.get("str1").unwrap(), "hello");
-    assert_eq!(obj.get("str2").unwrap(), String::from("yo"));
+    let yo = String::from("yo");
+    test_eq!(obj.get("str1").unwrap(), "hello");
+    test_eq!(obj.get("str2").unwrap(), yo);
 
     // Arr
 
-    let arr = arr![-5, 0, 1];
-    obj.set("arr", arr.clone().into());
-    assert_eq!(obj.get("arr").unwrap(), arr);
-
-    // Tup
-
-    // TODO:
-
-    // Obj
-
-    // TODO:
+    test_eq!(obj.get("arr").unwrap(), arr![-5, 0, 1]);
 
     // Errors
 
     let res = obj.get("bool").unwrap().get_str();
-    assert_eq!(res, Err(OverError::TypeMismatch(Type::Bool, Type::Str)));
+    assert_eq!(res, Err(OverError::TypeMismatch(Type::Str, Type::Bool)));
 
     assert_eq!(obj.get(""), None);
     assert_eq!(obj.get("cool"), None);
@@ -71,13 +76,24 @@ fn set_and_get() {
 // Test setting and getting values through parents.
 #[test]
 fn parents() {
-    let mut obj = Obj::new();
-    let mut def1 = Obj::new();
-    let mut def2 = Obj::new();
-
-    obj.set_parent(&def1).unwrap();
-
-    def1.set_parent(&def2).unwrap();
+    let def2 =
+        obj!{
+            "bool2" => true,
+            "bool3" => true
+        };
+    let def1 =
+        obj!{
+            "^" => def2.clone(),
+            "bool1" => true,
+            "bool2" => false,
+            "test2" => "bye",
+        };
+    let obj =
+        obj!{
+            "^" => def1.clone(),
+            "bool1" => true,
+            "test1" => "hi",
+        };
 
     // Test object equality when parents are involved.
 
@@ -85,81 +101,64 @@ fn parents() {
     assert_ne!(def1, def2);
     assert_ne!(obj, def2);
 
-    let mut obj2 = Obj::new();
-    obj2.set_parent(&def1).unwrap();
-
-    assert_eq!(obj, obj2);
-
-    obj2.set("test", true.into());
+    let obj2 = obj!{ "^" => def1.clone() };
     assert_ne!(obj, obj2);
+
+    let obj2 = obj!{ "^" => def1.clone(), "test1" => "hi", "bool1" => true };
+    test_eq!(obj, obj2);
 
     // Bool
 
-    obj.set("bool1", true.into());
-
-    def1.set("bool1", true.into());
-    def1.set("bool2", false.into());
-
-    def2.set("bool2", true.into());
-    def2.set("bool3", true.into());
-
     let (v, o) = obj.get_with_source("bool1").unwrap();
-    assert_eq!(v, true);
+    test_eq!(v, true);
     assert!(o.ptr_eq(&obj));
 
     let (v, o) = obj.get_with_source("bool2").unwrap();
-    assert_eq!(v, false);
+    test_eq!(v, false);
     assert!(o.ptr_eq(&def1));
 
     let (v, o) = obj.get_with_source("bool3").unwrap();
-    assert_eq!(v, true);
+    test_eq!(v, true);
     assert!(o.ptr_eq(&def2));
 
     // String
 
-    let str1 = String::from("hi");
-    let str2 = String::from("bye");
-
-    obj.set("test1", str1.clone().into());
-
-    def1.set("test2", str2.clone().into());
-
-    assert_eq!(obj.get("test1").unwrap(), str1);
-    assert_eq!(obj.get("test2").unwrap(), str2);
+    test_eq!(obj.get("test1").unwrap(), "hi");
+    test_eq!(obj.get("test2").unwrap(), "bye");
 }
 
 #[test]
 fn types() {
-    let mut obj = Obj::new();
+    let obj =
+        obj!{
+            "bool" => true,
+            "str" => "",
+            "arr_char" => arr!['w', 'o', 'w'],
+            "arr_arr" => try_arr![arr![], arr![true, false]].unwrap(),
+            "tup" => tup!('!', tup!(-1), try_arr!["test", "heya"].unwrap()),
+        };
 
     // Null
 
     let null = Value::Null;
-    assert_eq!(null.get_type(), Type::Null);
+    test_eq!(null.get_type(), Type::Null);
 
     // Bool
 
-    obj.set("bool", true.into());
-    assert_eq!(obj.get("bool").unwrap().get_type(), Type::Bool);
+    test_eq!(obj.get("bool").unwrap().get_type(), Type::Bool);
 
     // String
 
-    obj.set("str", "".into());
-    assert_eq!(obj.get("str").unwrap().get_type(), Type::Str);
+    test_eq!(obj.get("str").unwrap().get_type(), Type::Str);
 
     // Arr
 
-    obj.set("arr_char", arr!['w', 'o', 'w'].into());
-    assert_eq!(
+    test_eq!(
         obj.get("arr_char").unwrap().get_type(),
         Type::Arr(Box::new(Type::Char))
     );
 
-    obj.set(
-        "arr_arr",
-        try_arr![arr![], arr![true, false]].unwrap().into(),
-    );
-    assert_eq!(
+    test_eq!(
         obj.get("arr_arr").unwrap().get_type(),
         Type::Arr(Box::new(Type::Arr(Box::new(Type::Bool))))
     );
@@ -176,11 +175,7 @@ fn types() {
         Type::Tup(vec![Type::Int]),
         Type::Arr(Box::new(Type::Str)),
     ]);
-    obj.set(
-        "tup",
-        tup!('!', tup!(-1), try_arr!["test", "heya"].unwrap()).into(),
-    );
-    assert_eq!(obj.get("tup").unwrap().get_type(), tup_type);
+    test_eq!(obj.get("tup").unwrap().get_type(), tup_type);
 
     // Misc
 
