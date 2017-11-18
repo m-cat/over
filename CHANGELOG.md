@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.4.1] - 2017-11-18
+
+### Changed
+- Fix `Type::most_specific` returning false positives for `has_any`
+
 ## [0.4.0] - 2017-11-18
 
 ### Added
