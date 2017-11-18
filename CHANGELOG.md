@@ -1,5 +1,26 @@
 # Change Log
 
+## [0.4.0] - 2017-11-18
+
+### Added
+- Dot notation for object field access in .over files.
+- Add `Obj::map_ref`, `Arr::vec_ref` and `Tup::vec_ref`
+- `try_obj!` macro
+- `Obj::to_map`
+- `Obj::is_valid_field` and `Obj::is_valid_field_char`
+- `Type::has_any` and `Type::most_specific`
+
+### Changed
+- Update README.
+- Whitespace after fields in .over files is no longer mandatory.
+- Fix display formatting of container values.
+- Fix incorrect `Arr` and `Tup` type calculations with `Any`.
+- Change the ways `Obj`, `Arr`, and `Tup` can be initialized
+- Rename `Arr::get_type` to `inner_type` and `Tup::get_type` to `inner_type_vec`
+
+### Removed
+- Remove all mutation functions on `Obj`, `Arr`, and `Tup`
+
 ## [0.3.0] - 2017-11-12
 
 ### Added

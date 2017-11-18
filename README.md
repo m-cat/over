@@ -9,8 +9,8 @@ OVER: the best data format.
 
 - [OVER](#over)
     - [About](#about)
-    - [Usage](#usage)
     - [Example](#example)
+    - [Usage](#usage)
     - [Features](#features)
         - [Containers](#containers)
         - [Variables](#variables)
@@ -31,6 +31,7 @@ OVER: the best data format.
         - [Obj](#obj)
     - [What's wrong with JSON?](#whats-wrong-with-json)
     - [What about YAML/others?](#what-about-yamlothers)
+    - [Dependencies](#dependencies)
     - [Change Log](#change-log)
     - [Copyright](#copyright)
 
@@ -473,6 +474,10 @@ As you can see, OVER is much more understandable, even if you're not at all fami
 Look at [this answer](https://stackoverflow.com/a/18708156) on StackExchange for an example of how unintuitive YAML is. Trust me, that's not even the worst of it; there is a shocking amount of weirdness in the official spec. This design disaster also makes it impossible to write an efficient parser for it.
 
 Finally, as seen throughout this README, OVER manages to be more powerful than YAML while being much simpler! This may strike you as a paradox, but it is just a consequence of the thoughtless design of YAML and company (don't think I've forgotten about TOML). There are options such as [StrictYAML](https://github.com/crdoconnor/strictyaml) but they are, in my opinion, just bandaids on a broken solution.
+
+## Dependencies
+
+![dependencies](deps.png)
 
 ## Change Log
 
