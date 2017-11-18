@@ -107,11 +107,11 @@ impl Type {
         use self::Type::*;
 
         if let Any = *type2 {
-            return Some((type1.clone(), true));
+            return Some((type1.clone(), type1.has_any()));
         }
 
         match *type1 {
-            Any => Some((type2.clone(), true)),
+            Any => Some((type2.clone(), type2.has_any())),
 
             Arr(ref t1) => {
                 if let Arr(ref t2) = *type2 {
