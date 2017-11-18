@@ -77,10 +77,10 @@ impl Type {
         }
     }
 
-    /// Returns a type with the most specificity that can be applied to the two input types
-    /// as well as `true` if the type is not maximally specific, that is, it contains `Any`.
-    /// If no single type can be applied to both input types (e.g. the types are Str and Int),
-    /// returns `None`.
+    /// Returns a type with the most specificity that can be applied to the two input types as well
+    /// as `true` if the returned type is not maximally specific, that is, it contains `Any`. If no
+    /// single type can be applied to both input types (e.g. the types are `Str` and `Int`), returns
+    /// `None`.
     ///
     /// # Examples
     ///
@@ -99,7 +99,7 @@ impl Type {
     ///     Type::most_specific(&val1.get_type(), &val2.get_type()).unwrap();
     ///
     /// assert_eq!(specific_type, Tup(vec![Arr(Box::new(Char)), Arr(Box::new(Int))]));
-    /// assert!(has_any);
+    /// assert!(!has_any);
     ///
     /// # }
     /// ```

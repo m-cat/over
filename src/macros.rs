@@ -1,6 +1,6 @@
 //! Module containing crate macros.
 
-/// Given an int, returns a `BigInt`.
+/// Given an int, creates and returns a `BigInt`.
 #[macro_export]
 macro_rules! int {
     ( $int:expr ) => (
@@ -13,7 +13,7 @@ macro_rules! int {
     );
 }
 
-/// Given two ints, returns a `BigRational`.
+/// Given two ints, creates and returns a `BigRational`.
 #[macro_export]
 macro_rules! frac {
     ( $int1:expr, $int2:expr ) => (
@@ -23,8 +23,8 @@ macro_rules! frac {
     );
 }
 
-/// Given an array of elements, converts each element to values and returns an `Arr` containing a
-/// vector of the elements. For a non-panicking version, see `try_arr!`.
+/// Given a list of elements, converts each element to a `Value` and returns an `Arr` containing a
+/// vector of the values. For a non-panicking version, see `try_arr!`.
 ///
 /// # Panics
 /// Panics if the types don't check out.
@@ -42,7 +42,7 @@ macro_rules! arr {
     };
 }
 
-/// Given an array of elements, converts each element to values and returns an `Arr` containing a
+/// Given a list of elements, converts each element to a `Value` and returns an `Arr` containing a
 /// vector of the values. Returns an `OverResult` instead of panicking on error. To create an empty
 /// `Arr`, use `arr!` as it will never fail.
 #[macro_export]
@@ -58,7 +58,7 @@ macro_rules! try_arr {
     };
 }
 
-/// Given an array of elements, converts each element to values and returns a `Tup` containing a
+/// Given a list of elements, converts each element to `Value`s and returns a `Tup` containing a
 /// vector of the values.
 #[macro_export]
 macro_rules! tup {
@@ -72,7 +72,7 @@ macro_rules! tup {
     };
 }
 
-/// Given an array of field/value pairs, returns an `Obj` containing each pair.
+/// Given a list of field/value pairs, returns an `Obj` containing each pair.
 /// For a non-panicking version, see `try_obj!`.
 ///
 /// # Panics
@@ -91,7 +91,7 @@ macro_rules! obj {
     };
 }
 
-/// Given a list of field to value pairs, returns an `Obj` with the fields and values.
+/// Given a list of field to `Value` pairs, returns an `Obj` with the fields and values.
 /// Returns an `OverResult` instead of panicking on error. To create an empty `Obj`, use `obj!` as
 /// it will never fail.
 #[macro_export]
@@ -162,10 +162,8 @@ mod tests {
 
     #[test]
     fn obj_basic() {
-        let obj = Obj::from_map_unchecked(
-            map!{"a".into() => 1.into(),
-                                               "b".into() => arr![1, 2].into()},
-        );
+        let obj = Obj::from_map_unchecked(map!{"a".into() => 1.into(),
+                 "b".into() => arr![1, 2].into()});
 
         assert_eq!(
             obj,

@@ -77,7 +77,7 @@ impl Obj {
     ///
     /// Returns an error if the map contains an invalid field name.
     ///
-    /// See [`from_map`] for more details.
+    /// See `from_map` for more details.
     pub fn from_map_with_parent(obj_map: HashMap<String, Value>, parent: Obj) -> OverResult<Obj> {
         for field in obj_map.keys() {
             if !Self::is_valid_field(field) {
@@ -95,10 +95,10 @@ impl Obj {
 
     /// Returns a new `Obj` created from the given `HashMap`.
     ///
-    /// It is faster than the safe version, [`from_map`], if you know every field has a valid name.
-    /// You can check ahead of time whether a field is valid with [`is_valid_field`].
+    /// It is faster than the safe version, `from_map`, if you know every field has a valid name.
+    /// You can check ahead of time whether a field is valid with `is_valid_field`.
     ///
-    /// See [`from_map`] for more details.
+    /// See `from_map` for more details.
     pub fn from_map_unchecked(obj_map: HashMap<String, Value>) -> Obj {
         Obj {
             inner: Rc::new(ObjInner {
@@ -110,10 +110,10 @@ impl Obj {
 
     /// Returns a new `Obj` created from the given `HashMap` with given `parent`.
     ///
-    /// It is faster than the safe version, [`from_map_with_parent`], if you know every field has
-    /// a valid name. You can check ahead of time whether a field is valid with [`is_valid_field`].
+    /// It is faster than the safe version, `from_map_with_parent`, if you know every field has
+    /// a valid name. You can check ahead of time whether a field is valid with `is_valid_field`.
     ///
-    /// See [`from_map`] for more details.
+    /// See `from_map` for more details.
     pub fn from_map_with_parent_unchecked(obj_map: HashMap<String, Value>, parent: Obj) -> Obj {
         Obj {
             inner: Rc::new(ObjInner {
@@ -307,7 +307,7 @@ impl Obj {
     /// Returns true if the given char is valid for a field, depending on whether it is the first
     /// char or not.
     ///
-    /// See [`is_valid_field`] for more details.
+    /// See `is_valid_field` for more details.
     pub fn is_valid_field_char(ch: char, first: bool) -> bool {
         match ch {
             ch if ch.is_alphabetic() => true,
