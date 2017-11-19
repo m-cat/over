@@ -135,7 +135,7 @@ impl Obj {
 
     /// Returns a new `Obj` loaded from a file.
     pub fn from_file(path: &str) -> OverResult<Obj> {
-        parse::load_from_file(path).map_err(OverError::from)
+        Ok(parse::load_from_file(path)?)
     }
 
     /// Writes this `Obj` to given file in `.over` representation.
@@ -145,7 +145,7 @@ impl Obj {
     /// Also note that shorthand in the original file, including variables and file includes,
     /// is not preserved when parsing the file, and will not appear when writing to another file.
     pub fn write_to_file(&self, path: &str) -> OverResult<()> {
-        write_file_str(path, &self.write_str()).map_err(OverError::from)
+        Ok(write_file_str(path, &self.write_str())?)
     }
 
     /// Writes this `Obj` to a `String`.
@@ -335,7 +335,7 @@ impl FromStr for Obj {
     type Err = OverError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        parse::load_from_str(s).map_err(OverError::from)
+        Ok(parse::load_from_str(s)?)
     }
 }
 

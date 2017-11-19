@@ -22,14 +22,14 @@ type GlobalMap = HashMap<String, Value>;
 
 /// Parses given file as an `Obj`.
 pub fn parse_obj_file(path: &str) -> ParseResult<Obj> {
-    let stream = CharStream::from_file(path).map_err(ParseError::from)?;
+    let stream = CharStream::from_file(path)?;
     parse_obj_stream(stream)
 }
 
 /// Parses given &str as an `Obj`.
 pub fn parse_obj_str(contents: &str) -> ParseResult<Obj> {
     let contents = String::from(contents);
-    let stream = CharStream::from_string(contents).map_err(ParseError::from)?;
+    let stream = CharStream::from_string(contents)?;
     parse_obj_stream(stream)
 }
 
@@ -175,7 +175,7 @@ fn parse_field_value_pair(
 }
 
 fn parse_arr_file(path: &str) -> ParseResult<Arr> {
-    let stream = CharStream::from_file(path).map_err(ParseError::from)?;
+    let stream = CharStream::from_file(path)?;
     parse_arr_stream(stream)
 }
 
@@ -317,7 +317,7 @@ fn parse_arr(
 }
 
 fn parse_tup_file(path: &str) -> ParseResult<Tup> {
-    let stream = CharStream::from_file(path).map_err(ParseError::from)?;
+    let stream = CharStream::from_file(path)?;
     parse_tup_stream(stream)
 }
 
@@ -625,7 +625,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
         let whole: BigInt = if s1.is_empty() {
             0u8.into()
         } else {
-            s1.parse().map_err(ParseError::from)?
+            s1.parse()?
         };
 
         // Remove trailing zeros.
@@ -634,7 +634,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
         let (decimal, dec_len): (BigInt, usize) = if s2.is_empty() {
             (0u8.into(), 1)
         } else {
-            (s2.parse().map_err(ParseError::from)?, s2.len())
+            (s2.parse()?, s2.len())
         };
 
         let f = frac_from_whole_and_dec(whole, decimal, dec_len);
@@ -645,7 +645,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
             return parse_err(stream.file(), InvalidNumeric(line, col));
         }
 
-        let i: BigInt = s1.parse().map_err(ParseError::from)?;
+        let i: BigInt = s1.parse()?;
         Ok(i.into())
     }
 }
@@ -798,7 +798,7 @@ fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
 }
 
 fn parse_str_file(path: &str) -> ParseResult<String> {
-    read_file_str(path).map_err(ParseError::from)
+    Ok(read_file_str(path)?)
 }
 
 // Gets the next Str in the character stream.
