@@ -34,6 +34,7 @@ pub fn parse_obj_str(contents: &str) -> ParseResult<Obj> {
 }
 
 // Parses an Obj given a character stream.
+#[inline]
 fn parse_obj_stream(mut stream: CharStream) -> ParseResult<Obj> {
     let mut obj: ObjMap = HashMap::new();
     let mut globals: GlobalMap = HashMap::new();
@@ -95,6 +96,7 @@ fn parse_obj(
 }
 
 // Parses a field/value pair.
+#[inline]
 fn parse_field_value_pair(
     mut stream: &mut CharStream,
     obj: &mut ObjMap,
@@ -156,7 +158,7 @@ fn parse_field_value_pair(
         globals.insert(field, value);
     } else if is_parent {
         let par = value.get_obj().map_err(|e| {
-            ParseError::from_over(e, stream.file(), value_line, value_col)
+            ParseError::from_over(&e, stream.file(), value_line, value_col)
         })?;
         *parent = Some(par);
     } else {
@@ -174,12 +176,10 @@ fn parse_field_value_pair(
     Ok(true)
 }
 
+// Parses an Arr given a file.
 fn parse_arr_file(path: &str) -> ParseResult<Arr> {
-    let stream = CharStream::from_file(path)?;
-    parse_arr_stream(stream)
-}
+    let mut stream = CharStream::from_file(path)?;
 
-fn parse_arr_stream(mut stream: CharStream) -> ParseResult<Arr> {
     let obj: ObjMap = HashMap::new();
     let mut globals: GlobalMap = HashMap::new();
 
@@ -233,7 +233,7 @@ fn parse_arr_stream(mut stream: CharStream) -> ParseResult<Arr> {
 
     let arr = Arr::from_vec_unchecked(vec, tcur);
 
-    Ok(arr.into())
+    Ok(arr)
 }
 
 // Parses a sub-Arr in a file. It *must* start with [ and end with ].
@@ -316,12 +316,10 @@ fn parse_arr(
     Ok(arr.into())
 }
 
+// Parses a Tup given a file.
 fn parse_tup_file(path: &str) -> ParseResult<Tup> {
-    let stream = CharStream::from_file(path)?;
-    parse_tup_stream(stream)
-}
+    let mut stream = CharStream::from_file(path)?;
 
-fn parse_tup_stream(mut stream: CharStream) -> ParseResult<Tup> {
     let mut vec: Vec<Value> = Vec::new();
     let obj: ObjMap = HashMap::new();
     let mut globals: GlobalMap = HashMap::new();

@@ -29,7 +29,7 @@ impl fmt::Display for OverError {
         use self::OverError::*;
 
         match *self {
-            ArrOutOfBounds(ref index) => write!(f, "Arr index out of bounds: {}", index),
+            ArrOutOfBounds(ref index) => write!(f, "Arr index {} out of bounds", index),
             ArrTypeMismatch(ref expected, ref found) => {
                 write!(
                     f,
@@ -38,10 +38,10 @@ impl fmt::Display for OverError {
                     found
                 )
             }
-            FieldNotFound(ref field) => write!(f, "Field not found: {}", field),
-            InvalidFieldName(ref field) => write!(f, "Invalid field name: {}", field),
+            FieldNotFound(ref field) => write!(f, "Field not found: \"{}\"", field),
+            InvalidFieldName(ref field) => write!(f, "Invalid field name: \"{}\"", field),
             NoParentFound => write!(f, "No parent found for this obj"),
-            TupOutOfBounds(ref index) => write!(f, "Tup index out of bounds: {}", index),
+            TupOutOfBounds(ref index) => write!(f, "Tup index {} out of bounds", index),
             TupTypeMismatch(ref expected, ref found, ref index) => {
                 write!(
                     f,

@@ -278,7 +278,7 @@ impl Error for ParseError {
 
 impl ParseError {
     /// Convert an `OverError` to a `ParseError` given line and column numbers.
-    pub fn from_over(e: OverError, file: Option<String>, line: usize, col: usize) -> Self {
+    pub fn from_over(e: &OverError, file: Option<String>, line: usize, col: usize) -> Self {
         ParseError {
             file,
             kind: ParseErrorKind::OverError(format!("{} at line {}, col {}", e, line, col)),
