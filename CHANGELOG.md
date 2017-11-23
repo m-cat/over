@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.5.0] - 2017-11-23
+
+### Added
+- Allow indexing Arr and Tup with dot notation
+
 ## [0.4.1] - 2017-11-18
 
 ### Changed
