@@ -89,13 +89,15 @@ impl Value {
         BigInt,
         Int
     );
-    get_fn!(
-        "Returns the `BigRational` contained in this `Value`. \
-             Returns an error if this `Value` is not `Frac`.",
-        get_frac,
-        BigRational,
-        Frac
-    );
+    /// Returns the `BigRational` contained in this `Value`.
+    /// Returns an error if this `Value` is not `Frac`.
+    pub fn get_frac(&self) -> OverResult<BigRational> {
+        match *self {
+            Value::Frac(ref inner) => Ok(inner.clone()),
+            Value::Int(ref inner) => Ok(frac!(inner.clone(), 1)),
+            _ => Err(OverError::TypeMismatch(Type::Frac, self.get_type())),
+        }
+    }
     get_fn!(
         "Returns the `char` contained in this `Value`. \
              Returns an error if this `Value` is not `Char`.",

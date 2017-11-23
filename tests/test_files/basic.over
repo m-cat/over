@@ -30,3 +30,5 @@ p: Hello
 q:_
 r: null
 s: '\'' t: '\n' u: ' ' v: ''' w: '$'
+
+x: 1 # Fetch this as a Frac

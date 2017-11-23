@@ -65,6 +65,10 @@ fn basic() {
     test_eq!(obj.get("s").unwrap(), '\'');
     test_eq!(obj.get("t").unwrap(), '\n');
     test_eq!(obj.get("u").unwrap(), ' ');
+    test_eq!(obj.get("v").unwrap(), '\'');
+    test_eq!(obj.get("w").unwrap(), '$');
+    test_eq!(obj.get_frac("x").unwrap(), frac!(1, 1));
+    test_eq!(obj.get("x").unwrap().get_frac().unwrap(), frac!(1, 1));
 }
 
 // Test the example from the README.
