@@ -139,6 +139,12 @@ fn obj() {
 
     test_eq!(obj.get_int("dot").unwrap(), int!(1));
     test_eq!(obj.get_bool("dot_glob").unwrap(), true);
+    test_eq!(obj.get_int("dot_tup1").unwrap(), int!(1));
+    test_eq!(obj.get_int("dot_tup2").unwrap(), int!(2));
+    test_eq!(obj.get_int("dot_arr").unwrap(), int!(1));
+    test_eq!(obj.get_int("dot_op").unwrap(), int!(4));
+
+    test_eq!(obj.get_str("dot_var").unwrap(), "test");
 }
 
 // Test that globals are referenced correctly and don't get included as fields.
@@ -371,6 +377,22 @@ fn errors() {
         "Variable \"six\" at line 3, column 10 could not be found"
     );
     error_helper!("dot5.over", "Unexpected end at line 2");
+    error_helper!(
+        "dot_global.over",
+        "Invalid character \'@\' for value at line 4, column 10"
+    );
+    error_helper!(
+        "dot_huge.over",
+        "Invalid index 348734701382471230498713241343 at line 2, column 10"
+    );
+    error_helper!(
+        "dot_tup.over",
+        "Tup index 3 out of bounds at line 2, col 10"
+    );
+    error_helper!(
+        "dot_tup2.over",
+        "Invalid character \'-\' for value at line 2, column 10"
+    );
     error_helper!(
         "dup_global.over",
         "Duplicate global \"@global\" at line 2, column 1"

@@ -6,7 +6,7 @@ use super::MAX_DEPTH;
 use super::ParseResult;
 use super::misc::format_char;
 use OverError;
-use num_bigint::ParseBigIntError;
+use num_bigint::{BigInt, ParseBigIntError};
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -25,6 +25,7 @@ pub enum ParseErrorKind {
     DuplicateGlobal(String, usize, usize),
     ExpectedType(Type, Type, usize, usize),
     GlobalNotFound(String, usize, usize),
+    InvalidIndex(BigInt, usize, usize),
     InvalidClosingBracket(Option<char>, char, usize, usize),
     InvalidEscapeChar(char, usize, usize),
     InvalidFieldChar(char, usize, usize),
@@ -180,6 +181,15 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
+            InvalidIndex(ref index, ref line, ref col) => {
+                write!(
+                    f,
+                    "Invalid index {} at line {}, column {}",
+                    index,
+                    line,
+                    col
+                )
+            }
             InvalidNumeric(ref line, ref col) => {
                 write!(f, "Invalid numeric value at line {}, column {}", line, col)
             }
@@ -262,6 +272,7 @@ impl Error for ParseError {
             InvalidIncludeChar(_, _, _) => "Invalid include character",
             InvalidIncludePath(_, _, _) => "Invalid include path",
             InvalidIncludeToken(_, _, _) => "Invalid include token",
+            InvalidIndex(_, _, _) => "Invalid index",
             InvalidNumeric(_, _) => "Invalid numeric value",
             InvalidValue(_, _, _) => "Invalid value",
             InvalidValueChar(_, _, _) => "Invalid character for value",

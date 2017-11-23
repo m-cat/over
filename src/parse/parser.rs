@@ -8,7 +8,7 @@ use super::util::*;
 use arr::{self, Arr};
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use num_traits::Zero;
+use num_traits::{ToPrimitive, Zero};
 use obj::Obj;
 use std::collections::{HashMap, VecDeque};
 use std::ops::Deref;
@@ -473,12 +473,12 @@ fn parse_value(
         '{' => parse_obj(&mut stream, &mut globals, depth + 1)?,
         '[' => parse_arr(&mut stream, obj, &mut globals, depth + 1)?,
         '(' => parse_tup(&mut stream, obj, &mut globals, depth + 1)?,
-        '@' => parse_variable(&mut stream, obj, globals, line, col)?,
+        '@' => parse_variable(&mut stream, obj, globals, line, col, depth, cur_brace)?,
         '<' => parse_include(&mut stream, obj, &mut globals, depth)?,
         ch @ '+' | ch @ '-' => parse_unary_op(&mut stream, obj, globals, depth, cur_brace, ch)?,
         ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
         ch if Obj::is_valid_field_char(ch, true) => {
-            parse_variable(&mut stream, obj, globals, line, col)?
+            parse_variable(&mut stream, obj, globals, line, col, depth, cur_brace)?
         }
         ch => {
             return parse_err(stream.file(), InvalidValueChar(ch, line, col));
@@ -567,7 +567,7 @@ fn parse_unary_op(
                 &mut globals,
                 line,
                 col,
-                depth,
+                depth + 1,
                 cur_brace,
                 false,
             )?
@@ -652,13 +652,16 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
 fn parse_variable(
     mut stream: &mut CharStream,
     obj: &ObjMap,
-    globals: &GlobalMap,
+    mut globals: &mut GlobalMap,
     line: usize,
     col: usize,
+    depth: usize,
+    cur_brace: Option<char>,
 ) -> ParseResult<Value> {
     let mut var = String::new();
     let mut is_global = false;
     let mut dot = false;
+    let mut dot_global = false;
 
     let ch = stream.peek().unwrap();
     if ch == '@' {
@@ -672,7 +675,8 @@ fn parse_variable(
             '.' => {
                 let _ = stream.next();
                 match stream.peek() {
-                    Some(ch) if Obj::is_valid_field_char(ch, true) => (),
+                    Some('@') => dot_global = true,
+                    Some(ch) if Obj::is_valid_field_char(ch, true) || is_numeric_char(ch) => (),
                     Some(ch) => {
                         return parse_err(
                             stream.file(),
@@ -728,9 +732,86 @@ fn parse_variable(
 
     if dot {
         value = match value {
+            Value::Arr(arr) => {
+                let (line, col) = (stream.line(), stream.col());
+                let value = parse_value(
+                    &mut stream,
+                    obj,
+                    &mut globals,
+                    line,
+                    col,
+                    depth + 1,
+                    cur_brace,
+                    false,
+                )?;
+
+                match value {
+                    Value::Int(int) => {
+                        match int.to_usize() {
+                            Some(index) => {
+                                arr.get(index).map_err(|e| {
+                                    ParseError::from_over(&e, stream.file(), line, col)
+                                })?
+                            }
+                            None => return parse_err(stream.file(), InvalidIndex(int, line, col)),
+                        }
+                    }
+                    _ => {
+                        return parse_err(
+                            stream.file(),
+                            ExpectedType(Type::Int, value.get_type(), line, col),
+                        )
+                    }
+                }
+            }
+            Value::Tup(tup) => {
+                let (line, col) = (stream.line(), stream.col());
+                let value = parse_value(
+                    &mut stream,
+                    obj,
+                    &mut globals,
+                    line,
+                    col,
+                    depth + 1,
+                    cur_brace,
+                    false,
+                )?;
+
+                match value {
+                    Value::Int(int) => {
+                        match int.to_usize() {
+                            Some(index) => {
+                                tup.get(index).map_err(|e| {
+                                    ParseError::from_over(&e, stream.file(), line, col)
+                                })?
+                            }
+                            None => return parse_err(stream.file(), InvalidIndex(int, line, col)),
+                        }
+                    }
+                    _ => {
+                        return parse_err(
+                            stream.file(),
+                            ExpectedType(Type::Int, value.get_type(), line, col),
+                        )
+                    }
+                }
+            }
             Value::Obj(obj) => {
                 let (line, col) = (stream.line(), stream.col());
-                parse_variable(&mut stream, obj.map_ref(), globals, line, col)?
+
+                if dot_global {
+                    return parse_err(stream.file(), InvalidValueChar('@', line, col));
+                }
+
+                parse_variable(
+                    &mut stream,
+                    obj.map_ref(),
+                    globals,
+                    line,
+                    col,
+                    depth + 1,
+                    cur_brace,
+                )?
             }
             _ => {
                 return parse_err(

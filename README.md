@@ -257,6 +257,15 @@ obj: {
     color: @colors.red
 }
 ```
+
+Arrays and tuples can also be indexed using dot notation:
+
+```
+tup: ("test" 1)
+
+one: tup.1
+test: tup.one
+```
   
 ### Arithmetic on Values and Variables
 

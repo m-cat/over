@@ -1,5 +1,6 @@
 empty: {} empty2: {}
 @bools: { t: true f: false }
+@ints: { int: 1 }
 
 outie: {
     ^: @bools
@@ -14,5 +15,14 @@ outie: {
 
 obj_arr: {arr: [1 2 3]}
 
+@zero: 0
 dot_glob: @bools.t
 dot: outie.inner.z
+dot_arr: obj_arr.arr.@zero
+dot_tup1: outie.inner.b.@zero
+dot_tup2: outie.inner.b.1
+dot_op: @ints.int+obj_arr.arr.@zero+@ints.int+outie.inner.b.0 # 3
+
+tup: ("test" 1)
+zero: 0
+dot_var: tup.zero

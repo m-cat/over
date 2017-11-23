@@ -1,0 +1,4 @@
+obj: {test: 5}
+@test: 5
+
+dot: obj.@test
