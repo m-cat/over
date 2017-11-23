@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.5.1] - 2017-11-23
+
+### Changed
+- Allow calling `get_frac()` on `Int` values.
+
 ## [0.5.0] - 2017-11-23
 
 ### Added
