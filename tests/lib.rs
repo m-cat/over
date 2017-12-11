@@ -271,14 +271,6 @@ fn any_type() {
 fn includes() {
     let obj = Obj::from_file("tests/test_files/includes.over").unwrap();
 
-    test_eq!(
-        obj.get("include_obj").unwrap(),
-        obj!{
-            "obj2" => obj!{"test" => 1},
-            "obj3" => obj!{"test" => 2},
-        }
-    );
-
     let s = "Multi-line string\nwhich should be included verbatim\n\
              in another file. \"Quotes\" and $$$\ndon't need to be escaped.\n";
 
@@ -291,6 +283,18 @@ fn includes() {
         obj.get("include_tup").unwrap(),
         tup!("hello", 1, 'c', frac!(3, 3))
     );
+
+    test_eq!(
+        obj.get("include_obj").unwrap(),
+        obj!{
+            "obj2" => obj!{"test" => 1},
+            "obj3" => obj!{"test" => 2},
+            "recursive" => obj!{"test" => 1},
+        }
+    );
+    assert!(obj.get_obj("include_obj").unwrap().ptr_eq(
+        &obj.get_obj("include_obj2").unwrap(),
+    ));
 }
 
 // TODO: Test multi-line.over (need substitution)
@@ -481,6 +485,10 @@ fn errors() {
         "include4.over",
         "Invalid include token \"Blah\" at line 1, column 8; \
          expected \"Obj\", \"Arr\", \"Tup\", or \"Str\""
+    );
+    error_helper!(
+        "include_self.over",
+        "Tried to cyclically include file \"include_self.over\" at line 1, column 11"
     );
     error_helper!(
         "op_arr.over",

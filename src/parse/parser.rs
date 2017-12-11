@@ -1,5 +1,8 @@
 //! Module containing parsing functions.
 
+#![allow(unknown_lints)]
+#![allow(too_many_arguments)]
+
 use super::{MAX_DEPTH, ParseResult};
 use super::char_stream::CharStream;
 use super::error::{ParseError, parse_err};
@@ -10,7 +13,7 @@ use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{ToPrimitive, Zero};
 use obj::Obj;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::Deref;
 use std::path::Path;
 use tup::Tup;
@@ -19,23 +22,30 @@ use value::Value;
 
 type ObjMap = HashMap<String, Value>;
 type GlobalMap = HashMap<String, Value>;
+type IncludedMap = (HashMap<String, Value>, HashSet<String>);
 
 /// Parses given file as an `Obj`.
 pub fn parse_obj_file(path: &str) -> ParseResult<Obj> {
     let stream = CharStream::from_file(path)?;
-    parse_obj_stream(stream)
+    parse_obj_stream(stream, &mut (HashMap::new(), HashSet::new()))
+}
+
+// Parses given file as an `Obj`, keeping track of already encountered includes.
+fn parse_obj_file_includes(path: &str, included: &mut IncludedMap) -> ParseResult<Obj> {
+    let stream = CharStream::from_file(path)?;
+    parse_obj_stream(stream, included)
 }
 
 /// Parses given &str as an `Obj`.
 pub fn parse_obj_str(contents: &str) -> ParseResult<Obj> {
     let contents = String::from(contents);
     let stream = CharStream::from_string(contents)?;
-    parse_obj_stream(stream)
+    parse_obj_stream(stream, &mut (HashMap::new(), HashSet::new()))
 }
 
 // Parses an Obj given a character stream.
 #[inline]
-fn parse_obj_stream(mut stream: CharStream) -> ParseResult<Obj> {
+fn parse_obj_stream(mut stream: CharStream, mut included: &mut IncludedMap) -> ParseResult<Obj> {
     let mut obj: ObjMap = HashMap::new();
     let mut globals: GlobalMap = HashMap::new();
     let mut parent = None;
@@ -46,7 +56,16 @@ fn parse_obj_stream(mut stream: CharStream) -> ParseResult<Obj> {
     }
 
     // Parse all field/value pairs for this Obj.
-    while parse_field_value_pair(&mut stream, &mut obj, &mut globals, &mut parent, 1, None)? {}
+    while parse_field_value_pair(
+        &mut stream,
+        &mut obj,
+        &mut globals,
+        &mut included,
+        &mut parent,
+        1,
+        None,
+    )?
+    {}
 
     Ok(match parent {
         Some(parent) => Obj::from_map_with_parent_unchecked(obj, parent),
@@ -58,6 +77,7 @@ fn parse_obj_stream(mut stream: CharStream) -> ParseResult<Obj> {
 fn parse_obj(
     mut stream: &mut CharStream,
     globals: &mut GlobalMap,
+    mut included: &mut IncludedMap,
     depth: usize,
 ) -> ParseResult<Value> {
     // Check depth.
@@ -82,6 +102,7 @@ fn parse_obj(
         &mut stream,
         &mut obj,
         globals,
+        &mut included,
         &mut parent,
         depth,
         Some('}'),
@@ -101,6 +122,7 @@ fn parse_field_value_pair(
     mut stream: &mut CharStream,
     obj: &mut ObjMap,
     mut globals: &mut GlobalMap,
+    mut included: &mut IncludedMap,
     parent: &mut Option<Obj>,
     depth: usize,
     cur_brace: Option<char>,
@@ -143,6 +165,7 @@ fn parse_field_value_pair(
         &mut stream,
         obj,
         &mut globals,
+        &mut included,
         value_line,
         value_col,
         depth,
@@ -177,7 +200,7 @@ fn parse_field_value_pair(
 }
 
 // Parses an Arr given a file.
-fn parse_arr_file(path: &str) -> ParseResult<Arr> {
+fn parse_arr_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Arr> {
     let mut stream = CharStream::from_file(path)?;
 
     let obj: ObjMap = HashMap::new();
@@ -199,6 +222,7 @@ fn parse_arr_file(path: &str) -> ParseResult<Arr> {
             &mut stream,
             &obj,
             &mut globals,
+            &mut included,
             value_line,
             value_col,
             1,
@@ -241,6 +265,7 @@ fn parse_arr(
     mut stream: &mut CharStream,
     obj: &ObjMap,
     mut globals: &mut GlobalMap,
+    mut included: &mut IncludedMap,
     depth: usize,
 ) -> ParseResult<Value> {
     // Check depth.
@@ -279,6 +304,7 @@ fn parse_arr(
             &mut stream,
             obj,
             &mut globals,
+            &mut included,
             value_line,
             value_col,
             depth,
@@ -317,7 +343,7 @@ fn parse_arr(
 }
 
 // Parses a Tup given a file.
-fn parse_tup_file(path: &str) -> ParseResult<Tup> {
+fn parse_tup_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Tup> {
     let mut stream = CharStream::from_file(path)?;
 
     let mut vec: Vec<Value> = Vec::new();
@@ -336,6 +362,7 @@ fn parse_tup_file(path: &str) -> ParseResult<Tup> {
             &mut stream,
             &obj,
             &mut globals,
+            &mut included,
             value_line,
             value_col,
             1,
@@ -354,6 +381,7 @@ fn parse_tup(
     mut stream: &mut CharStream,
     obj: &ObjMap,
     mut globals: &mut GlobalMap,
+    mut included: &mut IncludedMap,
     depth: usize,
 ) -> ParseResult<Value> {
     // Check depth.
@@ -390,6 +418,7 @@ fn parse_tup(
             &mut stream,
             obj,
             &mut globals,
+            &mut included,
             value_line,
             value_col,
             depth,
@@ -454,12 +483,11 @@ fn parse_field(
 }
 
 // Gets the next value in the char stream.
-#[allow(unknown_lints)]
-#[allow(too_many_arguments)]
 fn parse_value(
     mut stream: &mut CharStream,
     obj: &ObjMap,
     mut globals: &mut GlobalMap,
+    mut included: &mut IncludedMap,
     line: usize,
     col: usize,
     depth: usize,
@@ -470,15 +498,37 @@ fn parse_value(
     let res = match stream.peek().unwrap() {
         '"' => parse_str(&mut stream)?,
         '\'' => parse_char(&mut stream)?,
-        '{' => parse_obj(&mut stream, &mut globals, depth + 1)?,
-        '[' => parse_arr(&mut stream, obj, &mut globals, depth + 1)?,
-        '(' => parse_tup(&mut stream, obj, &mut globals, depth + 1)?,
-        '@' => parse_variable(&mut stream, obj, globals, line, col, depth, cur_brace)?,
-        '<' => parse_include(&mut stream, obj, &mut globals, depth)?,
-        ch @ '+' | ch @ '-' => parse_unary_op(&mut stream, obj, globals, depth, cur_brace, ch)?,
+        '{' => parse_obj(&mut stream, &mut globals, included, depth + 1)?,
+        '[' => parse_arr(&mut stream, obj, &mut globals, included, depth + 1)?,
+        '(' => parse_tup(&mut stream, obj, &mut globals, included, depth + 1)?,
+        '@' => {
+            parse_variable(
+                &mut stream,
+                obj,
+                globals,
+                included,
+                line,
+                col,
+                depth,
+                cur_brace,
+            )?
+        }
+        '<' => parse_include(&mut stream, obj, &mut globals, &mut included, depth)?,
+        ch @ '+' | ch @ '-' => {
+            parse_unary_op(&mut stream, obj, globals, included, depth, cur_brace, ch)?
+        }
         ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
         ch if Obj::is_valid_field_char(ch, true) => {
-            parse_variable(&mut stream, obj, globals, line, col, depth, cur_brace)?
+            parse_variable(
+                &mut stream,
+                obj,
+                globals,
+                included,
+                line,
+                col,
+                depth,
+                cur_brace,
+            )?
         }
         ch => {
             return parse_err(stream.file(), InvalidValueChar(ch, line, col));
@@ -506,6 +556,7 @@ fn parse_value(
                         &mut stream,
                         obj,
                         &mut globals,
+                        &mut included,
                         line2,
                         col2,
                         depth,
@@ -551,6 +602,7 @@ fn parse_unary_op(
     mut stream: &mut CharStream,
     obj: &ObjMap,
     mut globals: &mut GlobalMap,
+    mut included: &mut IncludedMap,
     depth: usize,
     cur_brace: Option<char>,
     ch: char,
@@ -565,6 +617,7 @@ fn parse_unary_op(
                 &mut stream,
                 obj,
                 &mut globals,
+                &mut included,
                 line,
                 col,
                 depth + 1,
@@ -648,11 +701,12 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
     }
 }
 
-// Parses a variable name and get a value from the corresponding variable.
+// Parses a variable name and gets a value from the corresponding variable.
 fn parse_variable(
     mut stream: &mut CharStream,
     obj: &ObjMap,
     mut globals: &mut GlobalMap,
+    mut included: &mut IncludedMap,
     line: usize,
     col: usize,
     depth: usize,
@@ -738,6 +792,7 @@ fn parse_variable(
                     &mut stream,
                     obj,
                     &mut globals,
+                    &mut included,
                     line,
                     col,
                     depth + 1,
@@ -770,6 +825,7 @@ fn parse_variable(
                     &mut stream,
                     obj,
                     &mut globals,
+                    &mut included,
                     line,
                     col,
                     depth + 1,
@@ -807,6 +863,7 @@ fn parse_variable(
                     &mut stream,
                     obj.map_ref(),
                     globals,
+                    included,
                     line,
                     col,
                     depth + 1,
@@ -924,6 +981,7 @@ fn parse_include(
     mut stream: &mut CharStream,
     obj: &ObjMap,
     mut globals: &mut GlobalMap,
+    mut included: &mut IncludedMap,
     depth: usize,
 ) -> ParseResult<Value> {
     let ch = stream.next().unwrap();
@@ -948,6 +1006,7 @@ fn parse_include(
         &mut stream,
         obj,
         &mut globals,
+        &mut included,
         line,
         col,
         depth,
@@ -964,26 +1023,69 @@ fn parse_include(
     }
 
     // Get the full path of the include file.
-    let file2 = value.get_str().unwrap();
+    let include_file = value.get_str().unwrap();
     let pathbuf = match stream.file().as_ref() {
-        Some(file1) => Path::new(file1).parent().unwrap().join(Path::new(&file2)),
-        None => Path::new(&file2).to_path_buf(),
+        Some(file) => {
+            Path::new(file).parent().unwrap().join(
+                Path::new(&include_file),
+            )
+        }
+        None => Path::new(&include_file).to_path_buf(),
     };
     let path = pathbuf.as_path();
-    let path_str = match pathbuf.as_path().to_str() {
-        Some(path) => path,
-        None => return parse_err(stream.file(), InvalidIncludePath(file2, line, col)),
-    };
     if !path.is_file() {
-        return parse_err(stream.file(), InvalidIncludePath(file2, line, col));
+        return parse_err(stream.file(), InvalidIncludePath(include_file, line, col));
     }
-    let value: Value = match token.as_str() {
-        "Obj" => parse_obj_file(path_str)?.into(),
-        "Str" => parse_str_file(path_str)?.into(),
-        "Arr" => parse_arr_file(path_str)?.into(),
-        "Tup" => parse_tup_file(path_str)?.into(),
-        _ => return parse_err(stream.file(), InvalidIncludeToken(token, tok_line, tok_col)),
+
+    // Get the include file as a path relative to the current working directory.
+    let path_str = match path.to_str() {
+        Some(path) => path,
+        None => return parse_err(stream.file(), InvalidIncludePath(include_file, line, col)),
     };
+
+    // Get the include file as an absolute path.
+    let path = match path.canonicalize() {
+        Ok(path) => path,
+        Err(_) => return parse_err(stream.file(), InvalidIncludePath(include_file, line, col)),
+    };
+    let full_path_str = match path.to_str() {
+        Some(path) => path,
+        None => return parse_err(stream.file(), InvalidIncludePath(include_file, line, col)),
+    };
+
+    // Prevent cyclic includes by temporarily storing the current file path.
+    let storing = if let Some(file) = stream.file() {
+        let full_file = String::from(Path::new(&file).canonicalize().unwrap().to_str().unwrap());
+        included.1.insert(full_file.clone());
+        Some(full_file)
+    } else {
+        None
+    };
+    if included.1.contains(full_path_str) {
+        return parse_err(stream.file(), CyclicInclude(include_file, line, col));
+    }
+
+    // Get either the tracked value or parse it if it's our first time seeing the include.
+    let value = if included.0.contains_key(full_path_str) {
+        let value = &included.0[full_path_str];
+        value.clone()
+    } else {
+        let value: Value = match token.as_str() {
+            "Obj" => parse_obj_file_includes(path_str, included)?.into(),
+            "Str" => parse_str_file(path_str)?.into(),
+            "Arr" => parse_arr_file(path_str, included)?.into(),
+            "Tup" => parse_tup_file(path_str, included)?.into(),
+            _ => return parse_err(stream.file(), InvalidIncludeToken(token, tok_line, tok_col)),
+        };
+        // Use full path as included key.
+        included.0.insert(full_path_str.into(), value.clone());
+        value
+    };
+
+    // Remove the stored file path.
+    if let Some(file) = storing {
+        included.1.remove(&file);
+    }
 
     // Go to the next non-whitespace character, or error if there is none.
     if !find_char(stream.clone()) {

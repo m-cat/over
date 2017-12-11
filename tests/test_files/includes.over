@@ -13,3 +13,5 @@ include_obj: <
         Obj
         "includes/obj1.over"
     >
+
+include_obj2: <Obj "includes/obj1.over">

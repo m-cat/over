@@ -21,6 +21,7 @@ pub fn parse_err<T>(file: Option<String>, kind: ParseErrorKind) -> ParseResult<T
 #[derive(Debug)]
 pub enum ParseErrorKind {
     BinaryOperatorError(Type, Type, char, usize, usize),
+    CyclicInclude(String, usize, usize),
     DuplicateField(String, usize, usize),
     DuplicateGlobal(String, usize, usize),
     ExpectedType(Type, Type, usize, usize),
@@ -73,6 +74,15 @@ impl fmt::Display for ParseError {
                     found,
                     line,
                     col,
+                )
+            }
+            CyclicInclude(ref file, ref line, ref col) => {
+                write!(
+                    f,
+                    "Tried to cyclically include file \"{}\" at line {}, column {}",
+                    file,
+                    line,
+                    col
                 )
             }
             DuplicateField(ref field, ref line, ref col) => {
@@ -261,6 +271,8 @@ impl Error for ParseError {
         match (*self).kind {
             BinaryOperatorError(_, _, _, _, _) |
             UnaryOperatorError(_, _, _, _) => "Could not apply operator",
+
+            CyclicInclude(_, _, _) => "Tried to cyclically include file",
             DuplicateField(_, _, _) => "Duplicate field",
             DuplicateGlobal(_, _, _) => "Duplicate global",
             ExpectedType(_, _, _, _) => "Expected different type",
