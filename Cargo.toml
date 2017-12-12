@@ -13,7 +13,7 @@ license = "MIT"
 name = "over"
 readme = "README.md"
 repository = "https://github.com/m-cat/over"
-version = "0.5.1"
+version = "0.5.2"
 
 [dependencies]
 num-bigint = "0.1.*"

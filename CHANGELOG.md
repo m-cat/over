@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.5.2] - 2017-12-12
+
+### Added
+- Tracking of includes and prevention of cyclic includes.
+
 ## [0.5.1] - 2017-11-23
 
 ### Changed
@@ -8,12 +13,12 @@
 ## [0.5.0] - 2017-11-23
 
 ### Added
-- Allow indexing Arr and Tup with dot notation
+- Allow indexing Arr and Tup with dot notation.
 
 ## [0.4.1] - 2017-11-18
 
 ### Changed
-- Fix `Type::most_specific` returning false positives for `has_any`
+- Fix `Type::most_specific` returning false positives for `has_any`.
 
 ## [0.4.0] - 2017-11-18
 

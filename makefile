@@ -13,9 +13,8 @@ test:
 check:
 	cargo check
 
-#TODO: Upgrade clippy version
 clippy:
-	cargo +nightly-2017-07-20 clippy
+	cargo clippy --profile=test
 
 doc:
 	cargo doc
