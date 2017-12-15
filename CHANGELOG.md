@@ -1,9 +1,21 @@
 # Change Log
 
+## [0.6.0] - 2017-12-15
+
+### Added
+- `iter()` function for `Obj`, `Arr`, and `Tup`.
+
+### Changed
+- `Obj`, `Arr`, and `Tup` use `Arc` instead of `Rc` internally, making them Sync-able.
+- The `Obj` token is now optional when including object files.
+
+### Removed
+- `Obj::to_map()`, `Arr::to_vec()`, `Tup::to_vec()`.
+
 ## [0.5.2] - 2017-12-12
 
 ### Added
-- Tracking of includes and prevention of cyclic includes.
+- Tracking of file includes and prevention of cyclic includes.
 
 ## [0.5.1] - 2017-11-23
 
