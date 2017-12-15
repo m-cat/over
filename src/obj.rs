@@ -12,11 +12,12 @@ use num_traits::Zero;
 use parse;
 use parse::format::Format;
 use std::collections::HashMap;
+use std::collections::hash_map::{Iter, Keys, Values};
 use std::convert;
 use std::fmt;
 use std::io;
-use std::rc::Rc;
 use std::str::FromStr;
+use std::sync::Arc;
 use tup::Tup;
 use types::Type;
 use util::is_digit;
@@ -32,7 +33,7 @@ struct ObjInner {
 /// `Obj` struct.
 #[derive(Clone, Debug)]
 pub struct Obj {
-    inner: Rc<ObjInner>,
+    inner: Arc<ObjInner>,
 }
 
 macro_rules! get_fn {
@@ -66,7 +67,7 @@ impl Obj {
         }
 
         Ok(Obj {
-            inner: Rc::new(ObjInner {
+            inner: Arc::new(ObjInner {
                 map: obj_map,
                 parent: None,
             }),
@@ -86,7 +87,7 @@ impl Obj {
         }
 
         Ok(Obj {
-            inner: Rc::new(ObjInner {
+            inner: Arc::new(ObjInner {
                 map: obj_map,
                 parent: Some(parent),
             }),
@@ -101,7 +102,7 @@ impl Obj {
     /// See `from_map` for more details.
     pub fn from_map_unchecked(obj_map: HashMap<String, Value>) -> Obj {
         Obj {
-            inner: Rc::new(ObjInner {
+            inner: Arc::new(ObjInner {
                 map: obj_map,
                 parent: None,
             }),
@@ -116,16 +117,11 @@ impl Obj {
     /// See `from_map` for more details.
     pub fn from_map_with_parent_unchecked(obj_map: HashMap<String, Value>, parent: Obj) -> Obj {
         Obj {
-            inner: Rc::new(ObjInner {
+            inner: Arc::new(ObjInner {
                 map: obj_map,
                 parent: Some(parent),
             }),
         }
-    }
-
-    /// Returns the map of values in this `Obj`. Parent field/value pairs are excluded.
-    pub fn to_map(&self) -> HashMap<String, Value> {
-        self.inner.map.clone()
     }
 
     /// Returns a reference to the inner map of this `Obj`.
@@ -178,7 +174,7 @@ impl Obj {
 
     /// Returns whether `self` and `other` point to the same data.
     pub fn ptr_eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.inner, &other.inner)
+        Arc::ptr_eq(&self.inner, &other.inner)
     }
 
     /// Returns true if this `Obj` contains `field`.
@@ -316,6 +312,21 @@ impl Obj {
             '^' => first,
             _ => false,
         }
+    }
+
+    /// An iterator visiting all fields (keys) in arbitrary order.
+    pub fn keys(&self) -> Keys<String, Value> {
+        self.map_ref().keys()
+    }
+
+    /// An iterator visiting all values in arbitrary order.
+    pub fn values(&self) -> Values<String, Value> {
+        self.map_ref().values()
+    }
+
+    /// An iterator visiting all field-value pairs in arbitrary order.
+    pub fn iter(&self) -> Iter<String, Value> {
+        self.map_ref().iter()
     }
 }
 

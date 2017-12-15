@@ -68,6 +68,13 @@ pub fn is_digit(ch: char) -> bool {
     }
 }
 
+pub fn is_reserved(field: &str) -> bool {
+    match field {
+        "@" | "null" | "true" | "false" | "Obj" | "Str" | "Arr" | "Tup" => true,
+        _ => false,
+    }
+}
+
 pub fn frac_from_whole_and_dec(whole: BigInt, decimal: BigInt, dec_len: usize) -> BigRational {
     let denom = pow(BigInt::from_u8(10).unwrap(), dec_len);
     BigRational::new(whole, 1.into()) + BigRational::new(decimal, denom)

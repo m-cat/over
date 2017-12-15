@@ -149,6 +149,10 @@ fn obj() {
     test_eq!(obj.get_int("dot_op").unwrap(), int!(4));
 
     test_eq!(obj.get_str("dot_var").unwrap(), "test");
+
+    assert_eq!(obj.iter().count(), 13);
+    let value = obj.values().last();
+    assert!(!value.unwrap().is_null());
 }
 
 // Test that globals are referenced correctly and don't get included as fields.
@@ -369,9 +373,17 @@ fn errors() {
     error_helper!("decimal.over", "Invalid numeric value at line 1, column 10");
     error_helper!(
         "deep.over",
-        "Exceeded maximum depth (64) for a container at line 1, column 78"
+        "Exceeded maximum recursion depth (64) at line 1, column 78"
     );
-    error_helper!("dot1.over", "Expected Obj at line 1, column 6; found Bool");
+    error_helper!(
+        "deep_include.over",
+        "Exceeded maximum recursion depth (64) at line 10, column 12"
+    );
+    error_helper!(
+        "dot1.over",
+        "Invalid use of dot notation on value of type Bool at line 1, \
+                                column 6; value must be an Obj, Arr, or Tup."
+    );
     error_helper!(
         "dot2.over",
         "Invalid character \' \' for value at line 2, column 11"
@@ -422,6 +434,10 @@ fn errors() {
         "Invalid field name \"true\" at line 1, column 1"
     );
     error_helper!(
+        "field_obj.over",
+        "Invalid field name \"Obj\" at line 1, column 1"
+    );
+    error_helper!(
         "fuzz1.over",
         "Invalid closing bracket \')\' at line 20, column 1; expected \']\'"
     );
@@ -431,7 +447,7 @@ fn errors() {
     );
     error_helper!(
         "fuzz3.over",
-        "Exceeded maximum depth (64) for a container at line 5, column 65"
+        "Exceeded maximum recursion depth (64) at line 5, column 65"
     );
     error_helper!("fuzz4.over", "Duplicate field \"M\" at line 22, column 1");
     error_helper!(
@@ -471,7 +487,7 @@ fn errors() {
     );
     error_helper!(
         "include1.over",
-        "Invalid include token character \'\"\' at line 1, column 14"
+        "Invalid character \'\"\' for value at line 1, column 14"
     );
     error_helper!(
         "include2.over",
@@ -483,8 +499,15 @@ fn errors() {
     );
     error_helper!(
         "include4.over",
-        "Invalid include token \"Blah\" at line 1, column 8; \
-         expected \"Obj\", \"Arr\", \"Tup\", or \"Str\""
+        "Variable \"Blah\" at line 1, column 8 could not be found"
+    );
+    error_helper!(
+        "include5.over",
+        "Invalid closing bracket \'S\' at line 1, column 17; expected \'>\'"
+    );
+    error_helper!(
+        "include6.over",
+        "Expected Str at line 1, column 15; found Obj"
     );
     error_helper!(
         "include_self.over",

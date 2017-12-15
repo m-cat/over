@@ -2,6 +2,8 @@
 
 #![deny(missing_docs)]
 
+#[macro_use]
+extern crate lazy_static;
 extern crate num_bigint;
 extern crate num_rational;
 extern crate num_traits;

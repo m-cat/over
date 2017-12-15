@@ -28,12 +28,13 @@ pub enum ParseErrorKind {
     GlobalNotFound(String, usize, usize),
     InvalidIndex(BigInt, usize, usize),
     InvalidClosingBracket(Option<char>, char, usize, usize),
+    InvalidDot(Type, usize, usize),
     InvalidEscapeChar(char, usize, usize),
     InvalidFieldChar(char, usize, usize),
     InvalidFieldName(String, usize, usize),
     InvalidIncludeChar(char, usize, usize),
     InvalidIncludePath(String, usize, usize),
-    InvalidIncludeToken(String, usize, usize),
+    InvalidIncludeToken(Type, usize, usize),
     InvalidNumeric(usize, usize),
     InvalidValue(String, usize, usize),
     InvalidValueChar(char, usize, usize),
@@ -135,6 +136,16 @@ impl fmt::Display for ParseError {
                     }
                 )
             }
+            InvalidDot(ref t, ref line, ref col) => {
+                write!(
+                    f,
+                    "Invalid use of dot notation on value of type {} at line {}, column {}; \
+                     value must be an Obj, Arr, or Tup.",
+                    t,
+                    line,
+                    col
+                )
+            }
             InvalidEscapeChar(ref ch, ref line, ref col) => {
                 write!(
                     f,
@@ -181,12 +192,13 @@ impl fmt::Display for ParseError {
                     col
                 )
             }
-            InvalidIncludeToken(ref found, ref line, ref col) => {
+            InvalidIncludeToken(ref t, ref line, ref col) => {
                 write!(
                     f,
-                    "Invalid include token \"{}\" at line {}, column {}; \
-                     expected \"Obj\", \"Arr\", \"Tup\", or \"Str\"",
-                    found,
+                    "Invalid value of type \"{}\" at line {}, column {}; \
+                     must be either a Str value or one of the tokens \
+                     \"Obj\", \"Arr\", \"Tup\", or \"Str\"",
+                    t,
                     line,
                     col
                 )
@@ -224,7 +236,7 @@ impl fmt::Display for ParseError {
             MaxDepth(ref line, ref col) => {
                 write!(
                     f,
-                    "Exceeded maximum depth ({}) for a container at line {}, column {}",
+                    "Exceeded maximum recursion depth ({}) at line {}, column {}",
                     MAX_DEPTH,
                     line,
                     col
@@ -278,6 +290,7 @@ impl Error for ParseError {
             ExpectedType(_, _, _, _) => "Expected different type",
             GlobalNotFound(_, _, _) => "Global could not be found",
             InvalidClosingBracket(_, _, _, _) => "Invalid closing bracket",
+            InvalidDot(_, _, _) => "Invalid use of dot notation",
             InvalidEscapeChar(_, _, _) => "Invalid escape character",
             InvalidFieldChar(_, _, _) => "Invalid character for field",
             InvalidFieldName(_, _, _) => "Invalid field name",

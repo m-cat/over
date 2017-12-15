@@ -4,7 +4,8 @@
 use {INDENT_STEP, OverError, OverResult};
 use parse::format::Format;
 use std::fmt;
-use std::rc::Rc;
+use std::slice::Iter;
+use std::sync::Arc;
 use types::Type;
 use value::Value;
 
@@ -17,7 +18,7 @@ struct ArrInner {
 /// `Arr` struct.
 #[derive(Clone, Debug)]
 pub struct Arr {
-    inner: Rc<ArrInner>,
+    inner: Arc<ArrInner>,
 }
 
 impl Arr {
@@ -42,7 +43,7 @@ impl Arr {
             }
         }
 
-        Ok(Arr { inner: Rc::new(ArrInner { vec, inner_t: tcur }) })
+        Ok(Arr { inner: Arc::new(ArrInner { vec, inner_t: tcur }) })
     }
 
     /// Returns a new `Arr` from the given vector of `Value`s without checking whether every value
@@ -51,12 +52,7 @@ impl Arr {
     /// It is much faster than the safe version, [`from_vec`], if you know every element in `vec` is
     /// of type `inner_t`.
     pub fn from_vec_unchecked(vec: Vec<Value>, inner_t: Type) -> Arr {
-        Arr { inner: Rc::new(ArrInner { vec, inner_t }) }
-    }
-
-    /// Returns the vector of values in this `Arr`.
-    pub fn to_vec(&self) -> Vec<Value> {
-        self.inner.vec.clone()
+        Arr { inner: Arc::new(ArrInner { vec, inner_t }) }
     }
 
     /// Returns a reference to the inner vec of this `Arr`.
@@ -101,7 +97,12 @@ impl Arr {
 
     /// Returns whether `self` and `other` point to the same data.
     pub fn ptr_eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.inner, &other.inner)
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
+
+    /// Returns an iterator over the Arr.
+    pub fn iter(&self) -> Iter<Value> {
+        self.vec_ref().iter()
     }
 }
 

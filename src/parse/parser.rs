@@ -24,6 +24,13 @@ type ObjMap = HashMap<String, Value>;
 type GlobalMap = HashMap<String, Value>;
 type IncludedMap = (HashMap<String, Value>, HashSet<String>);
 
+lazy_static! {
+    static ref OBJ_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
+    static ref STR_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
+    static ref ARR_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
+    static ref TUP_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
+}
+
 /// Parses given file as an `Obj`.
 pub fn parse_obj_file(path: &str) -> ParseResult<Obj> {
     let stream = CharStream::from_file(path)?;
@@ -471,7 +478,7 @@ fn parse_field(
 
     // Check for invalid field names.
     match field.as_str() {
-        "true" | "false" | "null" | "@" => {
+        _field_str if is_reserved(_field_str) => {
             parse_err(stream.file(), InvalidFieldName(field.clone(), line, col))
         }
         "^" => Ok((field.clone(), false, true)),
@@ -513,7 +520,7 @@ fn parse_value(
                 cur_brace,
             )?
         }
-        '<' => parse_include(&mut stream, obj, &mut globals, &mut included, depth)?,
+        '<' => parse_include(&mut stream, obj, &mut globals, &mut included, depth + 1)?,
         ch @ '+' | ch @ '-' => {
             parse_unary_op(&mut stream, obj, globals, included, depth, cur_brace, ch)?
         }
@@ -758,9 +765,15 @@ fn parse_variable(
     }
 
     let mut value = match var.as_str() {
+        "null" => Value::Null,
         "true" => Value::Bool(true),
         "false" => Value::Bool(false),
-        "null" => Value::Null,
+
+        "Obj" => Value::Obj(OBJ_SENTINEL.clone()),
+        "Str" => Value::Obj(STR_SENTINEL.clone()),
+        "Arr" => Value::Obj(ARR_SENTINEL.clone()),
+        "Tup" => Value::Obj(TUP_SENTINEL.clone()),
+
         var @ "@" => return parse_err(stream.file(), InvalidValue(var.into(), line, col)),
         var if is_global => {
             // Global variable, get value from globals map.
@@ -870,12 +883,7 @@ fn parse_variable(
                     cur_brace,
                 )?
             }
-            _ => {
-                return parse_err(
-                    stream.file(),
-                    ExpectedType(Type::Obj, value.get_type(), line, col),
-                )
-            }
+            _ => return parse_err(stream.file(), InvalidDot(value.get_type(), line, col)),
         }
     }
 
@@ -984,6 +992,18 @@ fn parse_include(
     mut included: &mut IncludedMap,
     depth: usize,
 ) -> ParseResult<Value> {
+    enum IncludeType {
+        Obj,
+        Str,
+        Arr,
+        Tup,
+    }
+
+    // Check depth.
+    if depth > MAX_DEPTH {
+        return parse_err(stream.file(), MaxDepth(stream.line(), stream.col()));
+    }
+
     let ch = stream.next().unwrap();
     assert_eq!(ch, '<');
 
@@ -992,17 +1012,8 @@ fn parse_include(
         return parse_err(stream.file(), UnexpectedEnd(stream.line()));
     }
 
-    // Get the type token.
-    let (tok_line, tok_col) = (stream.line(), stream.col());
-    let token = parse_include_token(stream, tok_line, tok_col)?;
-
-    // Go to the next non-whitespace character, or error if there is none.
-    if !find_char(stream.clone()) {
-        return parse_err(stream.file(), UnexpectedEnd(stream.line()));
-    }
-
-    let (line, col) = (stream.line(), stream.col());
-    let value = parse_value(
+    let (mut line, mut col) = (stream.line(), stream.col());
+    let mut value = parse_value(
         &mut stream,
         obj,
         &mut globals,
@@ -1014,16 +1025,69 @@ fn parse_include(
         true,
     )?;
 
-    // Check type of the filename string.
-    if value.get_type() != Type::Str {
-        return parse_err(
-            stream.file(),
-            ExpectedType(Type::Str, value.get_type(), line, col),
-        );
+    let mut include_type = IncludeType::Obj; // Default include type if no token is present.
+    let mut parse_again = true; // True if an include token was found.
+    match value {
+        Value::Obj(ref obj) if obj.ptr_eq(&OBJ_SENTINEL) => include_type = IncludeType::Obj,
+        Value::Obj(ref obj) if obj.ptr_eq(&STR_SENTINEL) => include_type = IncludeType::Str,
+        Value::Obj(ref obj) if obj.ptr_eq(&ARR_SENTINEL) => include_type = IncludeType::Arr,
+        Value::Obj(ref obj) if obj.ptr_eq(&TUP_SENTINEL) => include_type = IncludeType::Tup,
+        Value::Str(_) => parse_again = false,
+        _ => {
+            return parse_err(
+                stream.file(),
+                InvalidIncludeToken(value.get_type(), line, col),
+            )
+        }
+    }
+
+    if parse_again {
+        // Go to the next non-whitespace character, or error if there is none.
+        if !find_char(stream.clone()) {
+            return parse_err(stream.file(), UnexpectedEnd(stream.line()));
+        }
+
+        line = stream.line();
+        col = stream.col();
+        value = parse_value(
+            &mut stream,
+            obj,
+            &mut globals,
+            &mut included,
+            line,
+            col,
+            depth,
+            Some('>'),
+            true,
+        )?;
+    }
+
+    // Go to the next non-whitespace character, or error if there is none.
+    if !find_char(stream.clone()) {
+        return parse_err(stream.file(), UnexpectedEnd(stream.line()));
+    }
+
+    match stream.next().unwrap() {
+        '>' => (),
+        ch => {
+            return parse_err(
+                stream.file(),
+                InvalidClosingBracket(Some('>'), ch, stream.line(), stream.col() - 1),
+            )
+        }
     }
 
     // Get the full path of the include file.
-    let include_file = value.get_str().unwrap();
+    let include_file = match value {
+        Value::Str(s) => s,
+        _ => {
+            return parse_err(
+                stream.file(),
+                ExpectedType(Type::Str, value.get_type(), line, col),
+            )
+        }
+    };
+
     let pathbuf = match stream.file().as_ref() {
         Some(file) => {
             Path::new(file).parent().unwrap().join(
@@ -1070,12 +1134,11 @@ fn parse_include(
         let value = &included.0[full_path_str];
         value.clone()
     } else {
-        let value: Value = match token.as_str() {
-            "Obj" => parse_obj_file_includes(path_str, included)?.into(),
-            "Str" => parse_str_file(path_str)?.into(),
-            "Arr" => parse_arr_file(path_str, included)?.into(),
-            "Tup" => parse_tup_file(path_str, included)?.into(),
-            _ => return parse_err(stream.file(), InvalidIncludeToken(token, tok_line, tok_col)),
+        let value: Value = match include_type {
+            IncludeType::Obj => parse_obj_file_includes(path_str, included)?.into(),
+            IncludeType::Str => parse_str_file(path_str)?.into(),
+            IncludeType::Arr => parse_arr_file(path_str, included)?.into(),
+            IncludeType::Tup => parse_tup_file(path_str, included)?.into(),
         };
         // Use full path as included key.
         included.0.insert(full_path_str.into(), value.clone());
@@ -1085,21 +1148,6 @@ fn parse_include(
     // Remove the stored file path.
     if let Some(file) = storing {
         included.1.remove(&file);
-    }
-
-    // Go to the next non-whitespace character, or error if there is none.
-    if !find_char(stream.clone()) {
-        return parse_err(stream.file(), UnexpectedEnd(stream.line()));
-    }
-
-    match stream.next().unwrap() {
-        '>' => (),
-        ch => {
-            return parse_err(
-                stream.file(),
-                InvalidClosingBracket(Some('>'), ch, stream.line(), stream.col() - 1),
-            )
-        }
     }
 
     Ok(value)
@@ -1196,7 +1244,8 @@ fn binary_op_on_values(
                     match Type::most_specific(&type1, &type2) {
                         Some((t, _)) => {
                             let (arr1, arr2) = (val1.get_arr().unwrap(), val2.get_arr().unwrap());
-                            let (mut vec1, mut vec2) = (arr1.to_vec(), arr2.to_vec());
+                            let (mut vec1, mut vec2) =
+                                (arr1.vec_ref().clone(), arr2.vec_ref().clone());
 
                             let mut vec = Vec::with_capacity(vec1.len() + vec2.len());
                             vec.append(&mut vec1);
@@ -1331,38 +1380,6 @@ fn find_char(mut stream: CharStream) -> bool {
     }
 
     false
-}
-
-// Returns all characters until the next whitespace.
-// Returns false if we got to the end of the stream.
-fn parse_include_token(stream: &mut CharStream, line: usize, col: usize) -> ParseResult<String> {
-    let mut s = String::new();
-
-    loop {
-        match stream.peek() {
-            Some(ch) => {
-                if is_whitespace(ch) || is_end_delimiter(ch) {
-                    break;
-                }
-
-                if !ch.is_alphabetic() {
-                    return parse_err(
-                        stream.file(),
-                        InvalidIncludeChar(ch, stream.line(), stream.col()),
-                    );
-                }
-
-                let _ = stream.next();
-                s.push(ch);
-            }
-            None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
-        }
-    }
-
-    match s.as_str() {
-        "Obj" | "Str" | "Arr" | "Tup" => Ok(s),
-        _ => parse_err(stream.file(), InvalidIncludeToken(s, line, col)),
-    }
 }
 
 // Helper function to make sure values are followed by a correct end delimiter.

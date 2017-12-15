@@ -166,7 +166,7 @@ Currently OVER has only been implemented for Rust; more languages may be support
 OVER has three container types:
 * An [array] where all elements must be of the same type of data (enforced by the parser).
 * A (tuple) which can hold elements of different types.
-* {Objects}.
+* {Objects} which hold a map of fields to values of different types.
 
 The following is a valid array, as each sub-tuple is the same type:
 
@@ -231,7 +231,7 @@ bar: {
 
 ### Object Field Access
 
-The fields of an object can be access using dot notation. This is valid as long as the object in question is in scope and the field exists. Example:
+The fields of an object can be accessed using dot notation. This is valid as long as the object in question is in scope and the field exists. Example:
 
 ```
 obj: {
@@ -261,10 +261,10 @@ obj: {
 Arrays and tuples can also be indexed using dot notation:
 
 ```
-tup: ("test" 1)
+tup: ("test" 0)
 
-one: tup.1
-test: tup.one
+zero: tup.1
+test: tup.zero
 ```
   
 ### Arithmetic on Values and Variables
@@ -308,11 +308,11 @@ We can have something akin to a "main" file that contains the two files as sub-o
 
 **`main.over`:**
 ```
-obj1: <Obj "includes/obj1.over">
-obj2: <Obj "includes/obj2.over">
+obj1: <"includes/obj1.over">
+obj2: <"includes/obj2.over">
 ```
 
-In the above example we could have simply parsed the two object files separately. The main benefit of doing includes, when it comes to objects, is organizational. We can also put arrays and tuples in separate files, which makes it easy to include, say, automatically-generated whitespace-delimited values. Finally, strings can also be in their own files, in which case they are parsed verbatim; no escaping of characters is done. This is a quite convenient option for large strings.
+In the above example we could have simply parsed the two object files separately. The main benefits of doing includes are convenience and organization. We can also put arrays and tuples in separate files, which makes it easy to include, say, automatically-generated whitespace-delimited values. Finally, strings can also be in their own files, in which case they are parsed verbatim; no escaping of characters is done. This is a quite convenient option for large strings.
 
 An example demonstrating inclusion of `Str`, `Arr`, and `Tup`:
 
@@ -348,7 +348,8 @@ don't need to be escaped.
 Some notes about file includes:
   * Global variables are not valid across files.
   * Files cannot be included in a circular manner; e.g. if file `main` includes `sub-obj`, then `sub-obj` cannot include `main`.
-  * Inclusion is only valid for `Obj`, `Str`, `Arr`, and `Tup`. 
+  * You can include the same file multiple times. File includes are only processed the first time they are encountered.
+  * Inclusion is only valid for `Obj`, `Str`, `Arr`, and `Tup`. When including an object file, the `Obj` keyword is optional.
 
 ### String Substitutions
 
@@ -416,7 +417,17 @@ A tuple container which can hold elements of different types.
 
 The godfather of all types, the *object*. A hashmap of keys, which we call *fields*, to values, where a value can be of any type, including other objects.
 
-Fields must be followed by a colon and cannot be "null", "true", or "false".
+Fields must be followed by a colon and cannot be one of the reserved keywords.
+
+Reserved keywords:
+* `@`
+* `null`
+* `true`
+* `false`
+* `Obj`
+* `Str`
+* `Arr`
+* `Tup`
 
 **Examples:** 
 
@@ -433,9 +444,9 @@ I started this project because I wanted an alternative to JSON. Why?
 * Floating-point numeric type.
 * Arrays where different types are allowed.
 * Field names have to be in quotes, e.g. `"name": "Johnny"` instead of `name: "Johnny"`. It's verbose and not ergonomic.
-* Finally, no support for comments is a dealbreaker. Some JSON implementations allow them, but it's not standard.
+* No support for comments is a dealbreaker. Some JSON implementations allow them, but it's not standard.
 
-JSON and other options are also lacking many of the features that I'm interested in, such as the ability to define variables and the concept of object parents. 
+JSON and other options are also lacking many of the features that I'm interested in, such as variables, the concept of object parents, file includes, and so on.
 
 ## What about YAML/others?
 
@@ -478,9 +489,9 @@ specialDelivery:  >
 ...
 ```
 
-As you can see, OVER is much more understandable, even if you're not at all familiar with it. The YAML version has strange syntax in some places (such as `&id001` and `*id001`; plus, what in the world are `>` and `|` supposed to be?) and a lack of useful syntax in others (every value looks like a string). Is the "data" field a number or a string? YAML is certainly more pleasing on a superficial level, which I suspect is the only reason it entered into general use, but it fails to stand up to light scrutiny.
+As you can see, this is much less clear than the OVER version. YAML has strange syntax (such as `&id001` and `*id001`; and what in the world are `>` and `|` supposed to be?) and a lack of useful syntax in others (every value looks like a string). Is the "data" field a number or a string? YAML is certainly more pleasing on a superficial level, which I suspect is the only reason it entered into general use, but it fails to stand up to some light scrutiny.
 
-Look at [this answer](https://stackoverflow.com/a/18708156) on StackExchange for an example of how unintuitive YAML is. Trust me, that's not even the worst of it; there is a shocking amount of weirdness in the official spec. This design disaster also makes it impossible to write an efficient parser for it.
+Look at [this answer](https://stackoverflow.com/a/18708156) on StackExchange for an example of how unintuitive YAML is. That's not the worst of it; there is a shocking amount of weirdness in the official spec. This design disaster also makes it impossible to write an efficient parser for YAML.
 
 Finally, as seen throughout this README, OVER manages to be more powerful than YAML while being much simpler! This may strike you as a paradox, but it is just a consequence of the thoughtless design of YAML and company (don't think I've forgotten about TOML). There are options such as [StrictYAML](https://github.com/crdoconnor/strictyaml) but they are, in my opinion, just bandaids on a broken solution.
 

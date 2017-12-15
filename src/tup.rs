@@ -4,7 +4,8 @@
 use {INDENT_STEP, OverError, OverResult};
 use parse::format::Format;
 use std::fmt;
-use std::rc::Rc;
+use std::slice::Iter;
+use std::sync::Arc;
 use types::Type;
 use value::Value;
 
@@ -17,7 +18,7 @@ struct TupInner {
 /// `Tup` struct.
 #[derive(Clone, Debug)]
 pub struct Tup {
-    inner: Rc<TupInner>,
+    inner: Arc<TupInner>,
 }
 
 impl Tup {
@@ -26,16 +27,11 @@ impl Tup {
         let tvec: Vec<Type> = values.iter().map(|val| val.get_type()).collect();
 
         Tup {
-            inner: Rc::new(TupInner {
+            inner: Arc::new(TupInner {
                 vec: values,
                 inner_tvec: tvec,
             }),
         }
-    }
-
-    /// Returns the vector of values in this `Tup`.
-    pub fn to_vec(&self) -> Vec<Value> {
-        self.inner.vec.clone()
     }
 
     /// Returns a reference to the inner vec of this `Tup`.
@@ -80,7 +76,12 @@ impl Tup {
 
     /// Returns whether `self` and `other` point to the same data.
     pub fn ptr_eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.inner, &other.inner)
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
+
+    /// Returns an iterator over the Tup.
+    pub fn iter(&self) -> Iter<Value> {
+        self.vec_ref().iter()
     }
 }
 
