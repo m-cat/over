@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.6.1] - 2017-12-19
+
+### Added
+- Allow underscores in numeric values.
+
 ## [0.6.0] - 2017-12-15
 
 ### Added
