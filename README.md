@@ -29,6 +29,7 @@ OVER: the best data format.
         - [Arr](#arr)
         - [Tup](#tup)
         - [Obj](#obj)
+    - [Todo](#todo)
     - [What's wrong with JSON?](#whats-wrong-with-json)
     - [What about YAML/others?](#what-about-yamlothers)
     - [Dependencies](#dependencies)
@@ -434,6 +435,19 @@ Reserved keywords:
 `{ a: 1 b: 2 list: [a b b a] }`
 
 `{ id: 4 field: { field: "Objects can be nested and each has their own scope." } }`
+
+## Todo
+
+As this project is being developed for my personal needs, there are some necessary steps to make it ready for 1.0 that I have little incentive to do myself. Any of the following would be a good way to contribute to the project:
+
+* [Easy] Multi-line/block comments, e.g. #[ ... ]#
+* [Hard] `super` keyword? i.e. super.var (disallow just `super`?). Not sure if this is worth the effort, but I can see potential use cases.
+* [?] Emacs mode, copy JSON-mode
+* [Easy] Benchmark against equivalent json files.
+* [Medium] Implement string substitution
+* [Easy] Look through API guidelines: https://rust-lang-nursery.github.io/api-guidelines/checklist.html
+* [Medium] Move error handling to Failure? https://www.reddit.com/r/rust/comments/7b88qp/failure_a_new_error_management_story/
+* [Medium] Performance: Consider replacing HashMap internally. Use Flame to benchmark: https://github.com/TyOverby/flame
 
 ## What's wrong with JSON?
 
