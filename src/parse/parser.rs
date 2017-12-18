@@ -642,6 +642,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
     let mut s1 = String::new();
     let mut s2 = String::new();
     let mut dec = false;
+    let mut under = false;
 
     while let Some(ch) = stream.peek() {
         match ch {
@@ -663,12 +664,26 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
                     );
                 }
             }
+            '_' => {
+                if !under {
+                    under = true;
+                } else {
+                    return parse_err(
+                        stream.file(),
+                        InvalidValueChar(ch, stream.line(), stream.col()),
+                    );
+                }
+            }
             _ => {
                 return parse_err(
                     stream.file(),
                     InvalidValueChar(ch, stream.line(), stream.col()),
                 )
             }
+        }
+
+        if ch != '_' {
+            under = false;
         }
 
         let _ = stream.next();

@@ -382,7 +382,7 @@ fn errors() {
     error_helper!(
         "dot1.over",
         "Invalid use of dot notation on value of type Bool at line 1, \
-                                column 6; value must be an Obj, Arr, or Tup."
+         column 6; value must be an Obj, Arr, or Tup."
     );
     error_helper!(
         "dot2.over",
@@ -532,6 +532,14 @@ fn errors() {
     error_helper!(
         "op_multiple.over",
         "Could not apply operator + on types Tup() and Frac at line 1, column 9"
+    );
+    error_helper!(
+        "underscore.over",
+        "Variable \"_444_444\" at line 1, column 9 could not be found"
+    );
+    error_helper!(
+        "underscore_multiple.over",
+        "Invalid character \'_\' for value at line 1, column 16"
     );
     error_helper!("unexpected_end1.over", "Unexpected end at line 2");
     error_helper!("unexpected_end2.over", "Unexpected end at line 3");
