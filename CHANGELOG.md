@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.6.2] - 2017-12-20
+
+### Added
+- `Obj`s now have an associated ID field.
+
 ## [0.6.1] - 2017-12-19
 
 ### Added
