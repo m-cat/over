@@ -11,17 +11,14 @@ use num_rational::BigRational;
 use num_traits::Zero;
 use parse;
 use parse::format::Format;
+use std::{convert, fmt, io};
 use std::collections::HashMap;
 use std::collections::hash_map::{Iter, Keys, Values};
-use std::convert;
-use std::fmt;
-use std::io;
 use std::str::FromStr;
 use std::sync::Arc;
 use tup::Tup;
 use types::Type;
-use util::is_digit;
-use util::write_file_str;
+use util::{is_digit, write_file_str};
 use value::Value;
 
 #[derive(Clone, Debug)]
@@ -34,6 +31,7 @@ struct ObjInner {
 #[derive(Clone, Debug)]
 pub struct Obj {
     inner: Arc<ObjInner>,
+    id: usize,
 }
 
 macro_rules! get_fn {
@@ -71,6 +69,7 @@ impl Obj {
                 map: obj_map,
                 parent: None,
             }),
+            id: 0,
         })
     }
 
@@ -91,6 +90,7 @@ impl Obj {
                 map: obj_map,
                 parent: Some(parent),
             }),
+            id: 0,
         })
     }
 
@@ -106,6 +106,7 @@ impl Obj {
                 map: obj_map,
                 parent: None,
             }),
+            id: 0,
         }
     }
 
@@ -121,7 +122,29 @@ impl Obj {
                 map: obj_map,
                 parent: Some(parent),
             }),
+            id: 0,
         }
+    }
+
+    /// Returns the ID of this `Obj`.
+    ///
+    /// Every `Obj` within a scope is assigned its own unique ID. IDs are generated incrementally,
+    /// starting at 0 for the first `Obj` in a scope. Note that the count starts over again at 0
+    /// whenever we enter a new scope, and resumes where it left off when the scope ends.
+    ///
+    /// # Notes
+    /// The ID is ignored when testing `Obj` equality.
+    pub fn id(&self) -> usize {
+        self.id
+    }
+
+    /// Sets the ID for this `Obj`.
+    ///
+    /// Useful if you instantiated your own `Obj`, as IDs are only automatically generated when
+    /// parsing a file. This also can be used if you want to override the default IDs of parsed
+    /// `Obj`s for your own purposes.
+    pub fn set_id(&mut self, id: usize) {
+        self.id = id
     }
 
     /// Returns a reference to the inner map of this `Obj`.
