@@ -1,5 +1,10 @@
 # Change Log
 
+## [0.6.3] - 2017-12-24
+
+### Changed
+- IDs are now globally unique.
+
 ## [0.6.2] - 2017-12-20
 
 ### Added
