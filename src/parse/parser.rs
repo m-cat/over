@@ -62,7 +62,6 @@ fn parse_obj_stream(mut stream: CharStream, mut included: &mut IncludedMap) -> P
 
     let mut globals: GlobalMap = HashMap::new();
     let mut parent = None;
-    let mut cur_id = 0;
 
     // Parse all field/value pairs for this Obj.
     while parse_field_value_pair(
@@ -73,7 +72,6 @@ fn parse_obj_stream(mut stream: CharStream, mut included: &mut IncludedMap) -> P
         &mut parent,
         1,
         None,
-        &mut cur_id,
     )?
     {}
 
@@ -106,7 +104,6 @@ fn parse_obj(
 
     let mut obj: ObjMap = HashMap::new();
     let mut parent = None;
-    let mut cur_id = 0;
 
     // Parse field/value pairs.
     while parse_field_value_pair(
@@ -117,7 +114,6 @@ fn parse_obj(
         &mut parent,
         depth,
         Some('}'),
-        &mut cur_id,
     )?
     {}
 
@@ -138,7 +134,6 @@ fn parse_field_value_pair(
     parent: &mut Option<Obj>,
     depth: usize,
     cur_brace: Option<char>,
-    cur_id: &mut usize,
 ) -> ParseResult<bool> {
     // Check if we're at an end delimiter instead of a field.
     let peek = stream.peek().unwrap();
@@ -174,7 +169,7 @@ fn parse_field_value_pair(
 
     // At a non-whitespace character, parse value.
     let (value_line, value_col) = (stream.line(), stream.col());
-    let mut value = parse_value(
+    let value = parse_value(
         &mut stream,
         obj,
         &mut globals,
@@ -198,12 +193,6 @@ fn parse_field_value_pair(
         })?;
         *parent = Some(par);
     } else {
-        // Set ID for Objs.
-        if let Value::Obj(ref mut o) = value {
-            o.set_id(*cur_id);
-            *cur_id += 1;
-        }
-
         obj.insert(field, value);
     }
 

@@ -128,21 +128,17 @@ fn obj() {
     let bools = obj!{"t" => true, "f" => false};
 
     let outie = obj.get_obj("outie").unwrap();
-    assert_eq!(outie.id(), 2);
     test_eq!(outie.get_parent().unwrap(), bools);
     test_eq!(get_int(&outie, "z"), 0);
 
     let inner = outie.get_obj("inner").unwrap();
-    assert_eq!(inner.id(), 0);
     test_eq!(get_int(&inner, "z"), 1);
     let innie = inner.get_obj("innie").unwrap();
-    assert_eq!(innie.id(), 0);
     test_eq!(get_int(&innie, "a"), 1);
     test_eq!(inner.get("b").unwrap(), tup!(1, 2,));
 
     test_eq!(get_int(&outie, "c"), 3);
     test_eq!(outie.get("d").unwrap(), obj!{});
-    assert_eq!(outie.get_obj("d").unwrap().id(), 1);
 
     let obj_arr = obj.get_obj("obj_arr").unwrap();
     test_eq!(obj_arr.get("arr").unwrap(), arr![1, 2, 3]);
@@ -295,7 +291,6 @@ fn includes() {
     );
 
     let o = obj.get_obj("include_obj").unwrap();
-    assert_eq!(o.id(), 0);
     test_eq!(
         o,
         obj!{
@@ -304,8 +299,6 @@ fn includes() {
             "dup" => obj!{"test" => 2},
         }
     );
-    assert_eq!(o.get_obj("obj2").unwrap().id(), 1);
-    assert_eq!(o.get_obj("obj3").unwrap().id(), 2);
 
     assert!(o.ptr_eq(&obj.get_obj("include_obj2").unwrap()));
 }

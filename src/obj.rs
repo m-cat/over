@@ -16,22 +16,31 @@ use std::collections::HashMap;
 use std::collections::hash_map::{Iter, Keys, Values};
 use std::str::FromStr;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tup::Tup;
 use types::Type;
 use util::{is_digit, write_file_str};
 use value::Value;
 
+lazy_static! {
+    static ref CUR_ID: AtomicUsize = AtomicUsize::new(0);
+}
+
+fn get_id() -> usize {
+    CUR_ID.fetch_add(1, Ordering::Relaxed)
+}
+
 #[derive(Clone, Debug)]
 struct ObjInner {
     map: HashMap<String, Value>,
     parent: Option<Obj>,
+    id: usize,
 }
 
 /// `Obj` struct.
 #[derive(Clone, Debug)]
 pub struct Obj {
     inner: Arc<ObjInner>,
-    id: usize,
 }
 
 macro_rules! get_fn {
@@ -63,13 +72,14 @@ impl Obj {
                 return Err(OverError::InvalidFieldName((*field).clone()));
             }
         }
+        let id = get_id();
 
         Ok(Obj {
             inner: Arc::new(ObjInner {
                 map: obj_map,
                 parent: None,
+                id,
             }),
-            id: 0,
         })
     }
 
@@ -84,13 +94,14 @@ impl Obj {
                 return Err(OverError::InvalidFieldName(field.clone()));
             }
         }
+        let id = get_id();
 
         Ok(Obj {
             inner: Arc::new(ObjInner {
                 map: obj_map,
                 parent: Some(parent),
+                id,
             }),
-            id: 0,
         })
     }
 
@@ -101,12 +112,14 @@ impl Obj {
     ///
     /// See `from_map` for more details.
     pub fn from_map_unchecked(obj_map: HashMap<String, Value>) -> Obj {
+        let id = get_id();
+
         Obj {
             inner: Arc::new(ObjInner {
                 map: obj_map,
                 parent: None,
+                id,
             }),
-            id: 0,
         }
     }
 
@@ -117,34 +130,26 @@ impl Obj {
     ///
     /// See `from_map` for more details.
     pub fn from_map_with_parent_unchecked(obj_map: HashMap<String, Value>, parent: Obj) -> Obj {
+        let id = get_id();
+
         Obj {
             inner: Arc::new(ObjInner {
                 map: obj_map,
                 parent: Some(parent),
+                id,
             }),
-            id: 0,
         }
     }
 
     /// Returns the ID of this `Obj`.
     ///
-    /// Every `Obj` within a scope is assigned its own unique ID. IDs are generated incrementally,
-    /// starting at 0 for the first `Obj` in a scope. Note that the count starts over again at 0
-    /// whenever we enter a new scope, and resumes where it left off when the scope ends.
+    /// Every `Obj` is assigned its own globally unique ID. IDs are generated incrementally,
+    /// starting at 0 for the first `Obj` created.
     ///
     /// # Notes
     /// The ID is ignored when testing `Obj` equality.
     pub fn id(&self) -> usize {
-        self.id
-    }
-
-    /// Sets the ID for this `Obj`.
-    ///
-    /// Useful if you instantiated your own `Obj`, as IDs are only automatically generated when
-    /// parsing a file. This also can be used if you want to override the default IDs of parsed
-    /// `Obj`s for your own purposes.
-    pub fn set_id(&mut self, id: usize) {
-        self.id = id
+        self.inner.id
     }
 
     /// Returns a reference to the inner map of this `Obj`.

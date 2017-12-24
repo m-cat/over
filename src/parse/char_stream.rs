@@ -26,7 +26,9 @@ pub struct CharStream {
 impl CharStream {
     pub fn from_file(path: &str) -> io::Result<CharStream> {
         let mut file = File::open(path)?;
-        let mut contents = String::new();
+
+        let len = file.metadata()?.len();
+        let mut contents = String::with_capacity(len as usize);
 
         file.read_to_string(&mut contents)?;
 
