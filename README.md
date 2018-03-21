@@ -32,7 +32,6 @@ OVER: the best data format.
     - [Todo](#todo)
     - [What's wrong with JSON?](#whats-wrong-with-json)
     - [What about YAML/others?](#what-about-yamlothers)
-    - [Dependencies](#dependencies)
     - [Change Log](#change-log)
     - [Copyright](#copyright)
 
@@ -313,7 +312,7 @@ obj1: <"includes/obj1.over">
 obj2: <"includes/obj2.over">
 ```
 
-In the above example we could have simply parsed the two object files separately. The main benefits of doing includes are convenience and organization. We can also put arrays and tuples in separate files, which makes it easy to include, say, automatically-generated whitespace-delimited values. Finally, strings can also be in their own files, in which case they are parsed verbatim; no escaping of characters is done. This is a quite convenient option for large strings.
+The main benefits of includes are convenience and organization. We can also put arrays and tuples in separate files, which makes it easy to include, say, automatically-generated whitespace-delimited values. Finally, strings can also be in their own files, in which case they are parsed verbatim; no escaping of characters is done. This is a quite convenient option for large strings.
 
 An example demonstrating inclusion of `Str`, `Arr`, and `Tup`:
 
@@ -503,15 +502,11 @@ specialDelivery:  >
 ...
 ```
 
-As you can see, this is much less clear than the OVER version. YAML has strange syntax (such as `&id001` and `*id001`; and what in the world are `>` and `|` supposed to be?) and a lack of useful syntax in others (every value looks like a string). Is the "data" field a number or a string? YAML is certainly more pleasing on a superficial level, which I suspect is the only reason it entered into general use, but it fails to stand up to some light scrutiny.
+As you can see, this is much less clear than the OVER version. YAML has strange syntax (such as `&id001` and `*id001`; and what in the world are `>` and `|` supposed to be?) and a lack of useful syntax in others (every value looks like a string). Is the `date` field a number or a string? YAML is certainly more pleasing on a superficial level, which I suspect is the only reason it entered into general use, but it fails to stand up to some light scrutiny. It's all about looking nice while sacrificing clarity.
 
 Look at [this answer](https://stackoverflow.com/a/18708156) on StackExchange for an example of how unintuitive YAML is. That's not the worst of it; there is a shocking amount of weirdness in the official spec. This design disaster also makes it impossible to write an efficient parser for YAML.
 
 Finally, as seen throughout this README, OVER manages to be more powerful than YAML while being much simpler! This may strike you as a paradox, but it is just a consequence of the thoughtless design of YAML and company (don't think I've forgotten about TOML). There are options such as [StrictYAML](https://github.com/crdoconnor/strictyaml) but they are, in my opinion, just bandaids on a broken solution.
-
-## Dependencies
-
-![dependencies](deps.png)
 
 ## Change Log
 
