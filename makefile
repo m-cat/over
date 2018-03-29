@@ -23,10 +23,6 @@ doc:
 modules:
 	cargo modules --orphans
 
-# Generate dependency graph
-graph:
-	cargo graph | dot -Tpng > deps.png
-
 # Run fuzz
 fuzz: fuzz1 fuzz2
 fuzz1:
