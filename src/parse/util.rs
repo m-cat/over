@@ -61,6 +61,7 @@ pub fn is_operator(ch: char) -> bool {
     }
 }
 
+/// Returns true if `ch` is an ASCII decimal digit.
 pub fn is_digit(ch: char) -> bool {
     match ch {
         '0'...'9' => true,

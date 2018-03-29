@@ -169,7 +169,8 @@ impl Obj {
     /// Also note that shorthand in the original file, including variables and file includes,
     /// is not preserved when parsing the file, and will not appear when writing to another file.
     pub fn write_to_file(&self, path: &str) -> OverResult<()> {
-        Ok(write_file_str(path, &self.write_str())?)
+        write_file_str(path, &self.write_str())?;
+        Ok(())
     }
 
     /// Writes this `Obj` to a `String`.
