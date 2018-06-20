@@ -58,7 +58,8 @@ customer: {
     family_name: "Gale"
 }
 
-items: [{
+items: [
+        {
          part_no:  "A4786"
          descrip:  "Water Bucket (Filled)"
          price:    01.47
@@ -437,10 +438,10 @@ Reserved keywords:
 
 ## Todo
 
-As this project is being developed for my personal needs, there are some necessary steps to make it ready for 1.0 that I have little incentive to do myself. Any of the following would be a good way to contribute to the project:
+As this project is being developed for my personal needs, there are some necessary steps to make it ready for `1.0` that I have little incentive to do myself. Any of the following would be a good way to contribute to the project:
 
-* [Easy] Multi-line/block comments, e.g. #[ ... ]#. Should be able to nest these.
-* [Hard] `super` keyword? i.e. super.var (disallow just `super`?). Not sure if this is worth the effort, but I can see potential use cases.
+* [Easy] Multi-line/block comments, e.g. `#[ ... ]#`. Should be able to nest these.
+* [Hard] `super` keyword? i.e. `super.var` (disallow just `super`?). Not sure if this is worth the effort, but I can see potential use cases.
 * [?] Write an Emacs mode, use JSON-mode as a starting point.
 * [Easy] Benchmark against equivalent json files.
 * [Medium] Implement string substitution.
@@ -463,7 +464,7 @@ JSON and other options are also lacking many of the features that I'm interested
 
 ## What about YAML/others?
 
-Let's compare the first example in this README ("The Basics") with the YAML version of the same data, taken from [Wikipedia](https://en.wikipedia.org/wiki/YAML#Example):
+Let's compare the first example in this README ([Example](#example)) with the YAML version of the same data, taken from [Wikipedia](https://en.wikipedia.org/wiki/YAML#Example):
 
 ```yaml
 ---
