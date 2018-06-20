@@ -1,13 +1,13 @@
 //! `Arr` module.
 //! An array container which can hold an arbitrary number of elements of a single type.
 
-use {INDENT_STEP, OverError, OverResult};
 use parse::format::Format;
 use std::fmt;
 use std::slice::Iter;
 use std::sync::Arc;
 use types::Type;
 use value::Value;
+use {OverError, OverResult, INDENT_STEP};
 
 #[derive(Clone, Debug)]
 struct ArrInner {
@@ -43,7 +43,9 @@ impl Arr {
             }
         }
 
-        Ok(Arr { inner: Arc::new(ArrInner { vec, inner_t: tcur }) })
+        Ok(Arr {
+            inner: Arc::new(ArrInner { vec, inner_t: tcur }),
+        })
     }
 
     /// Returns a new `Arr` from the given vector of `Value`s without checking whether every value
@@ -52,7 +54,9 @@ impl Arr {
     /// It is much faster than the safe version, [`from_vec`], if you know every element in `vec` is
     /// of type `inner_t`.
     pub fn from_vec_unchecked(vec: Vec<Value>, inner_t: Type) -> Arr {
-        Arr { inner: Arc::new(ArrInner { vec, inner_t }) }
+        Arr {
+            inner: Arc::new(ArrInner { vec, inner_t }),
+        }
     }
 
     /// Returns a reference to the inner vec of this `Arr`.

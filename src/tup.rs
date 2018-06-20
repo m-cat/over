@@ -1,13 +1,13 @@
 //! `Tup` module.
 //! A tuple container which can hold elements of different types.
 
-use {INDENT_STEP, OverError, OverResult};
 use parse::format::Format;
 use std::fmt;
 use std::slice::Iter;
 use std::sync::Arc;
 use types::Type;
 use value::Value;
+use {OverError, OverResult, INDENT_STEP};
 
 #[derive(Clone, Debug)]
 struct TupInner {

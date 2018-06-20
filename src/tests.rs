@@ -6,31 +6,29 @@ use value::Value;
 
 // Display nicely-formatted values on failure.
 macro_rules! test_eq {
-    ( $left:expr, $right:expr ) => {
-        {
-            if $left != $right {
-                panic!(format!("Left did not equal right.\nLeft: {}\nRight: {}\n",
-                       $left,
-                       $right));
-            }
+    ($left:expr, $right:expr) => {{
+        if $left != $right {
+            panic!(format!(
+                "Left did not equal right.\nLeft: {}\nRight: {}\n",
+                $left, $right
+            ));
         }
-    }
+    }};
 }
 
 // Test setting and getting values.
 #[test]
 fn set_and_get() {
-    let obj =
-        obj!{
-            "null" => Value::Null,
-            "bool" => true,
-            "int" => -5,
-            "frac" => frac!(1, 1),
-            "char" => 'x',
-            "str1" => "hello",
-            "str2" => "yo",
-            "arr" => arr![-5, 0, 1],
-        };
+    let obj = obj!{
+        "null" => Value::Null,
+        "bool" => true,
+        "int" => -5,
+        "frac" => frac!(1, 1),
+        "char" => 'x',
+        "str1" => "hello",
+        "str2" => "yo",
+        "arr" => arr![-5, 0, 1],
+    };
 
     // Null
 
@@ -76,24 +74,21 @@ fn set_and_get() {
 // Test setting and getting values through parents.
 #[test]
 fn parents() {
-    let def2 =
-        obj!{
-            "bool2" => true,
-            "bool3" => true
-        };
-    let def1 =
-        obj!{
-            "^" => def2.clone(),
-            "bool1" => true,
-            "bool2" => false,
-            "test2" => "bye",
-        };
-    let obj =
-        obj!{
-            "^" => def1.clone(),
-            "bool1" => true,
-            "test1" => "hi",
-        };
+    let def2 = obj!{
+        "bool2" => true,
+        "bool3" => true
+    };
+    let def1 = obj!{
+        "^" => def2.clone(),
+        "bool1" => true,
+        "bool2" => false,
+        "test2" => "bye",
+    };
+    let obj = obj!{
+        "^" => def1.clone(),
+        "bool1" => true,
+        "test1" => "hi",
+    };
 
     // Test object equality when parents are involved.
 
@@ -129,14 +124,13 @@ fn parents() {
 
 #[test]
 fn types() {
-    let obj =
-        obj!{
-            "bool" => true,
-            "str" => "",
-            "arr_char" => arr!['w', 'o', 'w'],
-            "arr_arr" => try_arr![arr![], arr![true, false]].unwrap(),
-            "tup" => tup!('!', tup!(-1), try_arr!["test", "heya"].unwrap()),
-        };
+    let obj = obj!{
+        "bool" => true,
+        "str" => "",
+        "arr_char" => arr!['w', 'o', 'w'],
+        "arr_arr" => try_arr![arr![], arr![true, false]].unwrap(),
+        "tup" => tup!('!', tup!(-1), try_arr!["test", "heya"].unwrap()),
+    };
 
     // Null
 

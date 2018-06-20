@@ -3,24 +3,20 @@
 /// Given an int, creates and returns a `BigInt`.
 #[macro_export]
 macro_rules! int {
-    ( $int:expr ) => (
-        {
-            use ::num_bigint::BigInt;
+    ($int:expr) => {{
+        use num_bigint::BigInt;
 
-            let _b: BigInt = $int.into();
-            _b
-        }
-    );
+        let _b: BigInt = $int.into();
+        _b
+    }};
 }
 
 /// Given two ints, creates and returns a `BigRational`.
 #[macro_export]
 macro_rules! frac {
-    ( $int1:expr, $int2:expr ) => (
-        {
-            ::num_rational::BigRational::new($int1.into(), $int2.into())
-        }
-    );
+    ($int1:expr, $int2:expr) => {{
+        ::num_rational::BigRational::new($int1.into(), $int2.into())
+    }};
 }
 
 /// Given a list of elements, converts each element to a `Value` and returns an `Arr` containing a
@@ -130,10 +126,10 @@ macro_rules! try_obj {
 
 #[cfg(test)]
 mod tests {
-    use OverError;
     use obj::Obj;
     use types::Type::*;
     use value::Value;
+    use OverError;
 
     #[test]
     fn arr_basic() {
@@ -163,7 +159,7 @@ mod tests {
     #[test]
     fn obj_basic() {
         let obj = Obj::from_map_unchecked(map!{"a".into() => 1.into(),
-                 "b".into() => arr![1, 2].into()});
+        "b".into() => arr![1, 2].into()});
 
         assert_eq!(
             obj,

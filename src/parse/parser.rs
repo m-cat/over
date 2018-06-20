@@ -3,11 +3,11 @@
 #![allow(unknown_lints)]
 #![allow(too_many_arguments)]
 
-use super::{MAX_DEPTH, ParseResult};
 use super::char_stream::CharStream;
-use super::error::{ParseError, parse_err};
 use super::error::ParseErrorKind::*;
+use super::error::{parse_err, ParseError};
 use super::util::*;
+use super::{ParseResult, MAX_DEPTH};
 use arr::{self, Arr};
 use num_bigint::BigInt;
 use num_rational::BigRational;
@@ -72,8 +72,7 @@ fn parse_obj_stream(mut stream: CharStream, mut included: &mut IncludedMap) -> P
         &mut parent,
         1,
         None,
-    )?
-    {}
+    )? {}
 
     Ok(match parent {
         Some(parent) => Obj::from_map_with_parent_unchecked(obj, parent),
@@ -114,8 +113,7 @@ fn parse_obj(
         &mut parent,
         depth,
         Some('}'),
-    )?
-    {}
+    )? {}
 
     let obj = match parent {
         Some(parent) => Obj::from_map_with_parent_unchecked(obj, parent),
@@ -188,9 +186,9 @@ fn parse_field_value_pair(
         }
         globals.insert(field, value);
     } else if is_parent {
-        let par = value.get_obj().map_err(|e| {
-            ParseError::from_over(&e, stream.file(), value_line, value_col)
-        })?;
+        let par = value
+            .get_obj()
+            .map_err(|e| ParseError::from_over(&e, stream.file(), value_line, value_col))?;
         *parent = Some(par);
     } else {
         obj.insert(field, value);
@@ -509,35 +507,31 @@ fn parse_value(
         '{' => parse_obj(&mut stream, &mut globals, included, depth + 1)?,
         '[' => parse_arr(&mut stream, obj, &mut globals, included, depth + 1)?,
         '(' => parse_tup(&mut stream, obj, &mut globals, included, depth + 1)?,
-        '@' => {
-            parse_variable(
-                &mut stream,
-                obj,
-                globals,
-                included,
-                line,
-                col,
-                depth,
-                cur_brace,
-            )?
-        }
+        '@' => parse_variable(
+            &mut stream,
+            obj,
+            globals,
+            included,
+            line,
+            col,
+            depth,
+            cur_brace,
+        )?,
         '<' => parse_include(&mut stream, obj, &mut globals, &mut included, depth + 1)?,
         ch @ '+' | ch @ '-' => {
             parse_unary_op(&mut stream, obj, globals, included, depth, cur_brace, ch)?
         }
         ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
-        ch if Obj::is_valid_field_char(ch, true) => {
-            parse_variable(
-                &mut stream,
-                obj,
-                globals,
-                included,
-                line,
-                col,
-                depth,
-                cur_brace,
-            )?
-        }
+        ch if Obj::is_valid_field_char(ch, true) => parse_variable(
+            &mut stream,
+            obj,
+            globals,
+            included,
+            line,
+            col,
+            depth,
+            cur_brace,
+        )?,
         ch => {
             return parse_err(stream.file(), InvalidValueChar(ch, line, col));
         }
@@ -620,19 +614,17 @@ fn parse_unary_op(
     let col = stream.col();
 
     let res = match stream.peek() {
-        Some(_) => {
-            parse_value(
-                &mut stream,
-                obj,
-                &mut globals,
-                &mut included,
-                line,
-                col,
-                depth + 1,
-                cur_brace,
-                false,
-            )?
-        }
+        Some(_) => parse_value(
+            &mut stream,
+            obj,
+            &mut globals,
+            &mut included,
+            line,
+            col,
+            depth + 1,
+            cur_brace,
+            false,
+        )?,
         None => return parse_err(stream.file(), UnexpectedEnd(line)),
     };
     unary_op_on_value(stream, res, ch, line, col)
@@ -830,16 +822,12 @@ fn parse_variable(
                 )?;
 
                 match value {
-                    Value::Int(int) => {
-                        match int.to_usize() {
-                            Some(index) => {
-                                arr.get(index).map_err(|e| {
-                                    ParseError::from_over(&e, stream.file(), line, col)
-                                })?
-                            }
-                            None => return parse_err(stream.file(), InvalidIndex(int, line, col)),
-                        }
-                    }
+                    Value::Int(int) => match int.to_usize() {
+                        Some(index) => arr
+                            .get(index)
+                            .map_err(|e| ParseError::from_over(&e, stream.file(), line, col))?,
+                        None => return parse_err(stream.file(), InvalidIndex(int, line, col)),
+                    },
                     _ => {
                         return parse_err(
                             stream.file(),
@@ -863,16 +851,12 @@ fn parse_variable(
                 )?;
 
                 match value {
-                    Value::Int(int) => {
-                        match int.to_usize() {
-                            Some(index) => {
-                                tup.get(index).map_err(|e| {
-                                    ParseError::from_over(&e, stream.file(), line, col)
-                                })?
-                            }
-                            None => return parse_err(stream.file(), InvalidIndex(int, line, col)),
-                        }
-                    }
+                    Value::Int(int) => match int.to_usize() {
+                        Some(index) => tup
+                            .get(index)
+                            .map_err(|e| ParseError::from_over(&e, stream.file(), line, col))?,
+                        None => return parse_err(stream.file(), InvalidIndex(int, line, col)),
+                    },
                     _ => {
                         return parse_err(
                             stream.file(),
@@ -928,17 +912,15 @@ fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
 
     if escape {
         ch = match stream.next() {
-            Some(ch) => {
-                match get_escape_char(ch) {
-                    Some(ch) => ch,
-                    None => {
-                        return parse_err(
-                            stream.file(),
-                            InvalidEscapeChar(ch, stream.line(), stream.col() - 1),
-                        )
-                    }
+            Some(ch) => match get_escape_char(ch) {
+                Some(ch) => ch,
+                None => {
+                    return parse_err(
+                        stream.file(),
+                        InvalidEscapeChar(ch, stream.line(), stream.col() - 1),
+                    )
                 }
-            }
+            },
             None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
         }
     }
@@ -1105,11 +1087,10 @@ fn parse_include(
     };
 
     let pathbuf = match stream.file().as_ref() {
-        Some(file) => {
-            Path::new(file).parent().unwrap().join(
-                Path::new(&include_file),
-            )
-        }
+        Some(file) => Path::new(file)
+            .parent()
+            .unwrap()
+            .join(Path::new(&include_file)),
         None => Path::new(&include_file).to_path_buf(),
     };
     let path = pathbuf.as_path();
@@ -1182,19 +1163,15 @@ fn unary_op_on_value(
     let t = val.get_type();
 
     Ok(match op {
-        '+' => {
-            match t {
-                Int | Frac => val,
-                _ => return parse_err(stream.file(), UnaryOperatorError(t, op, line, col)),
-            }
-        }
-        '-' => {
-            match t {
-                Int => (-val.get_int().unwrap()).into(),
-                Frac => (-val.get_frac().unwrap()).into(),
-                _ => return parse_err(stream.file(), UnaryOperatorError(t, op, line, col)),
-            }
-        }
+        '+' => match t {
+            Int | Frac => val,
+            _ => return parse_err(stream.file(), UnaryOperatorError(t, op, line, col)),
+        },
+        '-' => match t {
+            Int => (-val.get_int().unwrap()).into(),
+            Frac => (-val.get_frac().unwrap()).into(),
+            _ => return parse_err(stream.file(), UnaryOperatorError(t, op, line, col)),
+        },
         _ => return parse_err(stream.file(), UnaryOperatorError(t, op, line, col)),
     })
 }
@@ -1293,75 +1270,63 @@ fn binary_op_on_values(
                 }
             }
         }
-        '-' => {
-            match type1 {
-                Int if type2 == Int => (val1.get_int().unwrap() - val2.get_int().unwrap()).into(),
-                Frac if type2 == Frac => {
-                    (val1.get_frac().unwrap() - val2.get_frac().unwrap()).into()
-                }
-                _ => {
-                    return parse_err(
-                        stream.file(),
-                        BinaryOperatorError(type1, type2, op, line, col),
-                    )
-                }
+        '-' => match type1 {
+            Int if type2 == Int => (val1.get_int().unwrap() - val2.get_int().unwrap()).into(),
+            Frac if type2 == Frac => (val1.get_frac().unwrap() - val2.get_frac().unwrap()).into(),
+            _ => {
+                return parse_err(
+                    stream.file(),
+                    BinaryOperatorError(type1, type2, op, line, col),
+                )
             }
-        }
-        '*' => {
-            match type1 {
-                Int if type2 == Int => (val1.get_int().unwrap() * val2.get_int().unwrap()).into(),
-                Frac if type2 == Frac => {
-                    (val1.get_frac().unwrap() * val2.get_frac().unwrap()).into()
-                }
-                _ => {
-                    return parse_err(
-                        stream.file(),
-                        BinaryOperatorError(type1, type2, op, line, col),
-                    )
-                }
+        },
+        '*' => match type1 {
+            Int if type2 == Int => (val1.get_int().unwrap() * val2.get_int().unwrap()).into(),
+            Frac if type2 == Frac => (val1.get_frac().unwrap() * val2.get_frac().unwrap()).into(),
+            _ => {
+                return parse_err(
+                    stream.file(),
+                    BinaryOperatorError(type1, type2, op, line, col),
+                )
             }
-        }
-        '/' => {
-            match type1 {
-                Int if type2 == Int => {
-                    let (int1, int2) = (val1.get_int().unwrap(), val2.get_int().unwrap());
-                    if int2.is_zero() {
-                        return parse_err(stream.file(), InvalidNumeric(line, col));
-                    }
-                    BigRational::new(int1, int2).into()
+        },
+        '/' => match type1 {
+            Int if type2 == Int => {
+                let (int1, int2) = (val1.get_int().unwrap(), val2.get_int().unwrap());
+                if int2.is_zero() {
+                    return parse_err(stream.file(), InvalidNumeric(line, col));
                 }
-                Frac if type2 == Frac => {
-                    let (frac1, frac2) = (val1.get_frac().unwrap(), val2.get_frac().unwrap());
-                    if frac2.is_zero() {
-                        return parse_err(stream.file(), InvalidNumeric(line, col));
-                    }
-                    (frac1 / frac2).into()
-                }
-                _ => {
-                    return parse_err(
-                        stream.file(),
-                        BinaryOperatorError(type1, type2, op, line, col),
-                    )
-                }
+                BigRational::new(int1, int2).into()
             }
-        }
-        '%' => {
-            match type1 {
-                Int if type2 == Int => {
-                    let int2 = val2.get_int().unwrap();
-                    if int2.is_zero() {
-                        return parse_err(stream.file(), InvalidNumeric(line, col));
-                    }
-                    (val1.get_int().unwrap() % int2).into()
+            Frac if type2 == Frac => {
+                let (frac1, frac2) = (val1.get_frac().unwrap(), val2.get_frac().unwrap());
+                if frac2.is_zero() {
+                    return parse_err(stream.file(), InvalidNumeric(line, col));
                 }
-                _ => {
-                    return parse_err(
-                        stream.file(),
-                        BinaryOperatorError(type1, type2, op, line, col),
-                    )
-                }
+                (frac1 / frac2).into()
             }
-        }
+            _ => {
+                return parse_err(
+                    stream.file(),
+                    BinaryOperatorError(type1, type2, op, line, col),
+                )
+            }
+        },
+        '%' => match type1 {
+            Int if type2 == Int => {
+                let int2 = val2.get_int().unwrap();
+                if int2.is_zero() {
+                    return parse_err(stream.file(), InvalidNumeric(line, col));
+                }
+                (val1.get_int().unwrap() % int2).into()
+            }
+            _ => {
+                return parse_err(
+                    stream.file(),
+                    BinaryOperatorError(type1, type2, op, line, col),
+                )
+            }
+        },
         _ => {
             return parse_err(
                 stream.file(),
@@ -1401,26 +1366,22 @@ fn find_char(mut stream: CharStream) -> bool {
 // Helper function to make sure values are followed by a correct end delimiter.
 fn check_value_end(stream: &CharStream, cur_brace: Option<char>) -> ParseResult<()> {
     match stream.peek() {
-        Some(ch) => {
-            match ch {
-                ch if is_value_end_char(ch) => {
-                    if is_end_delimiter(ch) && Some(ch) != cur_brace {
-                        parse_err(
-                            stream.file(),
-                            InvalidClosingBracket(cur_brace, ch, stream.line(), stream.col()),
-                        )
-                    } else {
-                        Ok(())
-                    }
-                }
-                ch => {
+        Some(ch) => match ch {
+            ch if is_value_end_char(ch) => {
+                if is_end_delimiter(ch) && Some(ch) != cur_brace {
                     parse_err(
                         stream.file(),
-                        InvalidValueChar(ch, stream.line(), stream.col()),
+                        InvalidClosingBracket(cur_brace, ch, stream.line(), stream.col()),
                     )
+                } else {
+                    Ok(())
                 }
             }
-        }
+            ch => parse_err(
+                stream.file(),
+                InvalidValueChar(ch, stream.line(), stream.col()),
+            ),
+        },
         None => Ok(()),
     }
 }

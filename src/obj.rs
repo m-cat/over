@@ -3,7 +3,6 @@
 
 #![allow(unused_imports)] // will complain about num_traits::Zero otherwise
 
-use {INDENT_STEP, OverResult};
 use arr::Arr;
 use error::OverError;
 use num_bigint::BigInt;
@@ -11,16 +10,17 @@ use num_rational::BigRational;
 use num_traits::Zero;
 use parse;
 use parse::format::Format;
-use std::{convert, fmt, io};
-use std::collections::HashMap;
 use std::collections::hash_map::{Iter, Keys, Values};
+use std::collections::HashMap;
 use std::str::FromStr;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::{convert, fmt, io};
 use tup::Tup;
 use types::Type;
 use util::{is_digit, write_file_str};
 use value::Value;
+use {OverResult, INDENT_STEP};
 
 lazy_static! {
     static ref CUR_ID: AtomicUsize = AtomicUsize::new(0);
@@ -215,12 +215,10 @@ impl Obj {
     pub fn get(&self, field: &str) -> Option<Value> {
         match self.inner.map.get(field) {
             Some(value) => Some(value.clone()),
-            None => {
-                match self.inner.parent {
-                    Some(ref parent) => parent.get(field),
-                    None => None,
-                }
-            }
+            None => match self.inner.parent {
+                Some(ref parent) => parent.get(field),
+                None => None,
+            },
         }
     }
 
@@ -229,68 +227,66 @@ impl Obj {
     pub fn get_with_source(&self, field: &str) -> Option<(Value, Obj)> {
         match self.inner.map.get(field) {
             Some(value) => Some((value.clone(), self.clone())),
-            None => {
-                match self.inner.parent {
-                    Some(ref parent) => parent.get_with_source(field),
-                    None => None,
-                }
-            }
+            None => match self.inner.parent {
+                Some(ref parent) => parent.get_with_source(field),
+                None => None,
+            },
         }
     }
 
     get_fn!(
         "Returns the `bool` found at `field`. \
-             Returns an error if the field was not found \
-             or if the `Value` at `field` is not `Bool`.",
+         Returns an error if the field was not found \
+         or if the `Value` at `field` is not `Bool`.",
         get_bool,
         bool
     );
     get_fn!(
         "Returns the `BigInt` found at `field`. \
-             Returns an error if the field was not found \
-             or if the `Value` at `field` is not `Int`.",
+         Returns an error if the field was not found \
+         or if the `Value` at `field` is not `Int`.",
         get_int,
         BigInt
     );
     get_fn!(
         "Returns the `BigRational` found at `field`. \
-             Returns an error if the field was not found \
-             or if the `Value` at `field` is not `Frac`.",
+         Returns an error if the field was not found \
+         or if the `Value` at `field` is not `Frac`.",
         get_frac,
         BigRational
     );
     get_fn!(
         "Returns the `char` found at `field`. \
-             Returns an error if the field was not found \
-             or if the `Value` at `field` is not `Char`.",
+         Returns an error if the field was not found \
+         or if the `Value` at `field` is not `Char`.",
         get_char,
         char
     );
     get_fn!(
         "Returns the `String` found at `field`. \
-             Returns an error if the field was not found \
-             or if the `Value` at `field` is not `Str`.",
+         Returns an error if the field was not found \
+         or if the `Value` at `field` is not `Str`.",
         get_str,
         String
     );
     get_fn!(
         "Returns the `Arr` found at `field`. \
-             Returns an error if the field was not found \
-             or if the `Value` at `field` is not `Arr`.",
+         Returns an error if the field was not found \
+         or if the `Value` at `field` is not `Arr`.",
         get_arr,
         Arr
     );
     get_fn!(
         "Returns the `Tup` found at `field`. \
-             Returns an error if the field was not found \
-             or if the `Value` at `field` is not `Tup`.",
+         Returns an error if the field was not found \
+         or if the `Value` at `field` is not `Tup`.",
         get_tup,
         Tup
     );
     get_fn!(
         "Returns the `Obj` found at `field`. \
-             Returns an error if the field was not found \
-             or if the `Value` at `field` is not `Obj`.",
+         Returns an error if the field was not found \
+         or if the `Value` at `field` is not `Obj`.",
         get_obj,
         Obj
     );

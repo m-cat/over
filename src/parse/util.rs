@@ -2,7 +2,7 @@
 
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use num_traits::{FromPrimitive, pow};
+use num_traits::{pow, FromPrimitive};
 use std::fs::File;
 use std::io;
 use std::io::Read;

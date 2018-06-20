@@ -2,16 +2,16 @@
 
 #![allow(missing_docs)]
 
-use super::MAX_DEPTH;
-use super::ParseResult;
 use super::misc::format_char;
-use OverError;
+use super::ParseResult;
+use super::MAX_DEPTH;
 use num_bigint::{BigInt, ParseBigIntError};
 use std::error::Error;
 use std::fmt;
 use std::io;
 use std::num::ParseIntError;
 use types::Type;
+use OverError;
 
 pub fn parse_err<T>(file: Option<String>, kind: ParseErrorKind) -> ParseResult<T> {
     Err(ParseError { file, kind })
@@ -66,212 +66,130 @@ impl fmt::Display for ParseError {
         }
 
         match (*self).kind {
-            BinaryOperatorError(ref expected, ref found, ref op, ref line, ref col) => {
-                write!(
-                    f,
-                    "Could not apply operator {} on types {} and {} at line {}, column {}",
-                    op,
-                    expected,
-                    found,
-                    line,
-                    col,
-                )
-            }
-            CyclicInclude(ref file, ref line, ref col) => {
-                write!(
-                    f,
-                    "Tried to cyclically include file \"{}\" at line {}, column {}",
-                    file,
-                    line,
-                    col
-                )
-            }
-            DuplicateField(ref field, ref line, ref col) => {
-                write!(
-                    f,
-                    "Duplicate field \"{}\" at line {}, column {}",
-                    field,
-                    line,
-                    col
-                )
-            }
-            DuplicateGlobal(ref field, ref line, ref col) => {
-                write!(
-                    f,
-                    "Duplicate global \"{}\" at line {}, column {}",
-                    field,
-                    line,
-                    col
-                )
-            }
-            ExpectedType(ref expected, ref found, ref line, ref col) => {
-                write!(
-                    f,
-                    "Expected {} at line {}, column {}; found {}",
-                    expected,
-                    line,
-                    col,
-                    found
-                )
-            }
-            GlobalNotFound(ref var, ref line, ref col) => {
-                write!(
-                    f,
-                    "Global \"{}\" at line {}, column {} could not be found",
-                    var,
-                    line,
-                    col
-                )
-            }
-            InvalidClosingBracket(ref expected, ref found, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid closing bracket '{}' at line {}, column {}; expected {}",
-                    found,
-                    line,
-                    col,
-                    match *expected {
-                        Some(ch) => format!("'{}'", ch),
-                        None => String::from("none"),
-                    }
-                )
-            }
-            InvalidDot(ref t, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid use of dot notation on value of type {} at line {}, column {}; \
-                     value must be an Obj, Arr, or Tup.",
-                    t,
-                    line,
-                    col
-                )
-            }
-            InvalidEscapeChar(ref ch, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid escape character '\\{}' at line {}, column {}. \
-                     If you meant to write a backslash, use '\\\\'",
-                    &format_char(ch),
-                    line,
-                    col
-                )
-            }
-            InvalidFieldChar(ref ch, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid character '{}' for field at line {}, column {}",
-                    &format_char(ch),
-                    line,
-                    col
-                )
-            }
-            InvalidFieldName(ref field, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid field name \"{}\" at line {}, column {}",
-                    field,
-                    line,
-                    col
-                )
-            }
-            InvalidIncludeChar(ref found, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid include token character \'{}\' at line {}, column {}",
-                    found,
-                    line,
-                    col
-                )
-            }
-            InvalidIncludePath(ref path, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid include path \"{}\" at line {}, column {}",
-                    path,
-                    line,
-                    col
-                )
-            }
-            InvalidIncludeToken(ref t, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid value of type \"{}\" at line {}, column {}; \
-                     must be either a Str value or one of the tokens \
-                     \"Obj\", \"Arr\", \"Tup\", or \"Str\"",
-                    t,
-                    line,
-                    col
-                )
-            }
-            InvalidIndex(ref index, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid index {} at line {}, column {}",
-                    index,
-                    line,
-                    col
-                )
-            }
+            BinaryOperatorError(ref expected, ref found, ref op, ref line, ref col) => write!(
+                f,
+                "Could not apply operator {} on types {} and {} at line {}, column {}",
+                op, expected, found, line, col,
+            ),
+            CyclicInclude(ref file, ref line, ref col) => write!(
+                f,
+                "Tried to cyclically include file \"{}\" at line {}, column {}",
+                file, line, col
+            ),
+            DuplicateField(ref field, ref line, ref col) => write!(
+                f,
+                "Duplicate field \"{}\" at line {}, column {}",
+                field, line, col
+            ),
+            DuplicateGlobal(ref field, ref line, ref col) => write!(
+                f,
+                "Duplicate global \"{}\" at line {}, column {}",
+                field, line, col
+            ),
+            ExpectedType(ref expected, ref found, ref line, ref col) => write!(
+                f,
+                "Expected {} at line {}, column {}; found {}",
+                expected, line, col, found
+            ),
+            GlobalNotFound(ref var, ref line, ref col) => write!(
+                f,
+                "Global \"{}\" at line {}, column {} could not be found",
+                var, line, col
+            ),
+            InvalidClosingBracket(ref expected, ref found, ref line, ref col) => write!(
+                f,
+                "Invalid closing bracket '{}' at line {}, column {}; expected {}",
+                found,
+                line,
+                col,
+                match *expected {
+                    Some(ch) => format!("'{}'", ch),
+                    None => String::from("none"),
+                }
+            ),
+            InvalidDot(ref t, ref line, ref col) => write!(
+                f,
+                "Invalid use of dot notation on value of type {} at line {}, column {}; \
+                 value must be an Obj, Arr, or Tup.",
+                t, line, col
+            ),
+            InvalidEscapeChar(ref ch, ref line, ref col) => write!(
+                f,
+                "Invalid escape character '\\{}' at line {}, column {}. \
+                 If you meant to write a backslash, use '\\\\'",
+                &format_char(ch),
+                line,
+                col
+            ),
+            InvalidFieldChar(ref ch, ref line, ref col) => write!(
+                f,
+                "Invalid character '{}' for field at line {}, column {}",
+                &format_char(ch),
+                line,
+                col
+            ),
+            InvalidFieldName(ref field, ref line, ref col) => write!(
+                f,
+                "Invalid field name \"{}\" at line {}, column {}",
+                field, line, col
+            ),
+            InvalidIncludeChar(ref found, ref line, ref col) => write!(
+                f,
+                "Invalid include token character \'{}\' at line {}, column {}",
+                found, line, col
+            ),
+            InvalidIncludePath(ref path, ref line, ref col) => write!(
+                f,
+                "Invalid include path \"{}\" at line {}, column {}",
+                path, line, col
+            ),
+            InvalidIncludeToken(ref t, ref line, ref col) => write!(
+                f,
+                "Invalid value of type \"{}\" at line {}, column {}; \
+                 must be either a Str value or one of the tokens \
+                 \"Obj\", \"Arr\", \"Tup\", or \"Str\"",
+                t, line, col
+            ),
+            InvalidIndex(ref index, ref line, ref col) => write!(
+                f,
+                "Invalid index {} at line {}, column {}",
+                index, line, col
+            ),
             InvalidNumeric(ref line, ref col) => {
                 write!(f, "Invalid numeric value at line {}, column {}", line, col)
             }
-            InvalidValue(ref value, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid value \"{}\" at line {}, column {}",
-                    value,
-                    line,
-                    col
-                )
-            }
-            InvalidValueChar(ref ch, ref line, ref col) => {
-                write!(
-                    f,
-                    "Invalid character '{}' for value at line {}, column {}",
-                    &format_char(ch),
-                    line,
-                    col
-                )
-            }
-            MaxDepth(ref line, ref col) => {
-                write!(
-                    f,
-                    "Exceeded maximum recursion depth ({}) at line {}, column {}",
-                    MAX_DEPTH,
-                    line,
-                    col
-                )
-            }
-            UnaryOperatorError(ref found, ref op, ref line, ref col) => {
-                write!(
-                    f,
-                    "Could not apply operator {} on type {} at line {}, column {}",
-                    op,
-                    found,
-                    line,
-                    col,
-                )
-            }
-            UnexpectedEnd(ref line) => {
-                write!(
-                    f,
-                    "Unexpected end at line {}",
-                    line,
-                )
-            }
-            VariableNotFound(ref var, ref line, ref col) => {
-                write!(
-                    f,
-                    "Variable \"{}\" at line {}, column {} could not be found",
-                    var,
-                    line,
-                    col
-                )
-            }
+            InvalidValue(ref value, ref line, ref col) => write!(
+                f,
+                "Invalid value \"{}\" at line {}, column {}",
+                value, line, col
+            ),
+            InvalidValueChar(ref ch, ref line, ref col) => write!(
+                f,
+                "Invalid character '{}' for value at line {}, column {}",
+                &format_char(ch),
+                line,
+                col
+            ),
+            MaxDepth(ref line, ref col) => write!(
+                f,
+                "Exceeded maximum recursion depth ({}) at line {}, column {}",
+                MAX_DEPTH, line, col
+            ),
+            UnaryOperatorError(ref found, ref op, ref line, ref col) => write!(
+                f,
+                "Could not apply operator {} on type {} at line {}, column {}",
+                op, found, line, col,
+            ),
+            UnexpectedEnd(ref line) => write!(f, "Unexpected end at line {}", line,),
+            VariableNotFound(ref var, ref line, ref col) => write!(
+                f,
+                "Variable \"{}\" at line {}, column {} could not be found",
+                var, line, col
+            ),
 
-            IoError(ref error) |
-            OverError(ref error) |
-            ParseIntError(ref error) => write!(f, "{}", error),
+            IoError(ref error) | OverError(ref error) | ParseIntError(ref error) => {
+                write!(f, "{}", error)
+            }
         }
     }
 }
@@ -281,8 +199,9 @@ impl Error for ParseError {
         use self::ParseErrorKind::*;
 
         match (*self).kind {
-            BinaryOperatorError(_, _, _, _, _) |
-            UnaryOperatorError(_, _, _, _) => "Could not apply operator",
+            BinaryOperatorError(_, _, _, _, _) | UnaryOperatorError(_, _, _, _) => {
+                "Could not apply operator"
+            }
 
             CyclicInclude(_, _, _) => "Tried to cyclically include file",
             DuplicateField(_, _, _) => "Duplicate field",
@@ -305,9 +224,7 @@ impl Error for ParseError {
             UnexpectedEnd(_) => "Unexpected end when reading value",
             VariableNotFound(_, _, _) => "Variable could not be found",
 
-            IoError(ref error) |
-            OverError(ref error) |
-            ParseIntError(ref error) => error,
+            IoError(ref error) | OverError(ref error) | ParseIntError(ref error) => error,
         }
     }
 }

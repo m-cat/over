@@ -5,22 +5,21 @@ extern crate num_traits;
 extern crate over;
 
 use num_traits::ToPrimitive;
-use over::OverError;
 use over::obj::Obj;
 use over::types::Type;
 use over::value::Value;
+use over::OverError;
 
 // Display nicely-formatted values on failure.
 macro_rules! test_eq {
-    ( $left:expr, $right:expr ) => {
-        {
-            if $left != $right {
-                panic!(format!("Left did not equal right.\nLeft: {}\nRight: {}\n",
-                       $left,
-                       $right));
-            }
+    ($left:expr, $right:expr) => {{
+        if $left != $right {
+            panic!(format!(
+                "Left did not equal right.\nLeft: {}\nRight: {}\n",
+                $left, $right
+            ));
         }
-    }
+    }};
 }
 
 // Make comparisons with ints a bit more concise.
@@ -81,21 +80,21 @@ fn example() {
     assert_eq!(
         obj.get("customer").unwrap(),
         obj!{"first_name" => "Dorothy",
-             "family_name" => "Gale"}
+        "family_name" => "Gale"}
     );
 
     assert_eq!(
         obj.get("items").unwrap(),
         arr![
             obj!{"part_no" => "A4786",
-                 "descrip" => "Water Bucket (Filled)",
-                 "price" => frac!(147,100),
-                 "quantity" => 4},
+            "descrip" => "Water Bucket (Filled)",
+            "price" => frac!(147,100),
+            "quantity" => 4},
             obj!{"part_no" => "E1628",
-                 "descrip" => "High Heeled \"Ruby\" Slippers",
-                 "size" => 8,
-                 "price" => frac!(1337,10),
-                 "quantity" => 1},
+            "descrip" => "High Heeled \"Ruby\" Slippers",
+            "size" => 8,
+            "price" => frac!(1337,10),
+            "quantity" => 1},
         ]
     );
 
@@ -217,10 +216,10 @@ fn numbers() {
     test_eq!(
         obj.get("tup").unwrap(),
         tup!(
-            frac!(-1,2),
+            frac!(-1, 2),
             obj.get_frac("whole_frac").unwrap(),
-            frac!(1,1),
-            frac!(3,2),
+            frac!(1, 1),
+            frac!(3, 2),
         )
     );
 
@@ -311,15 +310,13 @@ fn write() {
     let write_path = "tests/test_files/write.over";
 
     macro_rules! write_helper {
-        ( $filename:expr ) => {
-            {
-                let obj1 = Obj::from_file($filename).unwrap();
-                obj1.write_to_file(write_path).unwrap();
+        ($filename:expr) => {{
+            let obj1 = Obj::from_file($filename).unwrap();
+            obj1.write_to_file(write_path).unwrap();
 
-                let obj2 = Obj::from_file(write_path).unwrap();
-                test_eq!(obj1, obj2);
-            }
-        }
+            let obj2 = Obj::from_file(write_path).unwrap();
+            test_eq!(obj1, obj2);
+        }};
     }
 
     write_helper!("tests/test_files/basic.over");
@@ -338,19 +335,17 @@ fn write() {
 #[test]
 fn errors() {
     macro_rules! error_helper {
-        ( $filename:expr, $error:expr ) => {
-            {
-                let full = format!("tests/test_files/errors/{}", $filename);
-                match Obj::from_file(&full) {
-                    Err(OverError::ParseError(s)) => {
-                        if s != format!("{}: {}", full, $error) {
-                            panic!("Error in {}: {:?}", $filename, s);
-                        }
+        ($filename:expr, $error:expr) => {{
+            let full = format!("tests/test_files/errors/{}", $filename);
+            match Obj::from_file(&full) {
+                Err(OverError::ParseError(s)) => {
+                    if s != format!("{}: {}", full, $error) {
+                        panic!("Error in {}: {:?}", $filename, s);
                     }
-                    res => panic!("No error occurred in {}: {:?}", $filename, res),
                 }
+                res => panic!("No error occurred in {}: {:?}", $filename, res),
             }
-        }
+        }};
     }
 
     error_helper!(

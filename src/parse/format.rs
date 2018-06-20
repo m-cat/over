@@ -1,6 +1,5 @@
 //! Module containing functions for formatting output of objects.
 
-use INDENT_STEP;
 use arr::Arr;
 use num_bigint::BigInt;
 use num_rational::BigRational;
@@ -8,6 +7,7 @@ use num_traits::One;
 use obj::Obj;
 use tup::Tup;
 use value::Value;
+use INDENT_STEP;
 
 // Returns a `String` with the given amount of spaces.
 fn indent(amount: usize) -> String {
@@ -110,7 +110,11 @@ impl Format for Arr {
             }
             1 => {
                 let f = self.get(0).unwrap().format(true, indent_amt);
-                if full { format!("[{}]", f) } else { f }
+                if full {
+                    format!("[{}]", f)
+                } else {
+                    f
+                }
             }
             _ => {
                 let mut s = if full {
@@ -153,7 +157,11 @@ impl Format for Tup {
             }
             1 => {
                 let f = self.get(0).unwrap().format(true, indent_amt);
-                if full { format!("({})", f) } else { f }
+                if full {
+                    format!("({})", f)
+                } else {
+                    f
+                }
             }
             _ => {
                 let mut s = if full {

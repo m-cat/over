@@ -1,6 +1,5 @@
 //! Module for values.
 
-use {INDENT_STEP, OverResult};
 use arr;
 use error::OverError;
 use num_bigint::BigInt;
@@ -11,6 +10,7 @@ use parse::format::Format;
 use std::fmt;
 use tup;
 use types::Type;
+use {OverResult, INDENT_STEP};
 
 /// Enum of possible values and their inner types.
 #[derive(Clone, Debug, PartialEq)]
@@ -55,7 +55,11 @@ macro_rules! get_fn {
 impl Value {
     /// Returns true if this `Value` is null.
     pub fn is_null(&self) -> bool {
-        if let Value::Null = *self { true } else { false }
+        if let Value::Null = *self {
+            true
+        } else {
+            false
+        }
     }
 
     /// Returns the `Type` of this `Value`.
@@ -77,14 +81,14 @@ impl Value {
 
     get_fn!(
         "Returns the `bool` contained in this `Value`. \
-             Returns an error if this `Value` is not `Bool`.",
+         Returns an error if this `Value` is not `Bool`.",
         get_bool,
         bool,
         Bool
     );
     get_fn!(
         "Returns the `BigInt` contained in this `Value`. \
-             Returns an error if this `Value` is not `Int`.",
+         Returns an error if this `Value` is not `Int`.",
         get_int,
         BigInt,
         Int
@@ -100,21 +104,21 @@ impl Value {
     }
     get_fn!(
         "Returns the `char` contained in this `Value`. \
-             Returns an error if this `Value` is not `Char`.",
+         Returns an error if this `Value` is not `Char`.",
         get_char,
         char,
         Char
     );
     get_fn!(
         "Returns the `String` contained in this `Value`. \
-             Returns an error if this `Value` is not `Str`.",
+         Returns an error if this `Value` is not `Str`.",
         get_str,
         String,
         Str
     );
     get_fn!(
         "Returns the `Obj` contained in this `Value`. \
-             Returns an error if this `Value` is not `Obj`.",
+         Returns an error if this `Value` is not `Obj`.",
         get_obj,
         obj::Obj,
         Obj
@@ -158,7 +162,7 @@ macro_rules! impl_eq {
             fn eq(&self, other: &$type) -> bool {
                 match *self {
                     Value::$valtype(ref value) => value == other,
-                    _                         => false
+                    _ => false,
                 }
             }
         }
@@ -167,11 +171,11 @@ macro_rules! impl_eq {
             fn eq(&self, other: &Value) -> bool {
                 match *other {
                     Value::$valtype(ref value) => value == self,
-                    _ => false
+                    _ => false,
                 }
             }
         }
-    }
+    };
 }
 
 impl_eq!(Bool, bool);
@@ -208,12 +212,10 @@ macro_rules! impl_eq_int {
         impl PartialEq<$type> for Value {
             fn eq(&self, other: &$type) -> bool {
                 match *self {
-                    Value::Int(ref value) => {
-                        match value.$fn() {
-                            Some(value) => value == *other,
-                            None => false
-                        }
-                    }
+                    Value::Int(ref value) => match value.$fn() {
+                        Some(value) => value == *other,
+                        None => false,
+                    },
                     _ => false,
                 }
             }
@@ -222,17 +224,15 @@ macro_rules! impl_eq_int {
         impl PartialEq<Value> for $type {
             fn eq(&self, other: &Value) -> bool {
                 match *other {
-                    Value::Int(ref value) => {
-                        match value.$fn() {
-                            Some(value) => value == *self,
-                            None => false
-                        }
-                    }
+                    Value::Int(ref value) => match value.$fn() {
+                        Some(value) => value == *self,
+                        None => false,
+                    },
                     _ => false,
                 }
             }
         }
-    }
+    };
 }
 
 impl_eq_int!(usize, to_usize);
@@ -248,7 +248,7 @@ impl_eq_int!(i64, to_i64);
 // impl From
 
 macro_rules! impl_from {
-    ( $type:ty, $fn:tt ) => {
+    ($type:ty, $fn:tt) => {
         impl From<$type> for Value {
             fn from(inner: $type) -> Self {
                 Value::$fn(inner.into())
