@@ -17,6 +17,6 @@ version = "0.6.3"
 
 [dependencies]
 lazy_static = "1.0.*"
-num-bigint = "0.1.*"
-num-rational = "0.1.*"
-num-traits = "0.1.*"
+num-bigint = "0.2.*"
+num-rational = "0.2.*"
+num-traits = "0.2.*"
