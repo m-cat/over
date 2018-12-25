@@ -1,6 +1,6 @@
-pub fn format_char(ch: &char) -> String {
+pub fn format_char(ch: char) -> String {
     match ch {
-        &'\n' => String::from("\\n"),
+        '\n' => String::from("\\n"),
         ch => format!("{}", ch),
     }
 }

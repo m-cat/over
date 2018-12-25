@@ -117,14 +117,14 @@ impl fmt::Display for ParseError {
                 f,
                 "Invalid escape character '\\{}' at line {}, column {}. \
                  If you meant to write a backslash, use '\\\\'",
-                &format_char(ch),
+                format_char(*ch),
                 line,
                 col
             ),
             InvalidFieldChar(ref ch, ref line, ref col) => write!(
                 f,
                 "Invalid character '{}' for field at line {}, column {}",
-                &format_char(ch),
+                format_char(*ch),
                 line,
                 col
             ),
@@ -166,7 +166,7 @@ impl fmt::Display for ParseError {
             InvalidValueChar(ref ch, ref line, ref col) => write!(
                 f,
                 "Invalid character '{}' for value at line {}, column {}",
-                &format_char(ch),
+                format_char(*ch),
                 line,
                 col
             ),

@@ -1,7 +1,6 @@
 //! Module containing parsing functions.
 
-#![allow(unknown_lints)]
-#![allow(too_many_arguments)]
+#![allow(clippy::too_many_arguments)]
 
 use super::char_stream::CharStream;
 use super::error::ParseErrorKind::*;
