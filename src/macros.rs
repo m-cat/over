@@ -158,12 +158,12 @@ mod tests {
 
     #[test]
     fn obj_basic() {
-        let obj = Obj::from_map_unchecked(map!{"a".into() => 1.into(),
+        let obj = Obj::from_map_unchecked(map! {"a".into() => 1.into(),
         "b".into() => arr![1, 2].into()});
 
         assert_eq!(
             obj,
-            obj!{
+            obj! {
                 "a" => 1,
                 "b" => arr![1, 2]
             }

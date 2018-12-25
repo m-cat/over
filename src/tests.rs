@@ -19,7 +19,7 @@ macro_rules! test_eq {
 // Test setting and getting values.
 #[test]
 fn set_and_get() {
-    let obj = obj!{
+    let obj = obj! {
         "null" => Value::Null,
         "bool" => true,
         "int" => -5,
@@ -74,17 +74,17 @@ fn set_and_get() {
 // Test setting and getting values through parents.
 #[test]
 fn parents() {
-    let def2 = obj!{
+    let def2 = obj! {
         "bool2" => true,
         "bool3" => true
     };
-    let def1 = obj!{
+    let def1 = obj! {
         "^" => def2.clone(),
         "bool1" => true,
         "bool2" => false,
         "test2" => "bye",
     };
-    let obj = obj!{
+    let obj = obj! {
         "^" => def1.clone(),
         "bool1" => true,
         "test1" => "hi",
@@ -96,10 +96,10 @@ fn parents() {
     assert_ne!(def1, def2);
     assert_ne!(obj, def2);
 
-    let obj2 = obj!{ "^" => def1.clone() };
+    let obj2 = obj! { "^" => def1.clone() };
     assert_ne!(obj, obj2);
 
-    let obj2 = obj!{ "^" => def1.clone(), "test1" => "hi", "bool1" => true };
+    let obj2 = obj! { "^" => def1.clone(), "test1" => "hi", "bool1" => true };
     test_eq!(obj, obj2);
 
     // Bool
@@ -124,7 +124,7 @@ fn parents() {
 
 #[test]
 fn types() {
-    let obj = obj!{
+    let obj = obj! {
         "bool" => true,
         "str" => "",
         "arr_char" => arr!['w', 'o', 'w'],

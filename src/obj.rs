@@ -357,7 +357,7 @@ impl Obj {
 
 impl Default for Obj {
     fn default() -> Self {
-        Self::from_map_unchecked(map!{})
+        Self::from_map_unchecked(map! {})
     }
 }
 

@@ -36,47 +36,63 @@ impl Type {
         use self::Type::*;
 
         match *self {
-            Any => if let Any = *other {
-                true
-            } else {
-                false
-            },
+            Any => {
+                if let Any = *other {
+                    true
+                } else {
+                    false
+                }
+            }
 
-            Null => if let Null = *other {
-                true
-            } else {
-                false
-            },
-            Bool => if let Bool = *other {
-                true
-            } else {
-                false
-            },
-            Int => if let Int = *other {
-                true
-            } else {
-                false
-            },
-            Frac => if let Frac = *other {
-                true
-            } else {
-                false
-            },
-            Char => if let Char = *other {
-                true
-            } else {
-                false
-            },
-            Str => if let Str = *other {
-                true
-            } else {
-                false
-            },
-            Obj => if let Obj = *other {
-                true
-            } else {
-                false
-            },
+            Null => {
+                if let Null = *other {
+                    true
+                } else {
+                    false
+                }
+            }
+            Bool => {
+                if let Bool = *other {
+                    true
+                } else {
+                    false
+                }
+            }
+            Int => {
+                if let Int = *other {
+                    true
+                } else {
+                    false
+                }
+            }
+            Frac => {
+                if let Frac = *other {
+                    true
+                } else {
+                    false
+                }
+            }
+            Char => {
+                if let Char = *other {
+                    true
+                } else {
+                    false
+                }
+            }
+            Str => {
+                if let Str = *other {
+                    true
+                } else {
+                    false
+                }
+            }
+            Obj => {
+                if let Obj = *other {
+                    true
+                } else {
+                    false
+                }
+            }
 
             Arr(ref t1) => {
                 if let Arr(ref t2) = *other {
