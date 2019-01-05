@@ -9,7 +9,7 @@ mod parser;
 mod util;
 
 use self::error::ParseError;
-use Obj;
+use crate::Obj;
 
 type ParseResult<T> = Result<T, ParseError>;
 

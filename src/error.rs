@@ -2,11 +2,11 @@
 
 #![allow(missing_docs)]
 
-use parse::error::ParseError;
+use crate::parse::error::ParseError;
+use crate::types::Type;
 use std::error::Error;
 use std::fmt;
 use std::io;
-use types::Type;
 
 /// The fabulous OVER error type.
 #[derive(Debug, PartialEq, Eq)]

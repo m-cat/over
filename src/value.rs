@@ -1,16 +1,16 @@
 //! Module for values.
 
-use arr;
-use error::OverError;
+use crate::arr;
+use crate::error::OverError;
+use crate::obj;
+use crate::parse::format::Format;
+use crate::tup;
+use crate::types::Type;
+use crate::{OverResult, INDENT_STEP};
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::ToPrimitive;
-use obj;
-use parse::format::Format;
 use std::fmt;
-use tup;
-use types::Type;
-use {OverResult, INDENT_STEP};
 
 /// Enum of possible values and their inner types.
 #[derive(Clone, Debug, PartialEq)]

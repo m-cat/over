@@ -7,17 +7,17 @@ use super::error::ParseErrorKind::*;
 use super::error::{parse_err, ParseError};
 use super::util::*;
 use super::{ParseResult, MAX_DEPTH};
-use arr::{self, Arr};
+use crate::arr::{self, Arr};
+use crate::obj::Obj;
+use crate::tup::Tup;
+use crate::types::Type;
+use crate::value::Value;
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{ToPrimitive, Zero};
-use obj::Obj;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::Deref;
 use std::path::Path;
-use tup::Tup;
-use types::Type;
-use value::Value;
 
 type ObjMap = HashMap<String, Value>;
 type GlobalMap = HashMap<String, Value>;
@@ -1157,7 +1157,7 @@ fn unary_op_on_value(
     line: usize,
     col: usize,
 ) -> ParseResult<Value> {
-    use types::Type::*;
+    use crate::types::Type::*;
 
     let t = val.get_type();
 
@@ -1184,7 +1184,7 @@ fn binary_op_on_values(
     line: usize,
     col: usize,
 ) -> ParseResult<Value> {
-    use types::Type::*;
+    use crate::types::Type::*;
 
     let (mut type1, mut type2) = (val1.get_type(), val2.get_type());
 

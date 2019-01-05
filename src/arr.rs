@@ -1,13 +1,13 @@
 //! `Arr` module.
 //! An array container which can hold an arbitrary number of elements of a single type.
 
-use parse::format::Format;
+use crate::parse::format::Format;
+use crate::types::Type;
+use crate::value::Value;
+use crate::{OverError, OverResult, INDENT_STEP};
 use std::fmt;
 use std::slice::Iter;
 use std::sync::Arc;
-use types::Type;
-use value::Value;
-use {OverError, OverResult, INDENT_STEP};
 
 #[derive(Clone, Debug)]
 struct ArrInner {

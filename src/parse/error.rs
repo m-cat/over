@@ -5,13 +5,13 @@
 use super::misc::format_char;
 use super::ParseResult;
 use super::MAX_DEPTH;
+use crate::types::Type;
+use crate::OverError;
 use num_bigint::{BigInt, ParseBigIntError};
 use std::error::Error;
 use std::fmt;
 use std::io;
 use std::num::ParseIntError;
-use types::Type;
-use OverError;
 
 pub fn parse_err<T>(file: Option<String>, kind: ParseErrorKind) -> ParseResult<T> {
     Err(ParseError { file, kind })

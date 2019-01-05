@@ -1,8 +1,8 @@
 //! Tests.
 
-use error::OverError;
-use types::Type;
-use value::Value;
+use crate::error::OverError;
+use crate::types::Type;
+use crate::value::Value;
 
 // Display nicely-formatted values on failure.
 macro_rules! test_eq {
