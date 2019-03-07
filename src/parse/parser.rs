@@ -247,7 +247,7 @@ fn parse_arr_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Arr
                     return parse_err(
                         stream.file(),
                         ExpectedType(tcur, tnew, value_line, value_col),
-                    )
+                    );
                 }
             }
         } else if tcur != tnew {
@@ -329,7 +329,7 @@ fn parse_arr(
                     return parse_err(
                         stream.file(),
                         ExpectedType(tcur, tnew, value_line, value_col),
-                    )
+                    );
                 }
             }
         } else if tcur != tnew {
@@ -467,7 +467,7 @@ fn parse_field(
                 return parse_err(
                     stream.file(),
                     InvalidFieldChar(ch, stream.line(), stream.col() - 1),
-                )
+                );
             }
         }
 
@@ -670,7 +670,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
                 return parse_err(
                     stream.file(),
                     InvalidValueChar(ch, stream.line(), stream.col()),
-                )
+                );
             }
         }
 
@@ -749,7 +749,7 @@ fn parse_variable(
                         return parse_err(
                             stream.file(),
                             InvalidValueChar(ch, stream.line(), stream.col()),
-                        )
+                        );
                     }
                     None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
                 }
@@ -766,7 +766,7 @@ fn parse_variable(
                 return parse_err(
                     stream.file(),
                     InvalidValueChar(ch, stream.line(), stream.col()),
-                )
+                );
             }
         }
     }
@@ -831,7 +831,7 @@ fn parse_variable(
                         return parse_err(
                             stream.file(),
                             ExpectedType(Type::Int, value.get_type(), line, col),
-                        )
+                        );
                     }
                 }
             }
@@ -860,7 +860,7 @@ fn parse_variable(
                         return parse_err(
                             stream.file(),
                             ExpectedType(Type::Int, value.get_type(), line, col),
-                        )
+                        );
                     }
                 }
             }
@@ -903,7 +903,7 @@ fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
             return parse_err(
                 stream.file(),
                 InvalidValueChar(ch, stream.line(), stream.col() - 1),
-            )
+            );
         }
         Some(ch) => (false, ch),
         None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
@@ -917,7 +917,7 @@ fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
                     return parse_err(
                         stream.file(),
                         InvalidEscapeChar(ch, stream.line(), stream.col() - 1),
-                    )
+                    );
                 }
             },
             None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
@@ -930,7 +930,7 @@ fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
             return parse_err(
                 stream.file(),
                 InvalidValueChar(ch, stream.line(), stream.col() - 1),
-            )
+            );
         }
         None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
     }
@@ -963,7 +963,7 @@ fn parse_str(stream: &mut CharStream) -> ParseResult<Value> {
                             return parse_err(
                                 stream.file(),
                                 InvalidEscapeChar(ch, stream.line(), stream.col() - 1),
-                            )
+                            );
                         }
                     }
                     escape = false;
@@ -1034,7 +1034,7 @@ fn parse_include(
             return parse_err(
                 stream.file(),
                 InvalidIncludeToken(value.get_type(), line, col),
-            )
+            );
         }
     }
 
@@ -1070,7 +1070,7 @@ fn parse_include(
             return parse_err(
                 stream.file(),
                 InvalidClosingBracket(Some('>'), ch, stream.line(), stream.col() - 1),
-            )
+            );
         }
     }
 
@@ -1081,7 +1081,7 @@ fn parse_include(
             return parse_err(
                 stream.file(),
                 ExpectedType(Type::Str, value.get_type(), line, col),
-            )
+            );
         }
     };
 
@@ -1257,7 +1257,7 @@ fn binary_op_on_values(
                             return parse_err(
                                 stream.file(),
                                 BinaryOperatorError(type1, type2, op, line, col),
-                            )
+                            );
                         }
                     }
                 }
@@ -1265,7 +1265,7 @@ fn binary_op_on_values(
                     return parse_err(
                         stream.file(),
                         BinaryOperatorError(type1, type2, op, line, col),
-                    )
+                    );
                 }
             }
         }
@@ -1276,7 +1276,7 @@ fn binary_op_on_values(
                 return parse_err(
                     stream.file(),
                     BinaryOperatorError(type1, type2, op, line, col),
-                )
+                );
             }
         },
         '*' => match type1 {
@@ -1286,7 +1286,7 @@ fn binary_op_on_values(
                 return parse_err(
                     stream.file(),
                     BinaryOperatorError(type1, type2, op, line, col),
-                )
+                );
             }
         },
         '/' => match type1 {
@@ -1308,7 +1308,7 @@ fn binary_op_on_values(
                 return parse_err(
                     stream.file(),
                     BinaryOperatorError(type1, type2, op, line, col),
-                )
+                );
             }
         },
         '%' => match type1 {
@@ -1323,14 +1323,14 @@ fn binary_op_on_values(
                 return parse_err(
                     stream.file(),
                     BinaryOperatorError(type1, type2, op, line, col),
-                )
+                );
             }
         },
         _ => {
             return parse_err(
                 stream.file(),
                 BinaryOperatorError(type1, type2, op, line, col),
-            )
+            );
         }
     })
 }
