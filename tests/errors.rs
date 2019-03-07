@@ -10,14 +10,42 @@ use over::OverError;
 fn errors() {
     macro_rules! error_helper {
         ($filename:expr, $error:expr) => {{
-            let full = format!("tests/test_files/errors/{}", $filename);
-            match Obj::from_file(&full) {
+            error_helper!($filename, $error, "")
+        }};
+
+        ($filename:expr, $error1:expr, $error2:expr) => {{
+            let full_name = format!("tests/test_files/errors/{}", $filename);
+
+            match Obj::from_file(&full_name) {
                 Err(OverError::ParseError(s)) => {
-                    if s != format!("{}: {}", full, $error) {
-                        panic!("Error in {}: {:?}", $filename, s);
+                    if $error2 != "" {
+                        if s != format!("{}: {}", full_name, $error1)
+                            && s != format!("{}: {}", full_name, $error2)
+                        {
+                            panic!(
+                                "Error in {}: {:?}.\nExpected: {:?}\nAlternatively: {:?}",
+                                $filename, s, $error1, $error2
+                            );
+                        }
+                    } else {
+                        if s != format!("{}: {}", full_name, $error1) {
+                            panic!("Error in {}: {:?}.\nExpected: {:?}", $filename, s, $error1);
+                        }
                     }
                 }
-                res => panic!("No error occurred in {}: {:?}", $filename, res),
+                res => {
+                    if $error2 != "" {
+                        panic!(
+                            "No error occurred in {}: {:?}.\nExpected: {:?}\nAlternatively: {:?}",
+                            $filename, res, $error1, $error2
+                        )
+                    } else {
+                        panic!(
+                            "No error occurred in {}: {:?}.\nExpected: {:?}",
+                            $filename, res, $error1
+                        )
+                    }
+                }
             }
         }};
     }
@@ -98,7 +126,8 @@ fn errors() {
     );
     error_helper!(
         "empty_number.over",
-        "Invalid character \'\\n\' for value at line 1, column 7"
+        "Invalid character \'\\n\' for value at line 1, column 7",
+        "Invalid character \'\r\' for value at line 1, column 7"
     );
     error_helper!(
         "field_true.over",
@@ -131,7 +160,8 @@ fn errors() {
     );
     error_helper!(
         "fuzz7.over",
-        "Invalid character \'\\n\' for field at line 8, column 0"
+        "Invalid character \'\\n\' for field at line 8, column 0",
+        "Invalid character \'\r\' for field at line 7, column 4"
     );
     error_helper!(
         "fuzz8.over",
@@ -194,7 +224,8 @@ fn errors() {
     );
     error_helper!(
         "op_end.over",
-        "Invalid character \'\\n\' for value at line 3, column 9"
+        "Invalid character \'\\n\' for value at line 3, column 9",
+        "Invalid character \'\r\' for value at line 3, column 9"
     );
     error_helper!(
         "op_error.over",

@@ -18,7 +18,7 @@ macro_rules! test_eq {
     ($left:expr, $right:expr) => {{
         if $left != $right {
             panic!(format!(
-                "Left did not equal right.\nLeft: {}\nRight: {}\n",
+                "Left did not equal right.\nLeft: {:?}\nRight: {:?}\n",
                 $left, $right
             ));
         }
@@ -82,31 +82,44 @@ fn example() {
     assert_eq!(obj.get("date").unwrap(), "2012-08-06");
     assert_eq!(
         obj.get("customer").unwrap(),
-        obj! {"first_name" => "Dorothy",
-        "family_name" => "Gale"}
+        obj! {
+            "first_name" => "Dorothy",
+            "family_name" => "Gale"
+        }
     );
 
     assert_eq!(
         obj.get("items").unwrap(),
         arr![
-            obj! {"part_no" => "A4786",
-            "descrip" => "Water Bucket (Filled)",
-            "price" => frac!(147,100),
-            "quantity" => 4},
-            obj! {"part_no" => "E1628",
-            "descrip" => "High Heeled \"Ruby\" Slippers",
-            "size" => 8,
-            "price" => frac!(1337,10),
-            "quantity" => 1},
+            obj! {
+                "part_no" => "A4786",
+                "descrip" => "Water Bucket (Filled)",
+                "price" => frac!(147,100),
+                "quantity" => 4
+            },
+            obj! {
+                "part_no" => "E1628",
+                "descrip" => "High Heeled \"Ruby\" Slippers",
+                "size" => 8,
+                "price" => frac!(1337,10),
+                "quantity" => 1
+            },
         ]
     );
 
-    assert_eq!(
-        obj.get("bill_to").unwrap(),
-        obj! {"street" => "123 Tornado Alley\nSuite 16",
-             "city" => "East Centerville",
-             "state" => "KS",
-        }
+    assert!(
+        obj.get("bill_to").unwrap()
+            == obj! {
+                "street" => "123 Tornado Alley\nSuite 16",
+                "city" => "East Centerville",
+                "state" => "KS",
+            }
+            || obj.get("bill_to").unwrap()
+                == obj! {
+                    "street" => "123 Tornado Alley\r\nSuite 16",
+                    "city" => "East Centerville",
+                    "state" => "KS",
+                }
     );
 
     assert_eq!(obj.get("ship_to").unwrap(), obj.get("bill_to").unwrap());
@@ -279,7 +292,8 @@ fn any_type() {
 fn includes() {
     let obj = Obj::from_file("tests/test_files/includes.over").unwrap();
 
-    let s = "Multi-line string\nwhich should be included verbatim\n\
+    // Test both \n and \r\n line endings.
+    let s = "Multi-line string\nwhich should be included verbatim\r\n\
              in another file. \"Quotes\" and $$$\ndon't need to be escaped.\n";
 
     test_eq!(obj.get("include").unwrap(), s);

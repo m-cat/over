@@ -694,7 +694,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
         };
 
         // Remove trailing zeros.
-        let s2 = s2.trim_right_matches('0');
+        let s2 = s2.trim_end_matches('0');
 
         let (decimal, dec_len): (BigInt, usize) = if s2.is_empty() {
             (0u8.into(), 1)
@@ -939,13 +939,16 @@ fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
 }
 
 fn parse_str_file(path: &str) -> ParseResult<String> {
-    Ok(read_file_str(path)?)
+    // Replace \r\n line endings with \n for consistency in internal handling.
+    let s = read_file_str(path)?.replace("\r\n", "\n");
+
+    Ok(s)
 }
 
 // Gets the next Str in the character stream.
 // Assumes the Str starts and ends with quotation marks and does not include them in the Str.
 // '"', '\' and '$' must be escaped with '\'.
-// Newlines can be escaped with '\n', but this is NOT necessary.
+// Newlines can either be the string "\n" ('\' followed by 'n') or the newline character '\n'.
 fn parse_str(stream: &mut CharStream) -> ParseResult<Value> {
     let ch = stream.next().unwrap();
     assert_eq!(ch, '"');
@@ -978,6 +981,9 @@ fn parse_str(stream: &mut CharStream) -> ParseResult<Value> {
             None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
         }
     }
+
+    // Replace \r\n line endings with \n for consistency in internal handling.
+    let s = s.replace("\r\n", "\n");
 
     Ok(s.into())
 }
