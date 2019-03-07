@@ -41,10 +41,10 @@ OVER: the best data format.
 
 OVER is a general-purpose data format like XML or JSON, but much better. Here are some of its key features:
 
-* OVER is designed to be intuitive for humans to read and write without sacrificing flexibility. 
-* It is powerful, with concepts such as variables, file includes, and object parents.
-* It has an elegant and versatile type system which can safely represent all common data.
-* It is resilient to errors by design and has no weird behavior or syntax like YAML or TOML. 
+- OVER is designed to be intuitive for humans to read and write without sacrificing flexibility.
+- It is powerful, with concepts such as variables, file includes, and object parents.
+- It has an elegant and versatile type system which can safely represent all common data.
+- It is resilient to errors by design and has no weird behavior or syntax like YAML or TOML.
 
 ## Example
 
@@ -73,9 +73,9 @@ items: [
          quantity: 1
         }
        ]
-       
+
 bill_to: {
-    street: 
+    street:
     # A multi-line string. Can also be written as "123 Tornado Alley\nSuite16"
 "123 Tornado Alley
 Suite 16"
@@ -91,10 +91,10 @@ specialDelivery:
 
 This basic example already demonstrates a lot of nice features about OVER:
 
-* You can immediately tell what kind of data each field contains.
-* Multi-line strings require no special syntax; see `bill_to.street`.
-* Variables; see `ship_to`.
-* Comments (sounds simple, but JSON doesn't have them).
+- You can immediately tell what kind of data each field contains.
+- Multi-line strings require no special syntax; see `bill_to.street`.
+- Variables; see `ship_to`.
+- Comments (sounds simple, but JSON doesn't have them).
 
 ## Usage
 
@@ -165,9 +165,10 @@ Currently OVER has only been implemented for Rust; more languages may be support
 ### Containers
 
 OVER has three container types:
-* An [array] where all elements must be of the same type of data (enforced by the parser).
-* A (tuple) which can hold elements of different types.
-* {Objects} which hold a map of fields to values of different types.
+
+- An [array] where all elements must be of the same type of data (enforced by the parser).
+- A (tuple) which can hold elements of different types.
+- {Objects} which hold a map of fields to values of different types.
 
 The following is a valid array, as each sub-tuple is the same type:
 
@@ -267,7 +268,7 @@ tup: ("test" 0)
 zero: tup.1
 test: tup.zero
 ```
-  
+
 ### Arithmetic on Values and Variables
 
 Basic arithmetic is possible on values and variables. The available operators are `+`, `-`, `*`, `/`, and `%`, though not all operators can be applied to all types. The operators `*`, `/`, and `%` have a higher precedence than `+` and `-`.
@@ -292,22 +293,25 @@ In the spirit of modularity, OVER provides a facility for splitting up files. Th
 Say we have two objects that we want in two separate files:
 
 **`includes/obj1.over`:**
+
 ```
-a: 1 
-b: 2 
+a: 1
+b: 2
 c: 3
 ```
 
 **`includes/obj2.over`:**
+
 ```
-a: 2 
-b: 3 
+a: 2
+b: 3
 c: 1
 ```
 
 We can have something akin to a "main" file that contains the two files as sub-objects:
 
 **`main.over`:**
+
 ```
 obj1: <"includes/obj1.over">
 obj2: <"includes/obj2.over">
@@ -318,6 +322,7 @@ The main benefits of includes are convenience and organization. We can also put 
 An example demonstrating inclusion of `Str`, `Arr`, and `Tup`:
 
 **`main.over`:**
+
 ```
 str: <Str "includes/str.over">
 arr: <Arr "includes/arr.over">
@@ -325,6 +330,7 @@ tup: <Tup "includes/tup.over">
 ```
 
 **`includes/str.over`:**
+
 ```
 Multi-line string
 which should be included verbatim
@@ -333,11 +339,13 @@ don't need to be escaped.
 ```
 
 **`includes/arr.over`:**
+
 ```
 1 2 3 4 5
 ```
 
 **`includes/tup.over`:**
+
 ```
 1
 'a'
@@ -347,10 +355,11 @@ don't need to be escaped.
 ```
 
 Some notes about file includes:
-  * Global variables are not valid across files.
-  * Files cannot be included in a circular manner; e.g. if file `main` includes `sub-obj`, then `sub-obj` cannot include `main`.
-  * You can include the same file multiple times. File includes are only processed the first time they are encountered.
-  * Inclusion is only valid for `Obj`, `Str`, `Arr`, and `Tup`. When including an object file, the `Obj` keyword is optional.
+
+- Global variables are not valid across files.
+- Files cannot be included in a circular manner; e.g. if file `main` includes `sub-obj`, then `sub-obj` cannot include `main`.
+- You can include the same file multiple times. File includes are only processed the first time they are encountered.
+- Inclusion is only valid for `Obj`, `Str`, `Arr`, and `Tup`. When including an object file, the `Obj` keyword is optional.
 
 ### String Substitutions
 
@@ -390,7 +399,7 @@ A type representing a single, unicode character.
 
 ### Str
 
-A unicode string type. 
+A unicode string type.
 
 **Examples:** `"smörgåsbord"`, `"A string with \"quotes\""`
 
@@ -421,16 +430,17 @@ The godfather of all types, the *object*. A hashmap of keys, which we call *fiel
 Fields must be followed by a colon and cannot be one of the reserved keywords.
 
 Reserved keywords:
-* `@`
-* `null`
-* `true`
-* `false`
-* `Obj`
-* `Str`
-* `Arr`
-* `Tup`
 
-**Examples:** 
+- `@`
+- `null`
+- `true`
+- `false`
+- `Obj`
+- `Str`
+- `Arr`
+- `Tup`
+
+**Examples:**
 
 `{ a: 1 b: 2 list: [a b b a] }`
 
@@ -440,25 +450,25 @@ Reserved keywords:
 
 As this project is being developed for my personal needs, there are some necessary steps to make it ready for `1.0` that I have little incentive to do myself. Any of the following would be a good way to contribute to the project:
 
-* [Easy] Multi-line/block comments, e.g. `#[ ... ]#`. Should be able to nest these.
-* [Hard] `super` keyword? i.e. `super.var` (disallow just `super`?). Not sure if this is worth the effort, but I can see potential use cases.
-* [?] Write an Emacs mode, use JSON-mode as a starting point.
-* [Easy] Benchmark against equivalent json files.
-* [Medium] Implement string substitution.
-* [Easy] Look through API guidelines: https://rust-lang-nursery.github.io/api-guidelines/checklist.html
-* [Medium] Move error handling to Failure? https://www.reddit.com/r/rust/comments/7b88qp/failure_a_new_error_management_story/
-* [Medium] Performance: Consider replacing HashMap internally. Use Flame to benchmark: https://github.com/TyOverby/flame
+- [Easy] Multi-line/block comments, e.g. `#[ ... ]#`. Should be able to nest these.
+- [Hard] `super` keyword? i.e. `super.var` (disallow just `super`?). Not sure if this is worth the effort, but I can see potential use cases.
+- [?] Write an Emacs mode, use JSON-mode as a starting point.
+- [Easy] Benchmark against equivalent json files.
+- [Medium] Implement string substitution.
+- [Easy] Look through API guidelines: https://rust-lang-nursery.github.io/api-guidelines/checklist.html
+- [Medium] Move error handling to Failure? https://www.reddit.com/r/rust/comments/7b88qp/failure_a_new_error_management_story/
+- [Medium] Performance: Consider replacing HashMap internally. Use Flame to benchmark: https://github.com/TyOverby/flame
 
 ## What's wrong with JSON?
 
 I started this project because I wanted an alternative to JSON. Why?
 
-* The last element in a list cannot have a trailing comma.
-* What's with the opening/closing braces?
-* Floating-point numeric type.
-* Arrays where different types are allowed.
-* Field names have to be in quotes, e.g. `"name": "Johnny"` instead of `name: "Johnny"`. It's verbose and not ergonomic.
-* No support for comments is a dealbreaker. Some JSON implementations allow them, but it's not standard.
+- The last element in a list cannot have a trailing comma.
+- What's with the opening/closing braces?
+- Floating-point numeric type.
+- Arrays where different types are allowed.
+- Field names have to be in quotes, e.g. `"name": "Johnny"` instead of `name: "Johnny"`. It's verbose and not ergonomic.
+- No support for comments is a dealbreaker. Some JSON implementations allow them, but it's not standard.
 
 JSON and other options are also lacking many of the features that I'm interested in, such as variables, the concept of object parents, file includes, and so on.
 
