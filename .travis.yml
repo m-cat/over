@@ -1,0 +1,22 @@
+env:
+  global:
+    - RUST_BACKTRACE=1
+    - PATH=$PATH:$HOME/.cargo/bin
+os:
+  - linux
+  - osx
+  - windows
+language: rust
+rust:
+  - stable
+sudo: false
+cache:
+  cargo: true
+before_script:
+  - rustup component add rustfmt;
+  - rustup component add clippy;
+script:
+  - set -x;
+    cargo fmt -- --check &&
+    cargo clippy --all-targets &&
+    cargo test --release --verbose
