@@ -1,3 +1,5 @@
+#![allow(clippy::cyclomatic_complexity)]
+
 //! Tests.
 
 use crate::error::OverError;

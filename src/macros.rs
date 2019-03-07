@@ -97,8 +97,7 @@ macro_rules! try_obj {
         try_obj!{ $( $field => $inner ),* };
     };
     { $( $field:expr => $inner:expr ),+ } => {
-        #[allow(unknown_lints)]
-        #[allow(useless_let_if_seq)]
+        #[allow(clippy::useless_let_if_seq)]
         {
             use $crate::obj::Obj;
 

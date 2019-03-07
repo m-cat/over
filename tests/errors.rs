@@ -1,3 +1,5 @@
+#![allow(clippy::cyclomatic_complexity)]
+
 extern crate over;
 
 use over::obj::Obj;
