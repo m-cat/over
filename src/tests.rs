@@ -5,18 +5,8 @@
 use crate::error::OverError;
 use crate::types::Type;
 use crate::value::Value;
-
-// Display nicely-formatted values on failure.
-macro_rules! test_eq {
-    ($left:expr, $right:expr) => {{
-        if $left != $right {
-            panic!(format!(
-                "Left did not equal right.\nLeft: {}\nRight: {}\n",
-                $left, $right
-            ));
-        }
-    }};
-}
+#[cfg(test)]
+use pretty_assertions::{assert_eq, assert_ne};
 
 // Test setting and getting values.
 #[test]
@@ -34,12 +24,12 @@ fn set_and_get() {
 
     // Null
 
-    test_eq!(obj.get("null").unwrap(), Value::Null);
+    assert_eq!(obj.get("null").unwrap(), Value::Null);
     assert!(obj.get("null").unwrap().is_null());
 
     // Bool
 
-    test_eq!(obj.get_bool("bool").unwrap(), true);
+    assert_eq!(obj.get_bool("bool").unwrap(), true);
     assert_eq!(obj.get_bool("bool"), Ok(true));
 
     // Int
@@ -57,12 +47,12 @@ fn set_and_get() {
     // String
 
     let yo = String::from("yo");
-    test_eq!(obj.get("str1").unwrap(), "hello");
-    test_eq!(obj.get("str2").unwrap(), yo);
+    assert_eq!(obj.get("str1").unwrap(), "hello");
+    assert_eq!(obj.get("str2").unwrap(), yo);
 
     // Arr
 
-    test_eq!(obj.get("arr").unwrap(), arr![-5, 0, 1]);
+    assert_eq!(obj.get("arr").unwrap(), arr![-5, 0, 1]);
 
     // Errors
 
@@ -102,26 +92,26 @@ fn parents() {
     assert_ne!(obj, obj2);
 
     let obj2 = obj! { "^" => def1.clone(), "test1" => "hi", "bool1" => true };
-    test_eq!(obj, obj2);
+    assert_eq!(obj, obj2);
 
     // Bool
 
     let (v, o) = obj.get_with_source("bool1").unwrap();
-    test_eq!(v, true);
+    assert_eq!(v, true);
     assert!(o.ptr_eq(&obj));
 
     let (v, o) = obj.get_with_source("bool2").unwrap();
-    test_eq!(v, false);
+    assert_eq!(v, false);
     assert!(o.ptr_eq(&def1));
 
     let (v, o) = obj.get_with_source("bool3").unwrap();
-    test_eq!(v, true);
+    assert_eq!(v, true);
     assert!(o.ptr_eq(&def2));
 
     // String
 
-    test_eq!(obj.get("test1").unwrap(), "hi");
-    test_eq!(obj.get("test2").unwrap(), "bye");
+    assert_eq!(obj.get("test1").unwrap(), "hi");
+    assert_eq!(obj.get("test2").unwrap(), "bye");
 }
 
 #[test]
@@ -137,24 +127,24 @@ fn types() {
     // Null
 
     let null = Value::Null;
-    test_eq!(null.get_type(), Type::Null);
+    assert_eq!(null.get_type(), Type::Null);
 
     // Bool
 
-    test_eq!(obj.get("bool").unwrap().get_type(), Type::Bool);
+    assert_eq!(obj.get("bool").unwrap().get_type(), Type::Bool);
 
     // String
 
-    test_eq!(obj.get("str").unwrap().get_type(), Type::Str);
+    assert_eq!(obj.get("str").unwrap().get_type(), Type::Str);
 
     // Arr
 
-    test_eq!(
+    assert_eq!(
         obj.get("arr_char").unwrap().get_type(),
         Type::Arr(Box::new(Type::Char))
     );
 
-    test_eq!(
+    assert_eq!(
         obj.get("arr_arr").unwrap().get_type(),
         Type::Arr(Box::new(Type::Arr(Box::new(Type::Bool))))
     );
@@ -171,7 +161,7 @@ fn types() {
         Type::Tup(vec![Type::Int]),
         Type::Arr(Box::new(Type::Str)),
     ]);
-    test_eq!(obj.get("tup").unwrap().get_type(), tup_type);
+    assert_eq!(obj.get("tup").unwrap().get_type(), tup_type);
 
     // Misc
 

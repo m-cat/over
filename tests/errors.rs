@@ -23,25 +23,25 @@ fn errors() {
                             && s != format!("{}: {}", full_name, $error2)
                         {
                             panic!(
-                                "Error in {}: {:?}.\nExpected: {:?}\nAlternatively: {:?}",
+                                "Error in {}: {:?}.\nExpected: {:#?}\nAlternatively: {:#?}",
                                 $filename, s, $error1, $error2
                             );
                         }
                     } else {
                         if s != format!("{}: {}", full_name, $error1) {
-                            panic!("Error in {}: {:?}.\nExpected: {:?}", $filename, s, $error1);
+                            panic!("Error in {}: {:?}.\nExpected: {:#?}", $filename, s, $error1);
                         }
                     }
                 }
                 res => {
                     if $error2 != "" {
                         panic!(
-                            "No error occurred in {}: {:?}.\nExpected: {:?}\nAlternatively: {:?}",
+                            "No error occurred in {}: {:?}.\nExpected: {:#?}\nAlternatively: {:#?}",
                             $filename, res, $error1, $error2
                         )
                     } else {
                         panic!(
-                            "No error occurred in {}: {:?}.\nExpected: {:?}",
+                            "No error occurred in {}: {:#?}.\nExpected: {:#?}",
                             $filename, res, $error1
                         )
                     }
