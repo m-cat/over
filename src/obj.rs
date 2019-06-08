@@ -143,6 +143,7 @@ impl Obj {
     /// starting at 0 for the first `Obj` created.
     ///
     /// # Notes
+    ///
     /// The ID is ignored when testing `Obj` equality.
     pub fn id(&self) -> usize {
         self.inner.id
@@ -161,19 +162,21 @@ impl Obj {
     /// Writes this `Obj` to given file in `.over` representation.
     ///
     /// # Notes
+    ///
     /// Note that the fields of the `Obj` will be output in an unpredictable order.
     /// Also note that shorthand in the original file, including variables and file includes,
     /// is not preserved when parsing the file, and will not appear when writing to another file.
     pub fn write_to_file(&self, path: &str) -> OverResult<()> {
-        write_file_str(path, &self.write_str())?;
+        write_file_str(path, &self.write_to_string())?;
         Ok(())
     }
 
     /// Writes this `Obj` to a `String`.
     ///
     /// # Notes
+    ///
     /// See `write_to_file`.
-    pub fn write_str(&self) -> String {
+    pub fn write_to_string(&self) -> String {
         self.format(false, 0)
     }
 

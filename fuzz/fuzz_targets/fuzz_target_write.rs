@@ -8,7 +8,7 @@ fuzz_target!(|data: &[u8]| {
     if let Ok(s) = std::str::from_utf8(data) {
         match over::Obj::from_str(s) {
             Ok(o1) => {
-                match over::Obj::from_str(&o1.write_str()) {
+                match over::Obj::from_str(&o1.to_string()) {
                     Ok(o2) => {
                         if o1 != o2 {
                             panic!(format!("Read object is different: {}", o2));
