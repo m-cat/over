@@ -5,12 +5,13 @@
 use crate::error::OverError;
 use crate::types::Type;
 use crate::value::Value;
+use crate::OverResult;
 #[cfg(test)]
 use pretty_assertions::{assert_eq, assert_ne};
 
 // Test setting and getting values.
 #[test]
-fn set_and_get() {
+fn set_and_get() -> OverResult<()> {
     let obj = obj! {
         "null" => Value::Null,
         "bool" => true,
@@ -29,7 +30,7 @@ fn set_and_get() {
 
     // Bool
 
-    assert_eq!(obj.get_bool("bool").unwrap(), true);
+    assert_eq!(obj.get_bool("bool")?, true);
     assert_eq!(obj.get_bool("bool"), Ok(true));
 
     // Int
@@ -61,11 +62,13 @@ fn set_and_get() {
 
     assert_eq!(obj.get(""), None);
     assert_eq!(obj.get("cool"), None);
+
+    Ok(())
 }
 
 // Test setting and getting values through parents.
 #[test]
-fn parents() {
+fn parents() -> OverResult<()> {
     let def2 = obj! {
         "bool2" => true,
         "bool3" => true
@@ -112,16 +115,18 @@ fn parents() {
 
     assert_eq!(obj.get("test1").unwrap(), "hi");
     assert_eq!(obj.get("test2").unwrap(), "bye");
+
+    Ok(())
 }
 
 #[test]
-fn types() {
+fn types() -> OverResult<()> {
     let obj = obj! {
         "bool" => true,
         "str" => "",
         "arr_char" => arr!['w', 'o', 'w'],
-        "arr_arr" => try_arr![arr![], arr![true, false]].unwrap(),
-        "tup" => tup!('!', tup!(-1), try_arr!["test", "heya"].unwrap()),
+        "arr_arr" => try_arr![arr![], arr![true, false]]?,
+        "tup" => tup!('!', tup!(-1), try_arr!["test", "heya"]?),
     };
 
     // Null
@@ -169,5 +174,7 @@ fn types() {
     assert_ne!(
         obj.get("bool").unwrap().get_type(),
         obj.get("str").unwrap().get_type()
-    )
+    );
+
+    Ok(())
 }

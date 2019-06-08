@@ -12,6 +12,7 @@ use num_traits::ToPrimitive;
 use over::obj::Obj;
 use over::types::Type;
 use over::value::Value;
+use over::OverResult;
 #[cfg(test)]
 use pretty_assertions::assert_eq;
 
@@ -22,17 +23,19 @@ fn get_int(obj: &Obj, field: &str) -> i64 {
 
 // Test parsing of empty file.
 #[test]
-fn empty() {
-    let obj = Obj::from_file("tests/test_files/empty.over").unwrap();
+fn empty() -> OverResult<()> {
+    let obj = Obj::from_file("tests/test_files/empty.over")?;
 
     assert_eq!(obj.len(), 0);
+
+    Ok(())
 }
 
 // Test reading basic Ints, Strs, Bools, and Null.
 // Also test that whitespace and comments are correctly ignored.
 #[test]
-fn basic() {
-    let obj = Obj::from_file("tests/test_files/basic.over").unwrap();
+fn basic() -> OverResult<()> {
+    let obj = Obj::from_file("tests/test_files/basic.over")?;
 
     assert_eq!(get_int(&obj, "_a1"), 1);
     assert_eq!(get_int(&obj, "a2"), 2);
@@ -61,6 +64,8 @@ fn basic() {
     assert_eq!(obj.get("w").unwrap(), '$');
     assert_eq!(obj.get_frac("x").unwrap(), frac!(1, 1));
     assert_eq!(obj.get("x").unwrap().get_frac().unwrap(), frac!(1, 1));
+
+    Ok(())
 }
 
 // Test the example from the README.
@@ -164,28 +169,30 @@ fn obj() {
 
 // Test that globals are referenced correctly and don't get included as fields.
 #[test]
-fn globals() {
-    let obj = Obj::from_file("tests/test_files/globals.over").unwrap();
+fn globals() -> OverResult<()> {
+    let obj = Obj::from_file("tests/test_files/globals.over")?;
 
-    let sub = obj.get_obj("sub").unwrap();
+    let sub = obj.get_obj("sub")?;
 
-    assert_eq!(sub.get_int("a").unwrap(), int!(1));
+    assert_eq!(sub.get_int("a")?, int!(1));
     assert_eq!(get_int(&sub, "b"), 2);
     assert_eq!(sub.len(), 2);
 
     assert_eq!(get_int(&obj, "c"), 2);
     assert_eq!(obj.len(), 2);
+
+    Ok(())
 }
 
 // Test parsing of numbers.
 #[test]
-fn numbers() {
-    let obj = Obj::from_file("tests/test_files/numbers.over").unwrap();
+fn numbers() -> OverResult<()> {
+    let obj = Obj::from_file("tests/test_files/numbers.over")?;
 
     assert_eq!(get_int(&obj, "neg"), -4);
-    assert_eq!(obj.get_frac("pos").unwrap(), frac!(4, 1));
-    assert_eq!(obj.get_frac("neg_zero").unwrap(), frac!(0, 1));
-    assert_eq!(obj.get_frac("pos_zero").unwrap(), frac!(0, 1));
+    assert_eq!(obj.get_frac("pos")?, frac!(4, 1));
+    assert_eq!(obj.get_frac("neg_zero")?, frac!(0, 1));
+    assert_eq!(obj.get_frac("pos_zero")?, frac!(0, 1));
 
     assert_eq!(obj.get("frac_from_dec").unwrap(), frac!(13, 10));
     assert_eq!(obj.get("neg_ffd").unwrap(), frac!(-13, 10));
@@ -230,11 +237,13 @@ fn numbers() {
     );
 
     assert_eq!(obj.get("var_frac").unwrap(), frac!(-1, 2));
+
+    Ok(())
 }
 
 #[test]
-fn operations() {
-    let obj = Obj::from_file("tests/test_files/operations.over").unwrap();
+fn operations() -> OverResult<()> {
+    let obj = Obj::from_file("tests/test_files/operations.over")?;
 
     assert_eq!(obj.get("mod1").unwrap(), int!(5));
     assert_eq!(obj.get("mod2").unwrap(), int!(0));
@@ -258,11 +267,13 @@ fn operations() {
         obj.get("tup_complex").unwrap(),
         tup!(arr![arr![], arr![arr![], arr![1, 2, 3], arr![]]])
     );
+
+    Ok(())
 }
 
 #[test]
-fn any_type() {
-    let obj = Obj::from_file("tests/test_files/any_type.over").unwrap();
+fn any_type() -> OverResult<()> {
+    let obj = Obj::from_file("tests/test_files/any_type.over")?;
 
     let arr1 = obj.get("arr1").unwrap();
     let arr2 = arr![arr![arr![]], arr![arr![2]], arr![arr![]]];
@@ -276,10 +287,12 @@ fn any_type() {
             tup!(arr![arr![2]], arr![arr![]]),
         ]
     );
+
+    Ok(())
 }
 
 #[test]
-fn includes() {
+fn includes() -> OverResult<()> {
     let obj = Obj::from_file("tests/test_files/includes.over").unwrap();
 
     // Test both \n and \r\n line endings.
@@ -306,22 +319,24 @@ fn includes() {
         }
     );
 
-    assert!(o.ptr_eq(&obj.get_obj("include_obj2").unwrap()));
+    assert!(o.ptr_eq(&obj.get_obj("include_obj2")?));
+
+    Ok(())
 }
 
 // TODO: Test multi-line.over (need substitution)
 
 // Test writing objects to files.
 #[test]
-fn write() {
+fn write() -> OverResult<()> {
     let write_path = "tests/test_files/write.over";
 
     macro_rules! write_helper {
         ($filename:expr) => {{
-            let obj1 = Obj::from_file($filename).unwrap();
-            obj1.write_to_file(write_path).unwrap();
+            let obj1 = Obj::from_file($filename)?;
+            obj1.write_to_file(write_path)?;
 
-            let obj2 = Obj::from_file(write_path).unwrap();
+            let obj2 = Obj::from_file(write_path)?;
             assert_eq!(obj1, obj2);
         }};
     }
@@ -336,4 +351,6 @@ fn write() {
     write_helper!("tests/test_files/fuzz1.over");
     write_helper!("tests/test_files/fuzz2.over");
     write_helper!("tests/test_files/fuzz3.over");
+
+    Ok(())
 }
