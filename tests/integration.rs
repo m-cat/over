@@ -1,4 +1,4 @@
-#![allow(clippy::cyclomatic_complexity)]
+#![allow(clippy::cognitive_complexity)]
 
 extern crate num_bigint;
 extern crate num_rational;

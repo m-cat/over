@@ -1,26 +1,22 @@
 //! `Obj` module.
 //! A hashmap of keys to values, where values can be any type, including other objects.
 
-#![allow(unused_imports)] // will complain about num_traits::Zero otherwise
-
 use crate::arr::Arr;
 use crate::error::OverError;
 use crate::parse;
 use crate::parse::format::Format;
 use crate::tup::Tup;
-use crate::types::Type;
 use crate::util::{is_digit, write_file_str};
 use crate::value::Value;
 use crate::{OverResult, INDENT_STEP};
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use num_traits::Zero;
 use std::collections::hash_map::{Iter, Keys, Values};
 use std::collections::HashMap;
+use std::fmt;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-use std::{convert, fmt, io};
 
 lazy_static! {
     static ref CUR_ID: AtomicUsize = AtomicUsize::new(0);
