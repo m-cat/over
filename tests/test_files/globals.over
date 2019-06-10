@@ -8,3 +8,7 @@ sub: {
 }
 
 c: @global2
+
+# Test that duplicate globals across includes are allowed.
+@a: null
+include: <Obj "includes/globals.over">

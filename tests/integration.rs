@@ -179,7 +179,8 @@ fn globals() -> OverResult<()> {
     assert_eq!(sub.len(), 2);
 
     assert_eq!(get_int(&obj, "c"), 2);
-    assert_eq!(obj.len(), 2);
+
+    assert_eq!(obj.len(), 3);
 
     Ok(())
 }
