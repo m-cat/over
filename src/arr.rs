@@ -1,4 +1,3 @@
-//! `Arr` module.
 //! An array container which can hold an arbitrary number of elements of a single type.
 
 use crate::parse::format::Format;

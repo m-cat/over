@@ -1,4 +1,4 @@
-//! Module for values.
+//! Values.
 
 use crate::arr;
 use crate::error::OverError;
@@ -86,6 +86,7 @@ impl Value {
         bool,
         Bool
     );
+
     get_fn!(
         "Returns the `BigInt` contained in this `Value`. \
          Returns an error if this `Value` is not `Int`.",
@@ -93,6 +94,7 @@ impl Value {
         BigInt,
         Int
     );
+
     /// Returns the `BigRational` contained in this `Value`.
     /// Returns an error if this `Value` is not `Frac`.
     pub fn get_frac(&self) -> OverResult<BigRational> {
@@ -102,6 +104,7 @@ impl Value {
             _ => Err(OverError::TypeMismatch(Type::Frac, self.get_type())),
         }
     }
+
     get_fn!(
         "Returns the `char` contained in this `Value`. \
          Returns an error if this `Value` is not `Char`.",
@@ -109,19 +112,13 @@ impl Value {
         char,
         Char
     );
+
     get_fn!(
         "Returns the `String` contained in this `Value`. \
          Returns an error if this `Value` is not `Str`.",
         get_str,
         String,
         Str
-    );
-    get_fn!(
-        "Returns the `Obj` contained in this `Value`. \
-         Returns an error if this `Value` is not `Obj`.",
-        get_obj,
-        obj::Obj,
-        Obj
     );
 
     /// Returns the `Arr` contained in this `Value`.
@@ -146,6 +143,14 @@ impl Value {
             Err(OverError::TypeMismatch(Type::Tup(vec![]), self.get_type()))
         }
     }
+
+    get_fn!(
+        "Returns the `Obj` contained in this `Value`. \
+         Returns an error if this `Value` is not `Obj`.",
+        get_obj,
+        obj::Obj,
+        Obj
+    );
 }
 
 impl fmt::Display for Value {

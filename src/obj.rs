@@ -1,5 +1,4 @@
-//! `Obj` module.
-//! A hashmap of keys to values, where values can be any type, including other objects.
+//! A map of keys to values, where values can be any type, including other objects.
 
 use crate::arr::Arr;
 use crate::error::OverError;
@@ -12,7 +11,7 @@ use crate::{OverResult, INDENT_STEP};
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use std::collections::hash_map::{Iter, Keys, Values};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -22,13 +21,13 @@ lazy_static! {
     static ref CUR_ID: AtomicUsize = AtomicUsize::new(0);
 }
 
-fn get_id() -> usize {
+fn gen_id() -> usize {
     CUR_ID.fetch_add(1, Ordering::Relaxed)
 }
 
 #[derive(Clone, Debug)]
 struct ObjInner {
-    map: HashMap<String, Value>,
+    map: BTreeMap<String, Value>,
     parent: Option<Obj>,
     id: usize,
 }
@@ -57,18 +56,18 @@ macro_rules! get_fn {
 }
 
 impl Obj {
-    /// Returns a new `Obj` created from the given `HashMap`.
+    /// Returns a new `Obj` created from the given `BTreeMap`.
     ///
     /// Returns an error if the map contains an invalid field name.
     /// A valid field name must start with an alphabetic character or '_' and subsequent characters
     /// must be alphabetic, numeric, or '_'.
-    pub fn from_map(obj_map: HashMap<String, Value>) -> OverResult<Obj> {
+    pub fn from_map(obj_map: BTreeMap<String, Value>) -> OverResult<Obj> {
         for field in obj_map.keys() {
             if !Self::is_valid_field(field) {
                 return Err(OverError::InvalidFieldName((*field).clone()));
             }
         }
-        let id = get_id();
+        let id = gen_id();
 
         Ok(Obj {
             inner: Arc::new(ObjInner {
@@ -79,18 +78,18 @@ impl Obj {
         })
     }
 
-    /// Returns a new `Obj` created from the given `HashMap` with given `parent`.
+    /// Returns a new `Obj` created from the given `BTreeMap` with given `parent`.
     ///
     /// Returns an error if the map contains an invalid field name.
     ///
     /// See `from_map` for more details.
-    pub fn from_map_with_parent(obj_map: HashMap<String, Value>, parent: Obj) -> OverResult<Obj> {
+    pub fn from_map_with_parent(obj_map: BTreeMap<String, Value>, parent: Obj) -> OverResult<Obj> {
         for field in obj_map.keys() {
             if !Self::is_valid_field(field) {
                 return Err(OverError::InvalidFieldName(field.clone()));
             }
         }
-        let id = get_id();
+        let id = gen_id();
 
         Ok(Obj {
             inner: Arc::new(ObjInner {
@@ -101,14 +100,14 @@ impl Obj {
         })
     }
 
-    /// Returns a new `Obj` created from the given `HashMap`.
+    /// Returns a new `Obj` created from the given `BTreeMap`.
     ///
     /// It is faster than the safe version, `from_map`, if you know every field has a valid name.
     /// You can check ahead of time whether a field is valid with `is_valid_field`.
     ///
     /// See `from_map` for more details.
-    pub fn from_map_unchecked(obj_map: HashMap<String, Value>) -> Obj {
-        let id = get_id();
+    pub fn from_map_unchecked(obj_map: BTreeMap<String, Value>) -> Obj {
+        let id = gen_id();
 
         Obj {
             inner: Arc::new(ObjInner {
@@ -119,14 +118,14 @@ impl Obj {
         }
     }
 
-    /// Returns a new `Obj` created from the given `HashMap` with given `parent`.
+    /// Returns a new `Obj` created from the given `BTreeMap` with given `parent`.
     ///
     /// It is faster than the safe version, `from_map_with_parent`, if you know every field has
     /// a valid name. You can check ahead of time whether a field is valid with `is_valid_field`.
     ///
     /// See `from_map` for more details.
-    pub fn from_map_with_parent_unchecked(obj_map: HashMap<String, Value>, parent: Obj) -> Obj {
-        let id = get_id();
+    pub fn from_map_with_parent_unchecked(obj_map: BTreeMap<String, Value>, parent: Obj) -> Obj {
+        let id = gen_id();
 
         Obj {
             inner: Arc::new(ObjInner {
@@ -150,7 +149,7 @@ impl Obj {
     }
 
     /// Returns a reference to the inner map of this `Obj`.
-    pub fn map_ref(&self) -> &HashMap<String, Value> {
+    pub fn map_ref(&self) -> &BTreeMap<String, Value> {
         &self.inner.map
     }
 
@@ -163,9 +162,11 @@ impl Obj {
     ///
     /// # Notes
     ///
-    /// Note that the fields of the `Obj` will be output in an unpredictable order.
-    /// Also note that shorthand in the original file, including variables and file includes,
-    /// is not preserved when parsing the file, and will not appear when writing to another file.
+    /// The fields of the `Obj` will be output in the same order they were read.
+    ///
+    /// Also note some shorthand from the original file, including mathematical operations and file
+    /// includes, may not be preserved when creating the `Obj` representation, and may not appear
+    /// when writing to another file.
     pub fn write_to_file(&self, path: &str) -> OverResult<()> {
         write_file_str(path, &self.write_to_string())?;
         Ok(())
@@ -181,6 +182,8 @@ impl Obj {
     }
 
     /// Iterates over each `(String, Value)` pair in `self`, applying `f`.
+    ///
+    /// Parent fields are not included.
     pub fn with_each<F>(&self, mut f: F)
     where
         F: FnMut(&String, &Value),
@@ -190,12 +193,16 @@ impl Obj {
         }
     }
 
-    /// Returns the number of fields for this `Obj` (parent fields not included).
+    /// Returns the number of fields for this `Obj`.
+    ///
+    /// Parent fields are not included.
     pub fn len(&self) -> usize {
         self.inner.map.len()
     }
 
     /// Returns whether this `Obj` is empty.
+    ///
+    /// Parent fields are not included.
     pub fn is_empty(&self) -> bool {
         self.inner.map.is_empty()
     }
@@ -206,11 +213,13 @@ impl Obj {
     }
 
     /// Returns true if this `Obj` contains `field`.
+    ///
+    /// Parent fields are not included.
     pub fn contains(&self, field: &str) -> bool {
         self.inner.map.contains_key(field)
     }
 
-    /// Gets the `Value` associated with `field`.
+    /// Gets the `Value` associated with `field` in this object or the first parent with `field`.
     pub fn get(&self, field: &str) -> Option<Value> {
         match self.inner.map.get(field) {
             Some(value) => Some(value.clone()),
@@ -393,7 +402,7 @@ impl PartialEq for Obj {
             return false;
         }
 
-        // Check HashMap equality.
+        // Check map equality.
         inner.map == other_inner.map
     }
 }

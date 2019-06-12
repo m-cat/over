@@ -2,5 +2,3 @@
 **/*.rs.bk
 Cargo.lock
 .DS_Store
-
-write.over

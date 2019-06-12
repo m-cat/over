@@ -24,6 +24,7 @@ type GlobalMap = HashMap<String, Value>;
 type IncludedMap = (HashMap<String, Value>, HashSet<String>);
 
 lazy_static! {
+    // Objs that signify that an include keyword was encountered.
     static ref OBJ_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
     static ref STR_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
     static ref ARR_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
@@ -148,15 +149,34 @@ fn parse_field_value_pair(
     let (field_line, field_col) = (stream.line(), stream.col());
 
     // Parse field.
-    let (field, is_global, is_parent) = parse_field(stream.clone(), field_line, field_col)?;
+    let (field_name, field_type) = parse_field(stream.clone(), field_line, field_col)?;
 
-    if !is_global && !is_parent && obj.contains_key(&field) {
-        return parse_err(stream.file(), DuplicateField(field, field_line, field_col));
-    } else if is_parent && parent.is_some() {
-        return parse_err(
-            stream.file(),
-            DuplicateField("^".into(), field_line, field_col),
-        );
+    // Check for errors.
+    match field_type {
+        Global => {
+            if globals.contains_key(&field_name) {
+                return parse_err(
+                    stream.file(),
+                    DuplicateGlobal(field_name, field_line, field_col),
+                );
+            }
+        }
+        Parent => {
+            if parent.is_some() {
+                return parse_err(
+                    stream.file(),
+                    DuplicateField("^".into(), field_line, field_col),
+                );
+            }
+        }
+        Regular => {
+            if obj.contains_key(&field_name) {
+                return parse_err(
+                    stream.file(),
+                    DuplicateField(field_name, field_line, field_col),
+                );
+            }
+        }
     }
 
     // Deal with extra whitespace between field and value.
@@ -179,18 +199,15 @@ fn parse_field_value_pair(
     )?;
 
     // Add value either to the globals map or to the current Obj.
-    if is_global {
-        if globals.contains_key(&field) {
-            return parse_err(stream.file(), DuplicateGlobal(field, field_line, field_col));
+    match field_type {
+        Global => globals.insert(field_name, value),
+        Parent => {
+            let par = value
+                .get_obj()
+                .map_err(|e| ParseError::from_over(&e, stream.file(), value_line, value_col))?;
+            *parent = Some(par);
         }
-        globals.insert(field, value);
-    } else if is_parent {
-        let par = value
-            .get_obj()
-            .map_err(|e| ParseError::from_over(&e, stream.file(), value_line, value_col))?;
-        *parent = Some(par);
-    } else {
-        obj.insert(field, value);
+        Regular => obj.insert(field_name, value),
     }
 
     // Go to the next non-whitespace character.
@@ -439,13 +456,19 @@ fn parse_tup(
     Ok(tup.into())
 }
 
+enum FieldType {
+    Global,
+    Parent,
+    Regular,
+}
+
 // Gets the next field in the char stream.
 // Returns Option<(field_name, is_global, is_parent)>.
 fn parse_field(
     mut stream: CharStream,
     line: usize,
     col: usize,
-) -> ParseResult<(String, bool, bool)> {
+) -> ParseResult<(String, FieldType)> {
     let mut field = String::new();
     let mut first = true;
     let mut is_global = false;
@@ -506,22 +529,12 @@ fn parse_value(
         '{' => parse_obj(&mut stream, &mut globals, included, depth + 1)?,
         '[' => parse_arr(&mut stream, obj, &mut globals, included, depth + 1)?,
         '(' => parse_tup(&mut stream, obj, &mut globals, included, depth + 1)?,
-        '@' => parse_variable(
-            &mut stream,
-            obj,
-            globals,
-            included,
-            line,
-            col,
-            depth,
-            cur_brace,
-        )?,
         '<' => parse_include(&mut stream, obj, &mut globals, &mut included, depth + 1)?,
         ch @ '+' | ch @ '-' => {
             parse_unary_op(&mut stream, obj, globals, included, depth, cur_brace, ch)?
         }
         ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
-        ch if Obj::is_valid_field_char(ch, true) => parse_variable(
+        ch if Obj::is_valid_field_char(ch, true) || ch == '@' => parse_variable(
             &mut stream,
             obj,
             globals,
@@ -608,7 +621,9 @@ fn parse_unary_op(
     cur_brace: Option<char>,
     ch: char,
 ) -> ParseResult<Value> {
-    let _ = stream.next();
+    let next = stream.next();
+    assert!(next == Some('-') || next == Some('+'));
+
     let line = stream.line();
     let col = stream.col();
 
@@ -776,6 +791,7 @@ fn parse_variable(
         "true" => Value::Bool(true),
         "false" => Value::Bool(false),
 
+        // If we're being called by `parse_include`, signify that one of these keywords was found.
         "Obj" => Value::Obj(OBJ_SENTINEL.clone()),
         "Str" => Value::Obj(STR_SENTINEL.clone()),
         "Arr" => Value::Obj(ARR_SENTINEL.clone()),
