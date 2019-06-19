@@ -4,6 +4,7 @@ use crate::parse::format::Format;
 use crate::types::Type;
 use crate::value::Value;
 use crate::{OverError, OverResult, INDENT_STEP};
+use std::convert::TryFrom;
 use std::fmt;
 use std::slice::Iter;
 use std::sync::Arc;
@@ -126,6 +127,14 @@ impl Default for Arr {
 impl fmt::Display for Arr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.format(true, INDENT_STEP))
+    }
+}
+
+impl TryFrom<Vec<Value>> for Arr {
+    type Error = OverError;
+
+    fn try_from(vec: Vec<Value>) -> Result<Self, Self::Error> {
+        Self::from_values(vec)
     }
 }
 

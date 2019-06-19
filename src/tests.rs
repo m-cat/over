@@ -8,6 +8,7 @@ use crate::value::Value;
 use crate::OverResult;
 #[cfg(test)]
 use pretty_assertions::{assert_eq, assert_ne};
+use std::convert::TryInto;
 
 // Test setting and getting values.
 #[test]
@@ -20,6 +21,7 @@ fn set_and_get() -> OverResult<()> {
         "char" => 'x',
         "str1" => "hello",
         "str2" => "yo",
+        "tup" => tup!["hi", 2, false],
         "arr" => arr![-5, 0, 1],
     };
 
@@ -54,6 +56,28 @@ fn set_and_get() -> OverResult<()> {
     // Arr
 
     assert_eq!(obj.get("arr").unwrap(), arr![-5, 0, 1]);
+    assert_eq!(
+        obj.get_arr("arr"),
+        vec![
+            Value::Int((-5).into()),
+            Value::Int(0.into()),
+            Value::Int(1.into())
+        ]
+        .try_into()
+    );
+
+    // Tup
+
+    assert_eq!(obj.get("tup").unwrap(), tup!["hi", 2, false]);
+    assert_eq!(
+        obj.get_tup("tup"),
+        Ok(vec![
+            Value::Str("hi".into()),
+            Value::Int(2.into()),
+            Value::Bool(false)
+        ]
+        .into())
+    );
 
     // Errors
 
