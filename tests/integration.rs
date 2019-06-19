@@ -9,7 +9,7 @@ extern crate over;
 mod errors;
 
 use num_traits::ToPrimitive;
-use over::obj::Obj;
+use over::obj::{Obj, Pair};
 use over::types::Type;
 use over::value::Value;
 use over::OverResult;
@@ -162,9 +162,9 @@ fn obj() {
 
     assert_eq!(obj.get_str("dot_var").unwrap(), "test");
 
-    assert_eq!(obj.iter().count(), 13);
-    let value = obj.values().last();
-    assert!(!value.unwrap().is_null());
+    assert_eq!(obj.iter().count(), 15);
+    let Pair(_, value) = obj.iter().last().unwrap();
+    assert!(!value.is_null());
 }
 
 // Test that globals are referenced correctly and don't get included as fields.
@@ -330,7 +330,17 @@ fn includes() -> OverResult<()> {
 // Test writing objects to files.
 #[test]
 fn write() -> OverResult<()> {
-    let write_path = "tests/test_files/write.over";
+    let write_dir = "tests/test_files/tmp";
+
+    // Create temporary directory.
+    match std::fs::create_dir(write_dir) {
+        Ok(_) => (),
+        Err(ref e) if e.kind() == std::io::ErrorKind::AlreadyExists => (),
+        _ => panic!("Error creating directory"),
+    }
+
+    let write_path = format!("{}/write.over", write_dir);
+    let write_path = write_path.as_str();
 
     macro_rules! write_helper {
         ($filename:expr) => {{
@@ -345,13 +355,20 @@ fn write() -> OverResult<()> {
     write_helper!("tests/test_files/basic.over");
     write_helper!("tests/test_files/empty.over");
     write_helper!("tests/test_files/includes.over");
-    write_helper!("tests/test_files/obj.over");
     write_helper!("tests/test_files/numbers.over");
     write_helper!("tests/test_files/example.over");
+
+    let obj1 = Obj::from_file("tests/test_files/obj.over")?;
+    obj1.write_to_file(write_path)?;
+    let obj2 = Obj::from_file(write_path)?;
+    assert_eq!(obj1, obj2);
+    // assert_eq!(obj2.get_obj("bools1")?.id(), obj2.get_obj("bools2")?.id());
 
     write_helper!("tests/test_files/fuzz1.over");
     write_helper!("tests/test_files/fuzz2.over");
     write_helper!("tests/test_files/fuzz3.over");
+
+    std::fs::remove_dir_all(write_dir).unwrap();
 
     Ok(())
 }

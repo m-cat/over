@@ -21,8 +21,15 @@ pub struct Arr {
 }
 
 impl Arr {
+    /// Returns an empty `Arr`.
+    pub fn empty() -> Self {
+        Self::from_values_unchecked(vec![], Type::Any)
+    }
+
     /// Returns a new `Arr` from the given vector of `Value`s.
-    pub fn from_vec(vec: Vec<Value>) -> OverResult<Arr> {
+    ///
+    /// Checks that every value is of the same type.
+    pub fn from_values(vec: Vec<Value>) -> OverResult<Self> {
         let mut tcur = Type::Any;
         let mut has_any = true;
 
@@ -42,18 +49,19 @@ impl Arr {
             }
         }
 
-        Ok(Arr {
-            inner: Arc::new(ArrInner { vec, inner_t: tcur }),
-        })
+        Ok(Self::from_values_unchecked(vec, tcur))
     }
 
     /// Returns a new `Arr` from the given vector of `Value`s without checking whether every value
     /// in `vec` is the same type.
     ///
-    /// It is much faster than the safe version, [`from_vec`], if you know every element in `vec` is
-    /// of type `inner_t`.
-    pub fn from_vec_unchecked(vec: Vec<Value>, inner_t: Type) -> Arr {
-        Arr {
+    /// Requires the type so that we don't have to recalculate it (by going through every single
+    /// value and calculating the most specific type).
+    ///
+    /// It is much faster than the safe version, [`from_values`], if you know every element in `vec`
+    /// is of type `inner_t`.
+    pub fn from_values_unchecked(vec: Vec<Value>, inner_t: Type) -> Self {
+        Self {
             inner: Arc::new(ArrInner { vec, inner_t }),
         }
     }
@@ -111,7 +119,7 @@ impl Arr {
 
 impl Default for Arr {
     fn default() -> Self {
-        Self::from_vec_unchecked(vec![], Type::Any)
+        Self::empty()
     }
 }
 
@@ -131,3 +139,5 @@ impl PartialEq for Arr {
         self.inner.vec == other.inner.vec
     }
 }
+
+impl Eq for Arr {}

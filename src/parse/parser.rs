@@ -8,7 +8,7 @@ use super::error::{parse_err, ParseError};
 use super::util::*;
 use super::{ParseResult, MAX_DEPTH};
 use crate::arr::{self, Arr};
-use crate::obj::Obj;
+use crate::obj::{Obj, Pair};
 use crate::tup::Tup;
 use crate::types::Type;
 use crate::value::Value;
@@ -19,22 +19,22 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::ops::Deref;
 use std::path::Path;
 
-type ObjMap = HashMap<String, Value>;
+type Pairs = Vec<Pair>;
 type GlobalMap = HashMap<String, Value>;
 type IncludedMap = (HashMap<String, Value>, HashSet<String>);
 
 lazy_static! {
     // Objs that signify that an include keyword was encountered.
-    static ref OBJ_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
-    static ref STR_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
-    static ref ARR_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
-    static ref TUP_SENTINEL: Obj = Obj::from_map_unchecked(HashMap::new());
+    static ref OBJ_SENTINEL: Obj = Obj::empty();
+    static ref STR_SENTINEL: Obj = Obj::empty();
+    static ref ARR_SENTINEL: Obj = Obj::empty();
+    static ref TUP_SENTINEL: Obj = Obj::empty();
 }
 
 /// Parses given file as an `Obj`.
 pub fn parse_obj_file(path: &str) -> ParseResult<Obj> {
     let stream = CharStream::from_file(path)?;
-    parse_obj_stream(stream, &mut (HashMap::new(), HashSet::new()))
+    parse_obj_stream(stream, &mut (Default::default(), Default::default()))
 }
 
 // Parses given file as an `Obj`, keeping track of already encountered includes.
@@ -47,26 +47,26 @@ fn parse_obj_file_includes(path: &str, included: &mut IncludedMap) -> ParseResul
 pub fn parse_obj_str(contents: &str) -> ParseResult<Obj> {
     let contents = String::from(contents);
     let stream = CharStream::from_string(contents)?;
-    parse_obj_stream(stream, &mut (HashMap::new(), HashSet::new()))
+    parse_obj_stream(stream, &mut (Default::default(), Default::default()))
 }
 
 // Parses an Obj given a character stream.
 #[inline]
 fn parse_obj_stream(mut stream: CharStream, mut included: &mut IncludedMap) -> ParseResult<Obj> {
-    let mut obj: ObjMap = HashMap::new();
+    let mut obj_pairs: Pairs = Default::default();
 
     // Go to the first non-whitespace character, or return if there is none.
     if !find_char(stream.clone()) {
-        return Ok(Obj::from_map_unchecked(obj));
+        return Ok(Obj::from_pairs_unchecked(obj_pairs, None));
     }
 
-    let mut globals: GlobalMap = HashMap::new();
+    let mut globals: GlobalMap = Default::default();
     let mut parent = None;
 
     // Parse all field/value pairs for this Obj.
     while parse_field_value_pair(
         &mut stream,
-        &mut obj,
+        &mut obj_pairs,
         &mut globals,
         &mut included,
         &mut parent,
@@ -74,10 +74,7 @@ fn parse_obj_stream(mut stream: CharStream, mut included: &mut IncludedMap) -> P
         None,
     )? {}
 
-    Ok(match parent {
-        Some(parent) => Obj::from_map_with_parent_unchecked(obj, parent),
-        None => Obj::from_map_unchecked(obj),
-    })
+    Ok(Obj::from_pairs_unchecked(obj_pairs, parent))
 }
 
 // Parses a sub-Obj in a file. It *must* start with { and end with }.
@@ -101,13 +98,13 @@ fn parse_obj(
         return parse_err(stream.file(), UnexpectedEnd(stream.line()));
     }
 
-    let mut obj: ObjMap = HashMap::new();
+    let mut obj_pairs: Pairs = Default::default();
     let mut parent = None;
 
     // Parse field/value pairs.
     while parse_field_value_pair(
         &mut stream,
-        &mut obj,
+        &mut obj_pairs,
         globals,
         &mut included,
         &mut parent,
@@ -115,10 +112,7 @@ fn parse_obj(
         Some('}'),
     )? {}
 
-    let obj = match parent {
-        Some(parent) => Obj::from_map_with_parent_unchecked(obj, parent),
-        None => Obj::from_map_unchecked(obj),
-    };
+    let obj = Obj::from_pairs_unchecked(obj_pairs, parent);
     Ok(obj.into())
 }
 
@@ -126,7 +120,7 @@ fn parse_obj(
 #[inline]
 fn parse_field_value_pair(
     mut stream: &mut CharStream,
-    obj: &mut ObjMap,
+    obj_pairs: &mut Pairs,
     mut globals: &mut GlobalMap,
     mut included: &mut IncludedMap,
     parent: &mut Option<Obj>,
@@ -153,7 +147,7 @@ fn parse_field_value_pair(
 
     // Check for errors.
     match field_type {
-        Global => {
+        FieldType::Global => {
             if globals.contains_key(&field_name) {
                 return parse_err(
                     stream.file(),
@@ -161,7 +155,7 @@ fn parse_field_value_pair(
                 );
             }
         }
-        Parent => {
+        FieldType::Parent => {
             if parent.is_some() {
                 return parse_err(
                     stream.file(),
@@ -169,8 +163,11 @@ fn parse_field_value_pair(
                 );
             }
         }
-        Regular => {
-            if obj.contains_key(&field_name) {
+        FieldType::Regular => {
+            if obj_pairs
+                .iter()
+                .any(|Pair(ref field, _)| *field == field_name)
+            {
                 return parse_err(
                     stream.file(),
                     DuplicateField(field_name, field_line, field_col),
@@ -188,7 +185,7 @@ fn parse_field_value_pair(
     let (value_line, value_col) = (stream.line(), stream.col());
     let value = parse_value(
         &mut stream,
-        obj,
+        obj_pairs,
         &mut globals,
         &mut included,
         value_line,
@@ -200,14 +197,18 @@ fn parse_field_value_pair(
 
     // Add value either to the globals map or to the current Obj.
     match field_type {
-        Global => globals.insert(field_name, value),
-        Parent => {
+        FieldType::Global => {
+            let _ = globals.insert(field_name, value);
+        }
+        FieldType::Parent => {
             let par = value
                 .get_obj()
                 .map_err(|e| ParseError::from_over(&e, stream.file(), value_line, value_col))?;
             *parent = Some(par);
         }
-        Regular => obj.insert(field_name, value),
+        FieldType::Regular => {
+            obj_pairs.push(Pair(field_name, value));
+        }
     }
 
     // Go to the next non-whitespace character.
@@ -225,10 +226,10 @@ fn parse_field_value_pair(
 fn parse_arr_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Arr> {
     let mut stream = CharStream::from_file(path)?;
 
-    let obj: ObjMap = HashMap::new();
-    let mut globals: GlobalMap = HashMap::new();
+    let obj_pairs: Pairs = Default::default();
+    let mut globals: GlobalMap = Default::default();
 
-    let mut vec = Vec::new();
+    let mut vec = vec![];
     let mut tcur = Type::Any;
     let mut has_any = true;
 
@@ -242,7 +243,7 @@ fn parse_arr_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Arr
         let (value_line, value_col) = (stream.line(), stream.col());
         let value = parse_value(
             &mut stream,
-            &obj,
+            &obj_pairs,
             &mut globals,
             &mut included,
             value_line,
@@ -277,7 +278,7 @@ fn parse_arr_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Arr
         vec.push(value);
     }
 
-    let arr = Arr::from_vec_unchecked(vec, tcur);
+    let arr = Arr::from_values_unchecked(vec, tcur);
 
     Ok(arr)
 }
@@ -285,7 +286,7 @@ fn parse_arr_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Arr
 // Parses a sub-Arr in a file. It *must* start with [ and end with ].
 fn parse_arr(
     mut stream: &mut CharStream,
-    obj: &ObjMap,
+    obj_pairs: &[Pair],
     mut globals: &mut GlobalMap,
     mut included: &mut IncludedMap,
     depth: usize,
@@ -324,7 +325,7 @@ fn parse_arr(
         let (value_line, value_col) = (stream.line(), stream.col());
         let value = parse_value(
             &mut stream,
-            obj,
+            obj_pairs,
             &mut globals,
             &mut included,
             value_line,
@@ -359,7 +360,7 @@ fn parse_arr(
         vec.push(value);
     }
 
-    let arr = Arr::from_vec_unchecked(vec, tcur);
+    let arr = Arr::from_values_unchecked(vec, tcur);
 
     Ok(arr.into())
 }
@@ -368,9 +369,9 @@ fn parse_arr(
 fn parse_tup_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Tup> {
     let mut stream = CharStream::from_file(path)?;
 
-    let mut vec: Vec<Value> = Vec::new();
-    let obj: ObjMap = HashMap::new();
-    let mut globals: GlobalMap = HashMap::new();
+    let mut vec: Vec<Value> = Default::default();
+    let obj_pairs: Pairs = Default::default();
+    let mut globals: GlobalMap = Default::default();
 
     loop {
         // Go to the first non-whitespace character, or error if there is none.
@@ -382,7 +383,7 @@ fn parse_tup_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Tup
         let (value_line, value_col) = (stream.line(), stream.col());
         let value = parse_value(
             &mut stream,
-            &obj,
+            &obj_pairs,
             &mut globals,
             &mut included,
             value_line,
@@ -401,7 +402,7 @@ fn parse_tup_file(path: &str, mut included: &mut IncludedMap) -> ParseResult<Tup
 // Parses a sub-Tup in a file. It *must* start with ( and end with ).
 fn parse_tup(
     mut stream: &mut CharStream,
-    obj: &ObjMap,
+    obj_pairs: &[Pair],
     mut globals: &mut GlobalMap,
     mut included: &mut IncludedMap,
     depth: usize,
@@ -438,7 +439,7 @@ fn parse_tup(
         let (value_line, value_col) = (stream.line(), stream.col());
         let value = parse_value(
             &mut stream,
-            obj,
+            obj_pairs,
             &mut globals,
             &mut included,
             value_line,
@@ -451,11 +452,12 @@ fn parse_tup(
         vec.push(value);
     }
 
-    let tup = Tup::from_vec(vec);
+    let tup = Tup::from_values(vec);
 
     Ok(tup.into())
 }
 
+#[derive(Clone, Copy)]
 enum FieldType {
     Global,
     Parent,
@@ -502,18 +504,25 @@ fn parse_field(
         _field_str if is_reserved(_field_str) => {
             parse_err(stream.file(), InvalidFieldName(field.clone(), line, col))
         }
-        "^" => Ok((field.clone(), false, true)),
+        "^" => Ok((field.clone(), FieldType::Parent)),
         bad if bad.starts_with('^') => {
             parse_err(stream.file(), InvalidFieldName(field.clone(), line, col))
         }
-        _ => Ok((field.clone(), is_global, false)),
+        _ => Ok((
+            field.clone(),
+            if is_global {
+                FieldType::Global
+            } else {
+                FieldType::Regular
+            },
+        )),
     }
 }
 
 // Gets the next value in the char stream.
 fn parse_value(
     mut stream: &mut CharStream,
-    obj: &ObjMap,
+    obj_pairs: &[Pair],
     mut globals: &mut GlobalMap,
     mut included: &mut IncludedMap,
     line: usize,
@@ -527,16 +536,28 @@ fn parse_value(
         '"' => parse_str(&mut stream)?,
         '\'' => parse_char(&mut stream)?,
         '{' => parse_obj(&mut stream, &mut globals, included, depth + 1)?,
-        '[' => parse_arr(&mut stream, obj, &mut globals, included, depth + 1)?,
-        '(' => parse_tup(&mut stream, obj, &mut globals, included, depth + 1)?,
-        '<' => parse_include(&mut stream, obj, &mut globals, &mut included, depth + 1)?,
-        ch @ '+' | ch @ '-' => {
-            parse_unary_op(&mut stream, obj, globals, included, depth, cur_brace, ch)?
-        }
+        '[' => parse_arr(&mut stream, obj_pairs, &mut globals, included, depth + 1)?,
+        '(' => parse_tup(&mut stream, obj_pairs, &mut globals, included, depth + 1)?,
+        '<' => parse_include(
+            &mut stream,
+            obj_pairs,
+            &mut globals,
+            &mut included,
+            depth + 1,
+        )?,
+        ch @ '+' | ch @ '-' => parse_unary_op(
+            &mut stream,
+            obj_pairs,
+            globals,
+            included,
+            depth,
+            cur_brace,
+            ch,
+        )?,
         ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
         ch if Obj::is_valid_field_char(ch, true) || ch == '@' => parse_variable(
             &mut stream,
-            obj,
+            obj_pairs,
             globals,
             included,
             line,
@@ -568,7 +589,7 @@ fn parse_value(
                     // Parse another value.
                     let val2 = parse_value(
                         &mut stream,
-                        obj,
+                        obj_pairs,
                         &mut globals,
                         &mut included,
                         line2,
@@ -614,7 +635,7 @@ fn parse_value(
 
 fn parse_unary_op(
     mut stream: &mut CharStream,
-    obj: &ObjMap,
+    obj_pairs: &[Pair],
     mut globals: &mut GlobalMap,
     mut included: &mut IncludedMap,
     depth: usize,
@@ -630,7 +651,7 @@ fn parse_unary_op(
     let res = match stream.peek() {
         Some(_) => parse_value(
             &mut stream,
-            obj,
+            obj_pairs,
             &mut globals,
             &mut included,
             line,
@@ -733,7 +754,7 @@ fn parse_numeric(stream: &mut CharStream, line: usize, col: usize) -> ParseResul
 // Parses a variable name and gets a value from the corresponding variable.
 fn parse_variable(
     mut stream: &mut CharStream,
-    obj: &ObjMap,
+    obj_pairs: &[Pair],
     mut globals: &mut GlobalMap,
     mut included: &mut IncludedMap,
     line: usize,
@@ -810,8 +831,8 @@ fn parse_variable(
         }
         var => {
             // Regular variable, get value from the current Obj.
-            match obj.get(var) {
-                Some(value) => value.clone(),
+            match obj_pairs.iter().find(|Pair(ref field, _)| field == var) {
+                Some(Pair(_, ref value)) => value.clone(),
                 None => {
                     let var = String::from(var);
                     return parse_err(stream.file(), VariableNotFound(var, line, col));
@@ -826,7 +847,7 @@ fn parse_variable(
                 let (line, col) = (stream.line(), stream.col());
                 let value = parse_value(
                     &mut stream,
-                    obj,
+                    obj_pairs,
                     &mut globals,
                     &mut included,
                     line,
@@ -855,7 +876,7 @@ fn parse_variable(
                 let (line, col) = (stream.line(), stream.col());
                 let value = parse_value(
                     &mut stream,
-                    obj,
+                    obj_pairs,
                     &mut globals,
                     &mut included,
                     line,
@@ -889,7 +910,7 @@ fn parse_variable(
 
                 parse_variable(
                     &mut stream,
-                    obj.map_ref(),
+                    obj.pairs_ref(),
                     globals,
                     included,
                     line,
@@ -1006,7 +1027,7 @@ fn parse_str(stream: &mut CharStream) -> ParseResult<Value> {
 
 fn parse_include(
     mut stream: &mut CharStream,
-    obj: &ObjMap,
+    obj_pairs: &[Pair],
     mut globals: &mut GlobalMap,
     mut included: &mut IncludedMap,
     depth: usize,
@@ -1034,7 +1055,7 @@ fn parse_include(
     let (mut line, mut col) = (stream.line(), stream.col());
     let mut value = parse_value(
         &mut stream,
-        obj,
+        obj_pairs,
         &mut globals,
         &mut included,
         line,
@@ -1070,7 +1091,7 @@ fn parse_include(
         col = stream.col();
         value = parse_value(
             &mut stream,
-            obj,
+            obj_pairs,
             &mut globals,
             &mut included,
             line,
@@ -1268,7 +1289,7 @@ fn binary_op_on_values(
                             // Get the inner type.
                             let arr = if let Arr(ref t) = t {
                                 // Because we know the type already, we can safely use `_unchecked`.
-                                arr::Arr::from_vec_unchecked(vec, t.deref().clone())
+                                arr::Arr::from_values_unchecked(vec, t.deref().clone())
                             } else {
                                 panic!("Logic error")
                             };

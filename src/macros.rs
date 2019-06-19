@@ -27,7 +27,7 @@ macro_rules! frac {
 #[macro_export]
 macro_rules! arr {
     [] => {
-        $crate::arr::Arr::from_vec(vec![]).unwrap()
+        $crate::arr::Arr::from_values(vec![]).unwrap()
     };
     [ $( $elem:expr ),+ , ] => {
         // Rule with trailing comma.
@@ -49,7 +49,7 @@ macro_rules! try_arr {
     };
     [ $( $elem:expr ),+ ] => {
         {
-            $crate::arr::Arr::from_vec(vec![ $( $elem.into() ),+ ])
+            $crate::arr::Arr::from_values(vec![ $( $elem.into() ),+ ])
         }
     };
 }
@@ -63,7 +63,7 @@ macro_rules! tup {
     };
     ( $( $elem:expr ),* ) => {
         {
-            $crate::tup::Tup::from_vec(vec![ $( $elem.into() ),+ ])
+            $crate::tup::Tup::from_values(vec![ $( $elem.into() ),+ ])
         }
     };
 }
@@ -76,7 +76,7 @@ macro_rules! tup {
 #[macro_export]
 macro_rules! obj {
     {} => {
-        $crate::obj::Obj::from_map_unchecked(::std::collections::HashMap::new())
+        $crate::obj::Obj::empty()
     };
     { $( $field:expr => $inner:expr ),+ , } => {
         // Rule with trailing comma.
@@ -99,25 +99,25 @@ macro_rules! try_obj {
     { $( $field:expr => $inner:expr ),+ } => {
         #[allow(clippy::useless_let_if_seq)]
         {
-            use $crate::obj::Obj;
+            use $crate::obj::{Obj, Pair};
 
-            let mut _map = ::std::collections::HashMap::new();
+            let mut _pairs = vec![];
             let mut _parent: Option<$crate::value::Value> = None;
 
             $(
                 if $field == "^" {
                     _parent = Some($inner.into());
                 } else {
-                    _map.insert($field.into(), $inner.into());
+                    _pairs.push(Pair($field.into(), $inner.into()));
                 }
             )*
 
             match _parent {
                 Some(parent) => match parent.get_obj() {
-                    Ok(parent) => Obj::from_map_with_parent(_map, parent),
+                    Ok(parent) => Obj::from_pairs(_pairs, Some(parent)),
                     e @ Err(_) => e,
                 }
-                None => Obj::from_map(_map),
+                None => Obj::from_pairs(_pairs, None),
             }
         }
     };
@@ -125,7 +125,7 @@ macro_rules! try_obj {
 
 #[cfg(test)]
 mod tests {
-    use crate::obj::Obj;
+    use crate::obj::{Obj, Pair};
     use crate::types::Type::*;
     use crate::value::Value;
     use crate::OverError;
@@ -157,8 +157,13 @@ mod tests {
 
     #[test]
     fn obj_basic() {
-        let obj = Obj::from_map_unchecked(map! {"a".into() => 1.into(),
-        "b".into() => arr![1, 2].into()});
+        let obj = Obj::from_pairs_unchecked(
+            vec![
+                Pair("a".into(), 1.into()),
+                Pair("b".into(), arr![1, 2].into()),
+            ],
+            None,
+        );
 
         assert_eq!(
             obj,

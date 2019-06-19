@@ -2,6 +2,9 @@ empty: {} empty2: {}
 @bools: { t: true f: false }
 @ints: { int: 1 }
 
+bools1: @bools
+bools2: @bools
+
 outie: {
     ^: @bools
     z: 0

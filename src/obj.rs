@@ -10,9 +10,8 @@ use crate::value::Value;
 use crate::{OverResult, INDENT_STEP};
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use std::collections::hash_map::{Iter, Keys, Values};
-use std::collections::BTreeMap;
 use std::fmt;
+use std::slice::Iter;
 use std::str::FromStr;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
@@ -21,18 +20,28 @@ lazy_static! {
     static ref CUR_ID: AtomicUsize = AtomicUsize::new(0);
 }
 
+// Generate a new, unique ID.
 fn gen_id() -> usize {
     CUR_ID.fetch_add(1, Ordering::Relaxed)
 }
 
+/// Field-value pair.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Pair(pub String, pub Value);
+
 #[derive(Clone, Debug)]
 struct ObjInner {
-    map: BTreeMap<String, Value>,
+    // Field-value pairs. Stored in the order they are added.
+    pairs: Vec<Pair>,
+    // Optional parent.
     parent: Option<Obj>,
+    // Unique ID.
     id: usize,
 }
 
 /// `Obj` struct.
+///
+/// This struct is immutable and cannot be modified once created.
 #[derive(Clone, Debug)]
 pub struct Obj {
     inner: Arc<ObjInner>,
@@ -56,83 +65,38 @@ macro_rules! get_fn {
 }
 
 impl Obj {
-    /// Returns a new `Obj` created from the given `BTreeMap`.
-    ///
-    /// Returns an error if the map contains an invalid field name.
-    /// A valid field name must start with an alphabetic character or '_' and subsequent characters
-    /// must be alphabetic, numeric, or '_'.
-    pub fn from_map(obj_map: BTreeMap<String, Value>) -> OverResult<Obj> {
-        for field in obj_map.keys() {
-            if !Self::is_valid_field(field) {
-                return Err(OverError::InvalidFieldName((*field).clone()));
-            }
-        }
-        let id = gen_id();
-
-        Ok(Obj {
-            inner: Arc::new(ObjInner {
-                map: obj_map,
-                parent: None,
-                id,
-            }),
-        })
+    /// Creates an empty `Obj`.
+    pub fn empty() -> Self {
+        Self::from_pairs_unchecked(vec![], None)
     }
 
-    /// Returns a new `Obj` created from the given `BTreeMap` with given `parent`.
+    /// Returns a new `Obj` created from the given `Vec` of `Pair`s with optional `parent`.
     ///
-    /// Returns an error if the map contains an invalid field name.
+    /// Returns an error if a pair contains an invalid field name.
     ///
-    /// See `from_map` for more details.
-    pub fn from_map_with_parent(obj_map: BTreeMap<String, Value>, parent: Obj) -> OverResult<Obj> {
-        for field in obj_map.keys() {
+    /// A valid field name must start with an alphabetic character or '_' and subsequent characters
+    /// must be alphabetic, numeric, or '_'.
+    pub fn from_pairs(pairs: Vec<Pair>, parent: Option<Self>) -> OverResult<Self> {
+        for Pair(ref field, _) in &pairs {
             if !Self::is_valid_field(field) {
                 return Err(OverError::InvalidFieldName(field.clone()));
             }
         }
-        let id = gen_id();
 
-        Ok(Obj {
-            inner: Arc::new(ObjInner {
-                map: obj_map,
-                parent: Some(parent),
-                id,
-            }),
-        })
+        Ok(Self::from_pairs_unchecked(pairs, parent))
     }
 
-    /// Returns a new `Obj` created from the given `BTreeMap`.
+    /// Returns a new `Obj` created from the given `Vec` of `Pair`s with optional `parent`.
     ///
-    /// It is faster than the safe version, `from_map`, if you know every field has a valid name.
+    /// It is faster than the safe version, `from_pairs`, if you know every field has a valid name.
     /// You can check ahead of time whether a field is valid with `is_valid_field`.
     ///
-    /// See `from_map` for more details.
-    pub fn from_map_unchecked(obj_map: BTreeMap<String, Value>) -> Obj {
+    /// See `from_pairs` for more details.
+    pub fn from_pairs_unchecked(pairs: Vec<Pair>, parent: Option<Self>) -> Self {
         let id = gen_id();
 
-        Obj {
-            inner: Arc::new(ObjInner {
-                map: obj_map,
-                parent: None,
-                id,
-            }),
-        }
-    }
-
-    /// Returns a new `Obj` created from the given `BTreeMap` with given `parent`.
-    ///
-    /// It is faster than the safe version, `from_map_with_parent`, if you know every field has
-    /// a valid name. You can check ahead of time whether a field is valid with `is_valid_field`.
-    ///
-    /// See `from_map` for more details.
-    pub fn from_map_with_parent_unchecked(obj_map: BTreeMap<String, Value>, parent: Obj) -> Obj {
-        let id = gen_id();
-
-        Obj {
-            inner: Arc::new(ObjInner {
-                map: obj_map,
-                parent: Some(parent),
-                id,
-            }),
+        Self {
+            inner: Arc::new(ObjInner { pairs, parent, id }),
         }
     }
 
@@ -148,13 +112,13 @@ impl Obj {
         self.inner.id
     }
 
-    /// Returns a reference to the inner map of this `Obj`.
-    pub fn map_ref(&self) -> &BTreeMap<String, Value> {
-        &self.inner.map
+    /// Returns a reference to the inner vec of this `Obj`.
+    pub fn pairs_ref(&self) -> &Vec<Pair> {
+        &self.inner.pairs
     }
 
     /// Returns a new `Obj` loaded from a file.
-    pub fn from_file(path: &str) -> OverResult<Obj> {
+    pub fn from_file(path: &str) -> OverResult<Self> {
         Ok(parse::load_from_file(path)?)
     }
 
@@ -188,7 +152,7 @@ impl Obj {
     where
         F: FnMut(&String, &Value),
     {
-        for (field, value) in &self.inner.map {
+        for Pair(field, value) in &self.inner.pairs {
             f(field, value)
         }
     }
@@ -197,17 +161,17 @@ impl Obj {
     ///
     /// Parent fields are not included.
     pub fn len(&self) -> usize {
-        self.inner.map.len()
+        self.inner.pairs.len()
     }
 
     /// Returns whether this `Obj` is empty.
     ///
     /// Parent fields are not included.
     pub fn is_empty(&self) -> bool {
-        self.inner.map.is_empty()
+        self.inner.pairs.is_empty()
     }
 
-    /// Returns whether `self` and `other` point to the same data.
+    /// Returns whether the data pointers of `self` and `other` are equal.
     pub fn ptr_eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.inner, &other.inner)
     }
@@ -216,13 +180,21 @@ impl Obj {
     ///
     /// Parent fields are not included.
     pub fn contains(&self, field: &str) -> bool {
-        self.inner.map.contains_key(field)
+        self.inner
+            .pairs
+            .iter()
+            .any(|Pair(pair_field, _)| field == pair_field)
     }
 
     /// Gets the `Value` associated with `field` in this object or the first parent with `field`.
     pub fn get(&self, field: &str) -> Option<Value> {
-        match self.inner.map.get(field) {
-            Some(value) => Some(value.clone()),
+        match self
+            .inner
+            .pairs
+            .iter()
+            .find(|Pair(ref field_name, _)| field_name == field)
+        {
+            Some(Pair(_, ref value)) => Some(value.clone()),
             None => match self.inner.parent {
                 Some(ref parent) => parent.get(field),
                 None => None,
@@ -232,9 +204,14 @@ impl Obj {
 
     /// Gets the `Value` associated with `field` and the `Obj` where it was found (either `self` or
     /// one of its parents).
-    pub fn get_with_source(&self, field: &str) -> Option<(Value, Obj)> {
-        match self.inner.map.get(field) {
-            Some(value) => Some((value.clone(), self.clone())),
+    pub fn get_with_source(&self, field: &str) -> Option<(Value, Self)> {
+        match self
+            .inner
+            .pairs
+            .iter()
+            .find(|Pair(ref field_name, _)| field_name == field)
+        {
+            Some(Pair(_, ref value)) => Some((value.clone(), self.clone())),
             None => match self.inner.parent {
                 Some(ref parent) => parent.get_with_source(field),
                 None => None,
@@ -305,7 +282,7 @@ impl Obj {
     }
 
     /// Returns the parent for this `Obj`.
-    pub fn get_parent(&self) -> Option<Obj> {
+    pub fn get_parent(&self) -> Option<Self> {
         match self.inner.parent {
             Some(ref parent) => Some(parent.clone()),
             None => None,
@@ -347,25 +324,15 @@ impl Obj {
         }
     }
 
-    /// An iterator visiting all fields (keys) in arbitrary order.
-    pub fn keys(&self) -> Keys<String, Value> {
-        self.map_ref().keys()
-    }
-
-    /// An iterator visiting all values in arbitrary order.
-    pub fn values(&self) -> Values<String, Value> {
-        self.map_ref().values()
-    }
-
-    /// An iterator visiting all field-value pairs in arbitrary order.
-    pub fn iter(&self) -> Iter<String, Value> {
-        self.map_ref().iter()
+    /// An iterator visiting all field-value pairs in order.
+    pub fn iter(&self) -> Iter<Pair> {
+        self.pairs_ref().iter()
     }
 }
 
 impl Default for Obj {
     fn default() -> Self {
-        Self::from_map_unchecked(map! {})
+        Self::empty()
     }
 }
 
@@ -402,7 +369,9 @@ impl PartialEq for Obj {
             return false;
         }
 
-        // Check map equality.
-        inner.map == other_inner.map
+        // Check pairs equality.
+        inner.pairs == other_inner.pairs
     }
 }
+
+impl Eq for Obj {}

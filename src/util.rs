@@ -2,9 +2,10 @@ use std::fs::File;
 use std::io;
 use std::io::Write;
 
+#[allow(unused_macros)]
 macro_rules! map {
     { } => {
-        ::std::collections::HashMap::new()
+        ::std::collections::BTreeMap::new()
     };
     { $( $key:expr => $value:expr ),+ , } => {
         // Rule with trailing comma.
@@ -12,7 +13,7 @@ macro_rules! map {
     };
     { $( $key:expr => $value:expr ),* } => {
         {
-            let mut _map = ::std::collections::HashMap::new();
+            let mut _map = ::std::collections::BTreeMap::new();
 
             $(
                 let _ = _map.insert($key, $value);

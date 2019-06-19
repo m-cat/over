@@ -21,11 +21,16 @@ pub struct Tup {
 }
 
 impl Tup {
+    /// Returns an empty `Tup`.
+    pub fn empty() -> Self {
+        Self::from_values(vec![])
+    }
+
     /// Returns a new `Tup` from the given vector of `Value`s.
-    pub fn from_vec(values: Vec<Value>) -> Tup {
+    pub fn from_values(values: Vec<Value>) -> Self {
         let tvec: Vec<Type> = values.iter().map(|val| val.get_type()).collect();
 
-        Tup {
+        Self {
             inner: Arc::new(TupInner {
                 vec: values,
                 inner_tvec: tvec,
@@ -86,7 +91,7 @@ impl Tup {
 
 impl Default for Tup {
     fn default() -> Self {
-        Self::from_vec(vec![])
+        Self::empty()
     }
 }
 
@@ -98,7 +103,7 @@ impl fmt::Display for Tup {
 
 impl From<Vec<Value>> for Tup {
     fn from(vec: Vec<Value>) -> Self {
-        Self::from_vec(vec)
+        Self::from_values(vec)
     }
 }
 
@@ -112,3 +117,5 @@ impl PartialEq for Tup {
         self.inner.vec == other.inner.vec
     }
 }
+
+impl Eq for Tup {}

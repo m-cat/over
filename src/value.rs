@@ -13,7 +13,7 @@ use num_traits::ToPrimitive;
 use std::fmt;
 
 /// Enum of possible values and their inner types.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Value {
     /// A null value.
     Null,

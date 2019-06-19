@@ -94,7 +94,7 @@ fn parents() -> OverResult<()> {
     let obj2 = obj! { "^" => def1.clone() };
     assert_ne!(obj, obj2);
 
-    let obj2 = obj! { "^" => def1.clone(), "test1" => "hi", "bool1" => true };
+    let obj2 = obj! { "^" => def1.clone(), "bool1" => true, "test1" => "hi" };
     assert_eq!(obj, obj2);
 
     // Bool
