@@ -38,7 +38,6 @@ OVER: the best data format.
     - [Todo](#todo)
     - [What's wrong with JSON?](#whats-wrong-with-json)
     - [What about YAML/others?](#what-about-yamlothers)
-    - [Change Log](#change-log)
     - [Copyright](#copyright)
 
 <!-- markdown-toc end -->
@@ -525,10 +524,6 @@ Look at [this answer](https://stackoverflow.com/a/18708156) on StackExchange for
 
 Finally, as seen throughout this README, OVER manages to be more powerful than YAML while being much simpler! This may strike you as a paradox, but it is just a consequence of the thoughtless design of YAML and company (don't think I've forgotten about TOML). There are options such as [StrictYAML](https://github.com/crdoconnor/strictyaml) but they are, in my opinion, just bandaids on a broken solution.
 
-## Change Log
-
-See [CHANGELOG.md](CHANGELOG.md).
-
 ## Copyright
 
-(c) 2017 Marcin Swieczkowski
+(c) 2019 Marcin Swieczkowski
