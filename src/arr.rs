@@ -11,8 +11,12 @@ use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 struct ArrInner {
-    vec: Vec<Value>,
+    // List of values.
+    values: Vec<Value>,
+    // Type of each contained value.
     inner_t: Type,
+    // Unique ID.
+    id: usize,
 }
 
 /// `Arr` struct.
@@ -30,11 +34,11 @@ impl Arr {
     /// Returns a new `Arr` from the given vector of `Value`s.
     ///
     /// Checks that every value is of the same type.
-    pub fn from_values(vec: Vec<Value>) -> OverResult<Self> {
+    pub fn from_values(values: Vec<Value>) -> OverResult<Self> {
         let mut tcur = Type::Any;
         let mut has_any = true;
 
-        for value in &vec {
+        for value in &values {
             let tnew = value.get_type();
 
             if has_any {
@@ -50,7 +54,7 @@ impl Arr {
             }
         }
 
-        Ok(Self::from_values_unchecked(vec, tcur))
+        Ok(Self::from_values_unchecked(values, tcur))
     }
 
     /// Returns a new `Arr` from the given vector of `Value`s without checking whether every value
@@ -61,15 +65,19 @@ impl Arr {
     ///
     /// It is much faster than the safe version, [`from_values`], if you know every element in `vec`
     /// is of type `inner_t`.
-    pub fn from_values_unchecked(vec: Vec<Value>, inner_t: Type) -> Self {
+    pub fn from_values_unchecked(values: Vec<Value>, inner_t: Type) -> Self {
         Self {
-            inner: Arc::new(ArrInner { vec, inner_t }),
+            inner: Arc::new(ArrInner {
+                values,
+                inner_t,
+                id: crate::gen_id(),
+            }),
         }
     }
 
     /// Returns a reference to the inner vec of this `Arr`.
-    pub fn vec_ref(&self) -> &Vec<Value> {
-        &self.inner.vec
+    pub fn values_ref(&self) -> &Vec<Value> {
+        &self.inner.values
     }
 
     /// Iterates over each `Value` in `self`, applying `Fn` `f`.
@@ -77,7 +85,7 @@ impl Arr {
     where
         F: FnMut(&Value),
     {
-        for value in &self.inner.vec {
+        for value in &self.inner.values {
             f(value)
         }
     }
@@ -85,10 +93,10 @@ impl Arr {
     /// Gets the value at `index`.
     /// Returns an error if `index` is out of bounds.
     pub fn get(&self, index: usize) -> OverResult<Value> {
-        if index >= self.inner.vec.len() {
+        if index >= self.inner.values.len() {
             Err(OverError::ArrOutOfBounds(index))
         } else {
-            Ok(self.inner.vec[index].clone())
+            Ok(self.inner.values[index].clone())
         }
     }
 
@@ -99,12 +107,12 @@ impl Arr {
 
     /// Returns the length of this `Arr`.
     pub fn len(&self) -> usize {
-        self.inner.vec.len()
+        self.inner.values.len()
     }
 
     /// Returns whether this `Arr` is empty.
     pub fn is_empty(&self) -> bool {
-        self.inner.vec.is_empty()
+        self.inner.values.is_empty()
     }
 
     /// Returns whether `self` and `other` point to the same data.
@@ -114,7 +122,7 @@ impl Arr {
 
     /// Returns an iterator over the Arr.
     pub fn iter(&self) -> Iter<Value> {
-        self.vec_ref().iter()
+        self.values_ref().iter()
     }
 }
 
@@ -145,7 +153,7 @@ impl PartialEq for Arr {
             return false;
         }
 
-        self.inner.vec == other.inner.vec
+        self.inner.values == other.inner.values
     }
 }
 

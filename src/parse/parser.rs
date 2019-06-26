@@ -1210,7 +1210,7 @@ fn binary_op_on_values(
                         Some((t, _)) => {
                             let (arr1, arr2) = (val1.get_arr().unwrap(), val2.get_arr().unwrap());
                             let (mut vec1, mut vec2) =
-                                (arr1.vec_ref().clone(), arr2.vec_ref().clone());
+                                (arr1.values_ref().clone(), arr2.values_ref().clone());
 
                             let mut vec = Vec::with_capacity(vec1.len() + vec2.len());
                             vec.append(&mut vec1);

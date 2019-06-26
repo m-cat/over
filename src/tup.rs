@@ -10,8 +10,12 @@ use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 struct TupInner {
-    vec: Vec<Value>,
+    // List of values.
+    values: Vec<Value>,
+    // List of types for each contained value.
     inner_tvec: Vec<Type>,
+    // Unique ID.
+    id: usize,
 }
 
 /// `Tup` struct.
@@ -28,19 +32,20 @@ impl Tup {
 
     /// Returns a new `Tup` from the given vector of `Value`s.
     pub fn from_values(values: Vec<Value>) -> Self {
-        let tvec: Vec<Type> = values.iter().map(|val| val.get_type()).collect();
+        let inner_tvec: Vec<Type> = values.iter().map(|val| val.get_type()).collect();
 
         Self {
             inner: Arc::new(TupInner {
-                vec: values,
-                inner_tvec: tvec,
+                values,
+                inner_tvec,
+                id: crate::gen_id(),
             }),
         }
     }
 
     /// Returns a reference to the inner vec of this `Tup`.
-    pub fn vec_ref(&self) -> &Vec<Value> {
-        &self.inner.vec
+    pub fn values_ref(&self) -> &Vec<Value> {
+        &self.inner.values
     }
 
     /// Iterates over each `Value` in `self`, applying `Fn` `f`.
@@ -48,7 +53,7 @@ impl Tup {
     where
         F: FnMut(&Value),
     {
-        for value in &self.inner.vec {
+        for value in &self.inner.values {
             f(value)
         }
     }
@@ -56,10 +61,10 @@ impl Tup {
     /// Gets the value at `index`.
     /// Returns an error if `index` is out of bounds.
     pub fn get(&self, index: usize) -> OverResult<Value> {
-        if index >= self.inner.vec.len() {
+        if index >= self.inner.values.len() {
             Err(OverError::TupOutOfBounds(index))
         } else {
-            Ok(self.inner.vec[index].clone())
+            Ok(self.inner.values[index].clone())
         }
     }
 
@@ -70,12 +75,12 @@ impl Tup {
 
     /// Returns the length of this `Tup`.
     pub fn len(&self) -> usize {
-        self.inner.vec.len()
+        self.inner.values.len()
     }
 
     /// Returns whether this `Tup` is empty.
     pub fn is_empty(&self) -> bool {
-        self.inner.vec.is_empty()
+        self.inner.values.is_empty()
     }
 
     /// Returns whether `self` and `other` point to the same data.
@@ -85,7 +90,7 @@ impl Tup {
 
     /// Returns an iterator over the Tup.
     pub fn iter(&self) -> Iter<Value> {
-        self.vec_ref().iter()
+        self.values_ref().iter()
     }
 }
 
@@ -114,7 +119,7 @@ impl PartialEq for Tup {
             return false;
         }
 
-        self.inner.vec == other.inner.vec
+        self.inner.values == other.inner.values
     }
 }
 

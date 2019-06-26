@@ -5,7 +5,7 @@ use crate::error::OverError;
 use crate::parse;
 use crate::parse::format::Format;
 use crate::tup::Tup;
-use crate::util::{is_digit, write_file_str};
+use crate::util;
 use crate::value::Value;
 use crate::{OverResult, INDENT_STEP};
 use num_bigint::BigInt;
@@ -13,17 +13,7 @@ use num_rational::BigRational;
 use std::fmt;
 use std::slice::Iter;
 use std::str::FromStr;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
-
-lazy_static! {
-    static ref CUR_ID: AtomicUsize = AtomicUsize::new(0);
-}
-
-// Generate a new, unique ID.
-fn gen_id() -> usize {
-    CUR_ID.fetch_add(1, Ordering::Relaxed)
-}
 
 /// Field-value pair.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -93,7 +83,7 @@ impl Obj {
     ///
     /// See `from_pairs` for more details.
     pub fn from_pairs_unchecked(pairs: Vec<Pair>, parent: Option<Self>) -> Self {
-        let id = gen_id();
+        let id = crate::gen_id();
 
         Self {
             inner: Arc::new(ObjInner { pairs, parent, id }),
@@ -132,7 +122,7 @@ impl Obj {
     /// includes, may not be preserved when creating the `Obj` representation, and may not appear
     /// when writing to another file.
     pub fn write_to_file(&self, path: &str) -> OverResult<()> {
-        write_file_str(path, &self.write_to_string())?;
+        util::write_file_str(path, &self.write_to_string())?;
         Ok(())
     }
 
@@ -310,7 +300,7 @@ impl Obj {
     pub fn is_valid_field_char(ch: char, first: bool) -> bool {
         match ch {
             ch if ch.is_alphabetic() => true,
-            ch if is_digit(ch) => !first,
+            ch if util::is_digit(ch) => !first,
             '_' => true,
             '^' => first,
             _ => false,
