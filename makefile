@@ -21,7 +21,7 @@ doc:
 
 # Display module structure
 modules:
-	cargo modules --orphans
+	cargo modules --orphans tree
 
 # Run fuzz
 fuzz: fuzz1 fuzz2

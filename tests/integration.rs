@@ -357,19 +357,18 @@ fn write() -> OverResult<()> {
 
     write_helper!("tests/test_files/basic.over");
     write_helper!("tests/test_files/empty.over");
+    write_helper!("tests/test_files/example.over");
+    write_helper!("tests/test_files/fuzz1.over");
+    write_helper!("tests/test_files/fuzz2.over");
+    write_helper!("tests/test_files/fuzz3.over");
     write_helper!("tests/test_files/includes.over");
     write_helper!("tests/test_files/numbers.over");
-    write_helper!("tests/test_files/example.over");
 
     let obj1 = Obj::from_file("tests/test_files/obj.over")?;
     obj1.write_to_file(write_path)?;
     let obj2 = Obj::from_file(write_path)?;
     assert_eq!(obj1, obj2);
     // assert_eq!(obj2.get_obj("bools1")?.id(), obj2.get_obj("bools2")?.id());
-
-    write_helper!("tests/test_files/fuzz1.over");
-    write_helper!("tests/test_files/fuzz2.over");
-    write_helper!("tests/test_files/fuzz3.over");
 
     std::fs::remove_dir_all(write_dir).unwrap();
 

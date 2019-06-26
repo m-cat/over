@@ -1,3 +1,5 @@
+//! Simple fuzz test that makes sure no crashes occur in parsing.
+
 #![no_main]
 #[macro_use] extern crate libfuzzer_sys;
 extern crate over;
