@@ -1,11 +1,10 @@
-#![allow(clippy::cognitive_complexity)]
-
 extern crate over;
 
 use over::obj::Obj;
 use over::OverError;
 
 // Test that parsing malformed .over files results in correct errors being returned.
+#[allow(clippy::cognitive_complexity)]
 #[test]
 fn errors() {
     macro_rules! error_helper {

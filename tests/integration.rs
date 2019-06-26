@@ -300,10 +300,13 @@ fn includes() -> OverResult<()> {
     let obj = Obj::from_file("tests/test_files/includes.over").unwrap();
 
     // Test both \n and \r\n line endings.
-    let s = "Multi-line string\nwhich should be included verbatim\r\n\
-             in another file. \"Quotes\" and $$$\ndon't need to be escaped.\n";
+    let s1 = "Multi-line string\nwhich should be included verbatim\n\
+              in another file. \"Quotes\" and $$$\ndon't need to be escaped.\n";
+    let s2 = "Multi-line string\r\nwhich should be included verbatim\r\n\
+              in another file. \"Quotes\" and $$$\r\ndon't need to be escaped.\r\n";
 
-    assert_eq!(obj.get("include").unwrap(), s);
+    let include = obj.get("include").unwrap();
+    assert!(include == s1 || include == s2);
     assert_eq!(obj.get("include2").unwrap(), obj.get("include").unwrap());
 
     assert_eq!(obj.get("include_arr").unwrap(), arr![1, 2, 3, 4, 5]);
@@ -361,6 +364,7 @@ fn write() -> OverResult<()> {
     write_helper!("tests/test_files/fuzz1.over");
     write_helper!("tests/test_files/fuzz2.over");
     write_helper!("tests/test_files/fuzz3.over");
+    write_helper!("tests/test_files/fuzz4.over");
     write_helper!("tests/test_files/includes.over");
     write_helper!("tests/test_files/numbers.over");
 

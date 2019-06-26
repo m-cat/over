@@ -927,8 +927,7 @@ fn parse_variable(
 }
 
 fn parse_str_file(path: &str) -> ParseResult<String> {
-    // Replace \r\n line endings with \n for consistency in internal handling.
-    let s = read_file_str(path)?.replace("\r\n", "\n");
+    let s = read_file_str(path)?;
 
     Ok(s)
 }
@@ -969,9 +968,6 @@ fn parse_str(stream: &mut CharStream) -> ParseResult<Value> {
             None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
         }
     }
-
-    // Replace \r\n line endings with \n for consistency in internal handling.
-    let s = s.replace("\r\n", "\n");
 
     Ok(s.into())
 }

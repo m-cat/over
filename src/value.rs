@@ -175,6 +175,7 @@ macro_rules! impl_eq {
 impl_eq!(Bool, bool);
 impl_eq!(Int, BigInt);
 impl_eq!(Frac, BigRational);
+impl_eq!(Str, String);
 impl_eq!(Arr, arr::Arr);
 impl_eq!(Tup, tup::Tup);
 impl_eq!(Obj, obj::Obj);
@@ -182,7 +183,7 @@ impl_eq!(Obj, obj::Obj);
 impl<'a> PartialEq<&'a str> for Value {
     fn eq(&self, other: &&str) -> bool {
         match *self {
-            Value::Str(ref value) => value == &other.replace("\r\n", "\n"),
+            Value::Str(ref value) => value == other,
             _ => false,
         }
     }
@@ -191,21 +192,9 @@ impl<'a> PartialEq<&'a str> for Value {
 impl<'a> PartialEq<Value> for &'a str {
     fn eq(&self, other: &Value) -> bool {
         match *other {
-            Value::Str(ref value) => value == &self.replace("\r\n", "\n"),
+            Value::Str(ref value) => value == self,
             _ => false,
         }
-    }
-}
-
-impl PartialEq<String> for Value {
-    fn eq(&self, other: &String) -> bool {
-        &other.as_str() == self
-    }
-}
-
-impl PartialEq<Value> for String {
-    fn eq(&self, other: &Value) -> bool {
-        &self.as_str() == other
     }
 }
 
