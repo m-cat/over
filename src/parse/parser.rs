@@ -534,7 +534,6 @@ fn parse_value(
     // Peek to determine what kind of value we'll be parsing.
     let res = match stream.peek().unwrap() {
         '"' => parse_str(&mut stream)?,
-        '\'' => parse_char(&mut stream)?,
         '{' => parse_obj(&mut stream, &mut globals, included, depth + 1)?,
         '[' => parse_arr(&mut stream, obj_pairs, &mut globals, included, depth + 1)?,
         '(' => parse_tup(&mut stream, obj_pairs, &mut globals, included, depth + 1)?,
@@ -926,55 +925,6 @@ fn parse_variable(
     Ok(value)
 }
 
-// Gets the next Char in the character stream.
-// Assumes the Char starts and ends with single quote marks.
-// '\', '\n', '\r', and '\t' must be escaped with '\'.
-// ''' do not need to be escaped, although they can be.
-fn parse_char(stream: &mut CharStream) -> ParseResult<Value> {
-    let ch = stream.next().unwrap();
-    assert_eq!(ch, '\'');
-
-    let (escape, mut ch) = match stream.next() {
-        Some('\\') => (true, '\0'),
-        Some(ch) if ch == '\n' || ch == '\r' || ch == '\t' => {
-            return parse_err(
-                stream.file(),
-                InvalidValueChar(ch, stream.line(), stream.col() - 1),
-            );
-        }
-        Some(ch) => (false, ch),
-        None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
-    };
-
-    if escape {
-        ch = match stream.next() {
-            Some(ch) => match get_escape_char(ch) {
-                Some(ch) => ch,
-                None => {
-                    return parse_err(
-                        stream.file(),
-                        InvalidEscapeChar(ch, stream.line(), stream.col() - 1),
-                    );
-                }
-            },
-            None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
-        }
-    }
-
-    match stream.next() {
-        Some('\'') => (),
-        Some(ch) => {
-            return parse_err(
-                stream.file(),
-                InvalidValueChar(ch, stream.line(), stream.col() - 1),
-            );
-        }
-        None => return parse_err(stream.file(), UnexpectedEnd(stream.line())),
-    }
-
-    Ok(ch.into())
-}
-
 fn parse_str_file(path: &str) -> ParseResult<String> {
     // Replace \r\n line endings with \n for consistency in internal handling.
     let s = read_file_str(path)?.replace("\r\n", "\n");
@@ -1246,26 +1196,6 @@ fn binary_op_on_values(
                 Int if type2 == Int => (val1.get_int().unwrap() + val2.get_int().unwrap()).into(),
                 Frac if type2 == Frac => {
                     (val1.get_frac().unwrap() + val2.get_frac().unwrap()).into()
-                }
-                Char if type2 == Char => {
-                    let mut s = String::with_capacity(2);
-                    s.push(val1.get_char().unwrap());
-                    s.push(val2.get_char().unwrap());
-                    s.into()
-                }
-                Char if type2 == Str => {
-                    let str2 = val2.get_str().unwrap();
-                    let mut s = String::with_capacity(1 + str2.len());
-                    s.push(val1.get_char().unwrap());
-                    s.push_str(&str2);
-                    s.into()
-                }
-                Str if type2 == Char => {
-                    let str1 = val1.get_str().unwrap();
-                    let mut s = String::with_capacity(str1.len() + 1);
-                    s.push_str(&str1);
-                    s.push(val2.get_char().unwrap());
-                    s.into()
                 }
                 Str if type2 == Str => {
                     let str1 = val1.get_str().unwrap();

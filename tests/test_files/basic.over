@@ -29,6 +29,6 @@ k:# Comment
 p: Hello
 q:_
 r: null
-s: '\'' t: '\n' u: ' ' v: ''' w: '$'
+s: "\'" t: "\n" u: " " v: "'" w: "$"
 
-x: 1 # Fetch this as a Frac
+x: 1 # Can fetch this as a Frac

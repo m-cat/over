@@ -53,21 +53,21 @@ fn errors() {
     error_helper!(
         "any1.over",
         "Could not apply operator + on types Arr(Arr(Arr(Int))) and \
-         Arr(Arr(Arr(Char))) at line 1, column 26"
+         Arr(Arr(Arr(Str))) at line 1, column 26"
     );
     error_helper!(
         "any2.over",
         "Expected Tup(Arr(Arr(Int)), Arr(Arr(Int))) at line 4, column 5; \
-         found Tup(Arr(Arr(Char)), Arr(Arr(Char)))"
+         found Tup(Arr(Arr(Str)), Arr(Arr(Str)))"
     );
     error_helper!(
         "any3.over",
         "Could not apply operator + on types Arr(Tup(Arr(Arr(Int)), Arr(Arr(Int)))) \
-         and Arr(Tup(Arr(Arr(Char)), Arr(Arr(Char)))) at line 5, column 16"
+         and Arr(Tup(Arr(Arr(Str)), Arr(Arr(Str)))) at line 5, column 16"
     );
     error_helper!(
         "arr_types.over",
-        "Expected Arr(Tup(Int, Int)) at line 2, column 37; found Arr(Tup(Int, Char))"
+        "Expected Arr(Tup(Int, Int)) at line 2, column 37; found Arr(Tup(Int, Str))"
     );
     error_helper!("decimal.over", "Invalid numeric value at line 1, column 10");
     error_helper!(
@@ -174,7 +174,7 @@ fn errors() {
     error_helper!("fuzz10.over", "Unexpected end at line 1");
     error_helper!(
         "fuzz11.over",
-        "Could not apply operator + on types Char and Int at line 14, column 5"
+        "Could not apply operator + on types Str and Int at line 14, column 5"
     );
     error_helper!("fuzz12.over", "Invalid numeric value at line 6, column 18");
     error_helper!(
@@ -192,7 +192,7 @@ fn errors() {
     );
     error_helper!(
         "include2.over",
-        "Expected Str at line 1, column 12; found Char"
+        "Expected Str at line 1, column 12; found Int"
     );
     error_helper!(
         "include3.over",
@@ -216,7 +216,7 @@ fn errors() {
     );
     error_helper!(
         "op_arr.over",
-        "Could not apply operator + on types Arr(Int) and Arr(Char) at line 1, column 13"
+        "Could not apply operator + on types Arr(Int) and Arr(Str) at line 1, column 13"
     );
     error_helper!(
         "op_arr_tup.over",

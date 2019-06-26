@@ -241,13 +241,6 @@ impl Obj {
         BigRational
     );
     get_fn!(
-        "Returns the `char` found at `field`. \
-         Returns an error if the field was not found \
-         or if the `Value` at `field` is not `Char`.",
-        get_char,
-        char
-    );
-    get_fn!(
         "Returns the `String` found at `field`. \
          Returns an error if the field was not found \
          or if the `Value` at `field` is not `Str`.",

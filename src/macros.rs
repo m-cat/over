@@ -146,13 +146,13 @@ mod tests {
     #[test]
     fn try_arr_mismatch() {
         assert_eq!(
-            try_arr![arr![1, 1], arr!['c']],
+            try_arr![arr![1, 1], arr!["c"]],
             Err(OverError::ArrTypeMismatch(
                 Arr(Box::new(Int)),
-                Arr(Box::new(Char)),
+                Arr(Box::new(Str)),
             ))
         );
-        assert_eq!(try_arr![1, 'c'], Err(OverError::ArrTypeMismatch(Int, Char)));
+        assert_eq!(try_arr![1, "c"], Err(OverError::ArrTypeMismatch(Int, Str)));
     }
 
     #[test]

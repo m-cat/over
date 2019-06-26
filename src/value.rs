@@ -25,8 +25,6 @@ pub enum Value {
     Int(BigInt),
     /// A fractional value.
     Frac(BigRational),
-    /// A character value.
-    Char(char),
     /// A string value.
     Str(String),
 
@@ -71,7 +69,6 @@ impl Value {
             Bool(_) => Type::Bool,
             Int(_) => Type::Int,
             Frac(_) => Type::Frac,
-            Char(_) => Type::Char,
             Str(_) => Type::Str,
             Arr(ref arr) => Type::Arr(Box::new(arr.inner_type())),
             Tup(ref tup) => Type::Tup(tup.inner_type_vec()),
@@ -104,14 +101,6 @@ impl Value {
             _ => Err(OverError::TypeMismatch(Type::Frac, self.get_type())),
         }
     }
-
-    get_fn!(
-        "Returns the `char` contained in this `Value`. \
-         Returns an error if this `Value` is not `Char`.",
-        get_char,
-        char,
-        Char
-    );
 
     get_fn!(
         "Returns the `String` contained in this `Value`. \
@@ -186,7 +175,6 @@ macro_rules! impl_eq {
 impl_eq!(Bool, bool);
 impl_eq!(Int, BigInt);
 impl_eq!(Frac, BigRational);
-impl_eq!(Char, char);
 impl_eq!(Arr, arr::Arr);
 impl_eq!(Tup, tup::Tup);
 impl_eq!(Obj, obj::Obj);
@@ -299,8 +287,6 @@ impl_from!(BigInt, Int);
 //     }
 // }
 impl_from!(BigRational, Frac);
-
-impl_from!(char, Char);
 
 impl_from!(String, Str);
 impl<'a> From<&'a str> for Value {

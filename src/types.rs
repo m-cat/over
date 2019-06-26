@@ -16,8 +16,6 @@ pub enum Type {
     Int,
     /// A fractional type.
     Frac,
-    /// A character type.
-    Char,
     /// A string type.
     Str,
 
@@ -67,13 +65,6 @@ impl Type {
             }
             Frac => {
                 if let Frac = *other {
-                    true
-                } else {
-                    false
-                }
-            }
-            Char => {
-                if let Char = *other {
                     true
                 } else {
                     false
@@ -141,12 +132,12 @@ impl Type {
     /// use over::value::Value;
     ///
     /// let val1: Value = tup!(arr![], arr![2]).into();
-    /// let val2: Value = tup!(arr!['c'], arr![]).into();
+    /// let val2: Value = tup!(arr!["c"], arr![]).into();
     ///
     /// let (specific_type, has_any) =
     ///     Type::most_specific(&val1.get_type(), &val2.get_type()).unwrap();
     ///
-    /// assert_eq!(specific_type, Tup(vec![Arr(Box::new(Char)), Arr(Box::new(Int))]));
+    /// assert_eq!(specific_type, Tup(vec![Arr(Box::new(Str)), Arr(Box::new(Int))]));
     /// assert!(!has_any);
     ///
     /// # }
@@ -250,7 +241,6 @@ impl fmt::Display for Type {
             Bool => write!(f, "Bool"),
             Int => write!(f, "Int"),
             Frac => write!(f, "Frac"),
-            Char => write!(f, "Char"),
             Str => write!(f, "Str"),
             Arr(ref boxxy) => write!(f, "Arr({})", boxxy),
             Tup(ref tvec) => write!(

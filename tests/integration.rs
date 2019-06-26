@@ -57,11 +57,11 @@ fn basic() -> OverResult<()> {
     assert_eq!(obj.get("p").unwrap(), "Hello");
     assert_eq!(get_int(&obj, "q"), 0);
     assert_eq!(obj.get("r").unwrap(), Value::Null);
-    assert_eq!(obj.get("s").unwrap(), '\'');
-    assert_eq!(obj.get("t").unwrap(), '\n');
-    assert_eq!(obj.get("u").unwrap(), ' ');
-    assert_eq!(obj.get("v").unwrap(), '\'');
-    assert_eq!(obj.get("w").unwrap(), '$');
+    assert_eq!(obj.get("s").unwrap(), "\'");
+    assert_eq!(obj.get("t").unwrap(), "\n");
+    assert_eq!(obj.get("u").unwrap(), " ");
+    assert_eq!(obj.get("v").unwrap(), "\'");
+    assert_eq!(obj.get("w").unwrap(), "$");
     assert_eq!(obj.get_frac("x").unwrap(), frac!(1, 1));
     assert_eq!(obj.get("x").unwrap().get_frac().unwrap(), frac!(1, 1));
 
@@ -307,7 +307,7 @@ fn includes() -> OverResult<()> {
 
     assert_eq!(
         obj.get("include_tup").unwrap(),
-        tup!("hello", 1, 'c', frac!(3, 3))
+        tup!("hello", 1, "c", frac!(3, 3))
     );
 
     let o = obj.get_obj("include_obj").unwrap();

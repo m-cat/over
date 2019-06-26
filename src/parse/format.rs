@@ -89,7 +89,6 @@ impl Format for Value {
             Value::Int(ref inner) => format!("{}", inner),
 
             Value::Frac(ref inner) => inner.format(true, indent_amt),
-            Value::Char(ref inner) => inner.format(true, indent_amt),
             Value::Str(ref inner) => inner.format(true, indent_amt),
             Value::Arr(ref inner) => inner.format(true, indent_amt),
             Value::Tup(ref inner) => inner.format(true, indent_amt),

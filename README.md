@@ -30,7 +30,6 @@ OVER: the best data format.
         - [Bool](#bool)
         - [Int](#int)
         - [Frac](#frac)
-        - [Char](#char)
         - [Str](#str)
         - [Arr](#arr)
         - [Tup](#tup)
@@ -353,9 +352,9 @@ don't need to be escaped.
 
 ```
 1
-'a'
+"a"
 3
-'b'
+"b"
 5
 ```
 
@@ -396,12 +395,6 @@ Fracs can also be written as decimals, which get converted automatically to frac
 
 **Examples:** `2.5`, `-.0`
 
-### Char
-
-A type representing a single, unicode character.
-
-**Examples:** `'q'`, `' '`
-
 ### Str
 
 A unicode string type.
@@ -426,7 +419,7 @@ An array container which can hold an arbitrary number of elements of a single ty
 
 A tuple container which can hold elements of different types.
 
-**Examples:** `()`, `(1 "John")` `( ('x' 1/2) [1 2 3] )`
+**Examples:** `()`, `(1 "John")` `( ("x" 1/2) [1 2 3] )`
 
 ### Obj
 

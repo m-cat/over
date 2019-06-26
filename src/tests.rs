@@ -18,7 +18,6 @@ fn set_and_get() -> OverResult<()> {
         "bool" => true,
         "int" => -5,
         "frac" => frac!(1, 1),
-        "char" => 'x',
         "str1" => "hello",
         "str2" => "yo",
         "tup" => tup!["hi", 2, false],
@@ -42,10 +41,6 @@ fn set_and_get() -> OverResult<()> {
     // Frac
 
     assert_eq!(obj.get_frac("frac"), Ok(frac!(1, 1)));
-
-    // Char
-
-    assert_eq!(obj.get_char("char"), Ok('x'));
 
     // String
 
@@ -148,9 +143,9 @@ fn types() -> OverResult<()> {
     let obj = obj! {
         "bool" => true,
         "str" => "",
-        "arr_char" => arr!['w', 'o', 'w'],
+        "arr_str" => arr!["w", "o", "w"],
         "arr_arr" => try_arr![arr![], arr![true, false]]?,
-        "tup" => tup!('!', tup!(-1), try_arr!["test", "heya"]?),
+        "tup" => tup!("!", tup!(-1), try_arr!["test", "heya"]?),
     };
 
     // Null
@@ -169,8 +164,8 @@ fn types() -> OverResult<()> {
     // Arr
 
     assert_eq!(
-        obj.get("arr_char").unwrap().get_type(),
-        Type::Arr(Box::new(Type::Char))
+        obj.get("arr_str").unwrap().get_type(),
+        Type::Arr(Box::new(Type::Str))
     );
 
     assert_eq!(
@@ -186,7 +181,7 @@ fn types() -> OverResult<()> {
     // Tup
 
     let tup_type = Type::Tup(vec![
-        Type::Char,
+        Type::Str,
         Type::Tup(vec![Type::Int]),
         Type::Arr(Box::new(Type::Str)),
     ]);
