@@ -12,7 +12,7 @@ use num_traits::ToPrimitive;
 use over::obj::{Obj, Pair};
 use over::types::Type;
 use over::value::Value;
-use over::OverResult;
+use over::{OverResult, ReferenceType};
 #[cfg(test)]
 use pretty_assertions::assert_eq;
 
@@ -136,10 +136,13 @@ fn obj() {
 
     assert!(!obj.contains("bools"));
     let bools = obj! {"t" => true, "f" => false};
+    let bools1 = obj.get_obj("bools1").unwrap();
+    assert_eq!(bools1.num_references(), 5); // Include the reference created above.
 
     let outie = obj.get_obj("outie").unwrap();
     assert_eq!(outie.get_parent().unwrap(), bools);
     assert_eq!(get_int(&outie, "z"), 0);
+    assert_eq!(outie.num_references(), 2); // Include the reference created above.
 
     let inner = outie.get_obj("inner").unwrap();
     assert_eq!(get_int(&inner, "z"), 1);

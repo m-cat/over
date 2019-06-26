@@ -7,7 +7,7 @@ use crate::parse::format::Format;
 use crate::tup::Tup;
 use crate::util;
 use crate::value::Value;
-use crate::{OverResult, INDENT_STEP};
+use crate::{OverResult, ReferenceType, INDENT_STEP};
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use std::fmt;
@@ -90,18 +90,6 @@ impl Obj {
         }
     }
 
-    /// Returns the ID of this `Obj`.
-    ///
-    /// Every `Obj` is assigned its own globally unique ID. IDs are generated incrementally,
-    /// starting at 0 for the first `Obj` created.
-    ///
-    /// # Notes
-    ///
-    /// The ID is ignored when testing `Obj` equality.
-    pub fn id(&self) -> usize {
-        self.inner.id
-    }
-
     /// Returns a reference to the inner vec of this `Obj`.
     pub fn pairs_ref(&self) -> &Vec<Pair> {
         &self.inner.pairs
@@ -159,11 +147,6 @@ impl Obj {
     /// Parent fields are not included.
     pub fn is_empty(&self) -> bool {
         self.inner.pairs.is_empty()
-    }
-
-    /// Returns whether the data pointers of `self` and `other` are equal.
-    pub fn ptr_eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.inner, &other.inner)
     }
 
     /// Returns true if this `Obj` contains `field`.
@@ -272,6 +255,11 @@ impl Obj {
         }
     }
 
+    /// An iterator visiting all field-value pairs in order.
+    pub fn iter(&self) -> Iter<Pair> {
+        self.pairs_ref().iter()
+    }
+
     /// Returns true if `field` is a valid field name for an `Obj`.
     ///
     /// The first character must be alphabetic or '_'. Subsequent characters are allowed to be
@@ -306,10 +294,19 @@ impl Obj {
             _ => false,
         }
     }
+}
 
-    /// An iterator visiting all field-value pairs in order.
-    pub fn iter(&self) -> Iter<Pair> {
-        self.pairs_ref().iter()
+impl ReferenceType for Obj {
+    fn id(&self) -> usize {
+        self.inner.id
+    }
+
+    fn num_references(&self) -> usize {
+        Arc::strong_count(&self.inner)
+    }
+
+    fn ptr_eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
     }
 }
 

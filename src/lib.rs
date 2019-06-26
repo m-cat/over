@@ -34,6 +34,25 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 /// Result type for this crate.
 pub type OverResult<T> = Result<T, OverError>;
 
+/// Trait containing required functions for all reference types (Arr, Tup, and Obj).
+pub trait ReferenceType: PartialEq + Eq {
+    /// Returns the ID of this reference type.
+    ///
+    /// Every reference type is assigned its own globally unique ID. IDs are generated
+    /// incrementally, starting at 0 for the first reference types created.
+    ///
+    /// # Notes
+    ///
+    /// The ID is ignored when testing equality using `eq` or `==`.
+    fn id(&self) -> usize;
+
+    /// The number of references that exist to this reference type (minimum of one).
+    fn num_references(&self) -> usize;
+
+    /// Returns whether `self` and `other` point to the same data.
+    fn ptr_eq(&self, other: &Self) -> bool;
+}
+
 // Indent step in .over files.
 const INDENT_STEP: usize = 4;
 

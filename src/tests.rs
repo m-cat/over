@@ -5,7 +5,7 @@
 use crate::error::OverError;
 use crate::types::Type;
 use crate::value::Value;
-use crate::OverResult;
+use crate::{OverResult, ReferenceType};
 #[cfg(test)]
 use pretty_assertions::{assert_eq, assert_ne};
 use std::convert::TryInto;
@@ -116,6 +116,12 @@ fn parents() -> OverResult<()> {
     let obj2 = obj! { "^" => def1.clone(), "bool1" => true, "test1" => "hi" };
     assert_eq!(obj, obj2);
 
+    // Test reference counts.
+
+    assert_eq!(def2.num_references(), 2);
+    assert_eq!(def2.num_references(), 2);
+    assert_eq!(obj.num_references(), 1);
+
     // Bool
 
     let (v, o) = obj.get_with_source("bool1").unwrap();
@@ -140,13 +146,20 @@ fn parents() -> OverResult<()> {
 
 #[test]
 fn types() -> OverResult<()> {
+    let arr_str = arr!["w", "o", "w"];
     let obj = obj! {
         "bool" => true,
         "str" => "",
-        "arr_str" => arr!["w", "o", "w"],
+        "arr_str" => arr_str.clone(),
+        "arr_str_dup" => arr_str.clone(),
         "arr_arr" => try_arr![arr![], arr![true, false]]?,
         "tup" => tup!("!", tup!(-1), try_arr!["test", "heya"]?),
     };
+
+    // Test reference counts.
+
+    assert_eq!(arr_str.num_references(), 3);
+    assert_eq!(obj.num_references(), 1);
 
     // Null
 

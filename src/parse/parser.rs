@@ -12,6 +12,7 @@ use crate::obj::{Obj, Pair};
 use crate::tup::Tup;
 use crate::types::Type;
 use crate::value::Value;
+use crate::ReferenceType;
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{ToPrimitive, Zero};

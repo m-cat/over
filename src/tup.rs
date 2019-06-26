@@ -3,7 +3,7 @@
 use crate::parse::format::Format;
 use crate::types::Type;
 use crate::value::Value;
-use crate::{OverError, OverResult, INDENT_STEP};
+use crate::{OverError, OverResult, ReferenceType, INDENT_STEP};
 use std::fmt;
 use std::slice::Iter;
 use std::sync::Arc;
@@ -83,14 +83,23 @@ impl Tup {
         self.inner.values.is_empty()
     }
 
-    /// Returns whether `self` and `other` point to the same data.
-    pub fn ptr_eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.inner, &other.inner)
-    }
-
     /// Returns an iterator over the Tup.
     pub fn iter(&self) -> Iter<Value> {
         self.values_ref().iter()
+    }
+}
+
+impl ReferenceType for Tup {
+    fn id(&self) -> usize {
+        self.inner.id
+    }
+
+    fn num_references(&self) -> usize {
+        Arc::strong_count(&self.inner)
+    }
+
+    fn ptr_eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
     }
 }
 
