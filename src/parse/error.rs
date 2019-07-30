@@ -194,40 +194,7 @@ impl fmt::Display for ParseError {
     }
 }
 
-impl Error for ParseError {
-    fn description(&self) -> &str {
-        use self::ParseErrorKind::*;
-
-        match (*self).kind {
-            BinaryOperatorError(_, _, _, _, _) | UnaryOperatorError(_, _, _, _) => {
-                "Could not apply operator"
-            }
-
-            CyclicInclude(_, _, _) => "Tried to cyclically include file",
-            DuplicateField(_, _, _) => "Duplicate field",
-            DuplicateGlobal(_, _, _) => "Duplicate global",
-            ExpectedType(_, _, _, _) => "Expected different type",
-            GlobalNotFound(_, _, _) => "Global could not be found",
-            InvalidClosingBracket(_, _, _, _) => "Invalid closing bracket",
-            InvalidDot(_, _, _) => "Invalid use of dot notation",
-            InvalidEscapeChar(_, _, _) => "Invalid escape character",
-            InvalidFieldChar(_, _, _) => "Invalid character for field",
-            InvalidFieldName(_, _, _) => "Invalid field name",
-            InvalidIncludeChar(_, _, _) => "Invalid include character",
-            InvalidIncludePath(_, _, _) => "Invalid include path",
-            InvalidIncludeToken(_, _, _) => "Invalid include token",
-            InvalidIndex(_, _, _) => "Invalid index",
-            InvalidNumeric(_, _) => "Invalid numeric value",
-            InvalidValue(_, _, _) => "Invalid value",
-            InvalidValueChar(_, _, _) => "Invalid character for value",
-            MaxDepth(_, _) => "Exceeded maximum depth for a container",
-            UnexpectedEnd(_) => "Unexpected end when reading value",
-            VariableNotFound(_, _, _) => "Variable could not be found",
-
-            IoError(ref error) | OverError(ref error) | ParseIntError(ref error) => error,
-        }
-    }
-}
+impl Error for ParseError {}
 
 impl ParseError {
     /// Convert an `OverError` to a `ParseError` given line and column numbers.

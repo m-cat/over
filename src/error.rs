@@ -53,24 +53,7 @@ impl fmt::Display for OverError {
     }
 }
 
-impl Error for OverError {
-    fn description(&self) -> &str {
-        use self::OverError::*;
-
-        match *self {
-            ArrOutOfBounds(_) => "Arr index out of bounds",
-            ArrTypeMismatch(_, _) => "Arr inner types do not match",
-            FieldNotFound(_) => "Field not found",
-            InvalidFieldName(_) => "Invalid field name",
-            NoParentFound => "No parent found for this obj",
-            TupOutOfBounds(_) => "Tup index out of bounds",
-            TupTypeMismatch(_, _, _) => "Tup inner types do not match",
-            TypeMismatch(_, _) => "Type mismatch",
-
-            ParseError(ref error) | IoError(ref error) => error,
-        }
-    }
-}
+impl Error for OverError {}
 
 impl From<io::Error> for OverError {
     fn from(e: io::Error) -> Self {
