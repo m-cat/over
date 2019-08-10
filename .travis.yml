@@ -9,14 +9,31 @@ os:
 language: rust
 rust:
   - stable
-sudo: false
+sudo: required
+addons:
+    apt:
+        packages:
+            - libssl-dev
 cache:
   cargo: true
+
 before_script:
   - rustup component add rustfmt;
   - rustup component add clippy;
+before_cache: |
+  if [[ "$TRAVIS_OS_NAME" == linux ]]; then
+    cargo install cargo-tarpaulin -f
+  fi
+
 script:
   - set -x;
     cargo fmt -- --check &&
     cargo clippy --all-targets &&
     cargo test --release --verbose
+
+after_success: |
+  if [[ "$TRAVIS_OS_NAME" == linux ]]; then
+    # cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
+    cargo tarpaulin --out Xml
+    bash <(curl -s https://codecov.io/bash)
+  fi

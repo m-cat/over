@@ -38,15 +38,16 @@ pub type OverResult<T> = Result<T, OverError>;
 pub trait ReferenceType: PartialEq + Eq {
     /// Returns the ID of this reference type.
     ///
-    /// Every reference type is assigned its own globally unique ID. IDs are generated
-    /// incrementally, starting at 0 for the first reference types created.
+    /// Every unique instance of a reference type is assigned its own globally unique ID. IDs are
+    /// generated incrementally, starting at 0 for the first instance created.
     ///
     /// # Notes
     ///
     /// The ID is ignored when testing equality using `eq` or `==`.
     fn id(&self) -> usize;
 
-    /// The number of references that exist to this reference type (minimum of one).
+    /// The number of references that exist to this unique instance of a reference type (minimum of
+    /// one).
     fn num_references(&self) -> usize;
 
     /// Returns whether `self` and `other` point to the same data.
