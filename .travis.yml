@@ -33,7 +33,7 @@ script:
 
 after_success: |
   if [[ "$TRAVIS_OS_NAME" == linux ]]; then
-    cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
-    # cargo tarpaulin --out Xml
-    # bash <(curl -s https://codecov.io/bash)
+    # cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
+    cargo tarpaulin --out Xml
+    bash <(curl -s https://codecov.io/bash)
   fi

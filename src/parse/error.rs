@@ -26,7 +26,6 @@ pub enum ParseErrorKind {
     InvalidEscapeChar(char, usize, usize),
     InvalidFieldChar(char, usize, usize),
     InvalidFieldName(String, usize, usize),
-    InvalidIncludeChar(char, usize, usize),
     InvalidIncludePath(String, usize, usize),
     InvalidIncludeToken(Type, usize, usize),
     InvalidNumeric(usize, usize),
@@ -122,11 +121,6 @@ impl fmt::Display for ParseError {
                 f,
                 "Invalid field name \"{}\" at line {}, column {}",
                 field, line, col
-            ),
-            InvalidIncludeChar(ref found, ref line, ref col) => write!(
-                f,
-                "Invalid include token character '{}' at line {}, column {}",
-                found, line, col
             ),
             InvalidIncludePath(ref path, ref line, ref col) => write!(
                 f,

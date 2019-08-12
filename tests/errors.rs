@@ -68,6 +68,10 @@ fn errors() {
         "arr_types.over",
         "Expected Arr(Tup(Int, Int)) at line 2, column 37; found Arr(Tup(Int, Str))"
     );
+    error_helper!(
+        "bad_global.over",
+        "Global \"@global\" at line 1, column 9 could not be found"
+    );
     error_helper!("decimal.over", "Invalid numeric value at line 1, column 10");
     error_helper!(
         "deep.over",
@@ -126,7 +130,7 @@ fn errors() {
     error_helper!(
         "empty_number.over",
         "Invalid character \'\\n\' for value at line 1, column 7",
-        "Invalid character \'\r\' for value at line 1, column 7"
+        "Invalid character \'\\r\' for value at line 1, column 7"
     );
     error_helper!(
         "escape.over",
@@ -165,7 +169,7 @@ fn errors() {
     error_helper!(
         "fuzz7.over",
         "Invalid character \'\\n\' for field at line 8, column 0",
-        "Invalid character \'\r\' for field at line 7, column 4"
+        "Invalid character \'\\r\' for field at line 7, column 4"
     );
     error_helper!(
         "fuzz8.over",
@@ -234,7 +238,7 @@ fn errors() {
     error_helper!(
         "op_end.over",
         "Invalid character \'\\n\' for value at line 3, column 9",
-        "Invalid character \'\r\' for value at line 3, column 9"
+        "Invalid character \'\\r\' for value at line 3, column 9"
     );
     error_helper!(
         "op_error.over",
