@@ -2,16 +2,10 @@
 
 #![allow(missing_docs)]
 
-use super::misc::format_char;
-use super::ParseResult;
-use super::MAX_DEPTH;
-use crate::types::Type;
-use crate::OverError;
+use super::{BinaryOp, ParseResult, UnaryOp, MAX_DEPTH};
+use crate::{types::Type, OverError};
 use num_bigint::{BigInt, ParseBigIntError};
-use std::error::Error;
-use std::fmt;
-use std::io;
-use std::num::ParseIntError;
+use std::{error::Error, fmt, io, num::ParseIntError};
 
 pub fn parse_err<T>(file: Option<String>, kind: ParseErrorKind) -> ParseResult<T> {
     Err(ParseError { file, kind })
@@ -20,7 +14,7 @@ pub fn parse_err<T>(file: Option<String>, kind: ParseErrorKind) -> ParseResult<T
 /// Error kind.
 #[derive(Debug)]
 pub enum ParseErrorKind {
-    BinaryOperatorError(Type, Type, char, usize, usize),
+    BinaryOperatorError(Type, Type, BinaryOp, usize, usize),
     CyclicInclude(String, usize, usize),
     DuplicateField(String, usize, usize),
     DuplicateGlobal(String, usize, usize),
@@ -39,7 +33,7 @@ pub enum ParseErrorKind {
     InvalidValue(String, usize, usize),
     InvalidValueChar(char, usize, usize),
     MaxDepth(usize, usize),
-    UnaryOperatorError(Type, char, usize, usize),
+    UnaryOperatorError(Type, UnaryOp, usize, usize),
     UnexpectedEnd(usize),
     VariableNotFound(String, usize, usize),
 
@@ -115,18 +109,14 @@ impl fmt::Display for ParseError {
             ),
             InvalidEscapeChar(ref ch, ref line, ref col) => write!(
                 f,
-                "Invalid escape character '\\{}' at line {}, column {}. \
+                "Invalid escape character {:?} following backslash at line {}, column {}. \
                  If you meant to write a backslash, use '\\\\'",
-                format_char(*ch),
-                line,
-                col
+                ch, line, col
             ),
             InvalidFieldChar(ref ch, ref line, ref col) => write!(
                 f,
-                "Invalid character '{}' for field at line {}, column {}",
-                format_char(*ch),
-                line,
-                col
+                "Invalid character {:?} for field at line {}, column {}",
+                ch, line, col
             ),
             InvalidFieldName(ref field, ref line, ref col) => write!(
                 f,
@@ -135,7 +125,7 @@ impl fmt::Display for ParseError {
             ),
             InvalidIncludeChar(ref found, ref line, ref col) => write!(
                 f,
-                "Invalid include token character \'{}\' at line {}, column {}",
+                "Invalid include token character '{}' at line {}, column {}",
                 found, line, col
             ),
             InvalidIncludePath(ref path, ref line, ref col) => write!(
@@ -165,10 +155,8 @@ impl fmt::Display for ParseError {
             ),
             InvalidValueChar(ref ch, ref line, ref col) => write!(
                 f,
-                "Invalid character '{}' for value at line {}, column {}",
-                format_char(*ch),
-                line,
-                col
+                "Invalid character {:?} for value at line {}, column {}",
+                ch, line, col
             ),
             MaxDepth(ref line, ref col) => write!(
                 f,

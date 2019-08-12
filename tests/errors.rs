@@ -51,7 +51,7 @@ fn errors() {
 
     error_helper!(
         "any1.over",
-        "Could not apply operator + on types Arr(Arr(Arr(Int))) and \
+        "Could not apply operator \'+\' on types Arr(Arr(Arr(Int))) and \
          Arr(Arr(Arr(Str))) at line 1, column 26"
     );
     error_helper!(
@@ -61,7 +61,7 @@ fn errors() {
     );
     error_helper!(
         "any3.over",
-        "Could not apply operator + on types Arr(Tup(Arr(Arr(Int)), Arr(Arr(Int)))) \
+        "Could not apply operator \'+\' on types Arr(Tup(Arr(Arr(Int)), Arr(Arr(Int)))) \
          and Arr(Tup(Arr(Arr(Str)), Arr(Arr(Str)))) at line 5, column 16"
     );
     error_helper!(
@@ -129,6 +129,11 @@ fn errors() {
         "Invalid character \'\r\' for value at line 1, column 7"
     );
     error_helper!(
+        "escape.over",
+        "Invalid escape character \'a\' following backslash at line 1, column 12. If you meant to \
+         write a backslash, use \'\\\\\'"
+    );
+    error_helper!(
         "field_true.over",
         "Invalid field name \"true\" at line 1, column 1"
     );
@@ -138,11 +143,11 @@ fn errors() {
     );
     error_helper!(
         "fuzz1.over",
-        "Invalid closing bracket \')\' at line 20, column 1; expected \']\'"
+        "Invalid closing bracket ')' at line 20, column 1; expected \']\'"
     );
     error_helper!(
         "fuzz2.over",
-        "Invalid closing bracket \')\' at line 22, column 2; expected none"
+        "Invalid closing bracket ')' at line 22, column 2; expected none"
     );
     error_helper!(
         "fuzz3.over",
@@ -164,7 +169,7 @@ fn errors() {
     );
     error_helper!(
         "fuzz8.over",
-        "Invalid character \'\"\' for value at line 34, column 3"
+        "Invalid character \'\\\"\' for value at line 34, column 3"
     );
     error_helper!(
         "fuzz9.over",
@@ -173,7 +178,7 @@ fn errors() {
     error_helper!("fuzz10.over", "Unexpected end at line 1");
     error_helper!(
         "fuzz11.over",
-        "Could not apply operator + on types Str and Int at line 14, column 5"
+        "Could not apply operator \'+\' on types Str and Int at line 14, column 5"
     );
     error_helper!("fuzz12.over", "Invalid numeric value at line 6, column 18");
     error_helper!(
@@ -182,12 +187,12 @@ fn errors() {
     );
     error_helper!(
         "fuzz14.over",
-        "Could not apply operator + on types Arr(Arr(Int)) and Arr(Arr(Arr(Int))) \
+        "Could not apply operator \'+\' on types Arr(Arr(Int)) and Arr(Arr(Arr(Int))) \
          at line 8, column 5"
     );
     error_helper!(
         "include1.over",
-        "Invalid character \'\"\' for value at line 1, column 14"
+        "Invalid character \'\\\"\' for value at line 1, column 14"
     );
     error_helper!(
         "include2.over",
@@ -210,16 +215,21 @@ fn errors() {
         "Expected Str at line 1, column 15; found Obj"
     );
     error_helper!(
+        "include7.over",
+        "Invalid value of type \"Bool\" at line 1, column 11; must be either a Str value or one of \
+         the tokens \"Obj\", \"Arr\", \"Tup\", or \"Str\""
+    );
+    error_helper!(
         "include_self.over",
         "Tried to cyclically include file \"include_self.over\" at line 1, column 11"
     );
     error_helper!(
         "op_arr.over",
-        "Could not apply operator + on types Arr(Int) and Arr(Str) at line 1, column 13"
+        "Could not apply operator \'+\' on types Arr(Int) and Arr(Str) at line 1, column 13"
     );
     error_helper!(
         "op_arr_tup.over",
-        "Could not apply operator + on types Arr(Any) and Tup() at line 1, column 11"
+        "Could not apply operator \'+\' on types Arr(Any) and Tup() at line 1, column 11"
     );
     error_helper!(
         "op_end.over",
@@ -228,11 +238,19 @@ fn errors() {
     );
     error_helper!(
         "op_error.over",
-        "Could not apply operator + on types Str and Int at line 1, column 16"
+        "Could not apply operator \'+\' on types Str and Int at line 1, column 16"
     );
     error_helper!(
         "op_multiple.over",
-        "Could not apply operator + on types Tup() and Frac at line 1, column 9"
+        "Could not apply operator \'+\' on types Tup() and Frac at line 1, column 9"
+    );
+    error_helper!(
+        "op_unary1.over",
+        "Could not apply operator \'+\' on type Null at line 2, column 10"
+    );
+    error_helper!(
+        "op_unary2.over",
+        "Could not apply operator \'-\' on type Str at line 2, column 10"
     );
     error_helper!(
         "underscore.over",

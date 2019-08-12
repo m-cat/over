@@ -2,23 +2,29 @@
 
 #![allow(clippy::too_many_arguments)]
 
-use super::char_stream::CharStream;
-use super::error::ParseErrorKind::*;
-use super::error::{parse_err, ParseError};
-use super::util::*;
-use super::{ParseResult, MAX_DEPTH};
-use crate::arr::{self, Arr};
-use crate::obj::{Obj, Pair};
-use crate::tup::Tup;
-use crate::types::Type;
-use crate::value::Value;
-use crate::ReferenceType;
+use super::{
+    char_stream::CharStream,
+    error::ParseErrorKind::*,
+    error::{parse_err, ParseError},
+    util::*,
+    {BinaryOp, ParseResult, UnaryOp, MAX_DEPTH},
+};
+use crate::{
+    arr::{self, Arr},
+    obj::{Obj, Pair},
+    tup::Tup,
+    types::Type,
+    value::Value,
+    ReferenceType,
+};
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{ToPrimitive, Zero};
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::ops::Deref;
-use std::path::Path;
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    ops::Deref,
+    path::Path,
+};
 
 type Pairs = Vec<Pair>;
 type GlobalMap = HashMap<String, Value>;
@@ -545,14 +551,23 @@ fn parse_value(
             &mut included,
             depth + 1,
         )?,
-        ch @ '+' | ch @ '-' => parse_unary_op(
+        '+' => parse_unary_op(
             &mut stream,
             obj_pairs,
             globals,
             included,
             depth,
             cur_brace,
-            ch,
+            UnaryOp::Plus,
+        )?,
+        '-' => parse_unary_op(
+            &mut stream,
+            obj_pairs,
+            globals,
+            included,
+            depth,
+            cur_brace,
+            UnaryOp::Minus,
         )?,
         ch if is_numeric_char(ch) => parse_numeric(&mut stream, line, col)?,
         ch if Obj::is_valid_field_char(ch, true) || ch == '@' => parse_variable(
@@ -573,42 +588,42 @@ fn parse_value(
     // Process operations if this is the first value.
     if is_first {
         let mut val_deque: VecDeque<(Value, usize, usize)> = VecDeque::new();
-        let mut op_deque: VecDeque<char> = VecDeque::new();
+        let mut op_deque: VecDeque<BinaryOp> = VecDeque::new();
         val_deque.push_back((res, line, col));
 
-        loop {
-            match stream.peek() {
-                Some(ch) if is_operator(ch) => {
-                    let _ = stream.next();
-                    if stream.peek().is_none() {
-                        return parse_err(stream.file(), UnexpectedEnd(stream.line()));
-                    }
-
-                    let (line2, col2) = (stream.line(), stream.col());
-
-                    // Parse another value.
-                    let val2 = parse_value(
-                        &mut stream,
-                        obj_pairs,
-                        &mut globals,
-                        &mut included,
-                        line2,
-                        col2,
-                        depth,
-                        cur_brace,
-                        false,
-                    )?;
-
-                    if is_priority_operator(ch) {
-                        let (val1, line1, col1) = val_deque.pop_back().unwrap();
-                        let res = binary_op_on_values(stream, val1, val2, ch, line2, col2)?;
-                        val_deque.push_back((res, line1, col1));
-                    } else {
-                        val_deque.push_back((val2, line2, col2));
-                        op_deque.push_back(ch);
-                    }
+        while let Some(ch) = stream.peek() {
+            if let Some(op) = BinaryOp::get_op(ch) {
+                let _ = stream.next();
+                if stream.peek().is_none() {
+                    return parse_err(stream.file(), UnexpectedEnd(stream.line()));
                 }
-                _ => break,
+
+                let (line2, col2) = (stream.line(), stream.col());
+
+                // Parse another value.
+                let val2 = parse_value(
+                    &mut stream,
+                    obj_pairs,
+                    &mut globals,
+                    &mut included,
+                    line2,
+                    col2,
+                    depth,
+                    cur_brace,
+                    false,
+                )?;
+
+                if op.is_priority() {
+                    let (val1, line1, col1) = val_deque.pop_back().unwrap();
+                    let res = binary_op_on_values(stream, val1, val2, op, line2, col2)?;
+                    val_deque.push_back((res, line1, col1));
+                } else {
+                    val_deque.push_back((val2, line2, col2));
+                    op_deque.push_back(op);
+                }
+            } else {
+                // Character was not an operator.
+                break;
             }
         }
 
@@ -640,10 +655,12 @@ fn parse_unary_op(
     mut included: &mut IncludedMap,
     depth: usize,
     cur_brace: Option<char>,
-    ch: char,
+    op: UnaryOp,
 ) -> ParseResult<Value> {
     let next = stream.next();
-    assert!(next == Some('-') || next == Some('+'));
+    assert!(
+        (next == Some('-') && op == UnaryOp::Minus) || (next == Some('+') && op == UnaryOp::Plus)
+    );
 
     let line = stream.line();
     let col = stream.col();
@@ -662,7 +679,7 @@ fn parse_unary_op(
         )?,
         None => return parse_err(stream.file(), UnexpectedEnd(line)),
     };
-    unary_op_on_value(stream, res, ch, line, col)
+    unary_op_on_value(stream, res, op, line, col)
 }
 
 // Gets the next numeric (either Int or Frac) in the character stream.
@@ -1143,7 +1160,7 @@ fn parse_include(
 fn unary_op_on_value(
     stream: &CharStream,
     val: Value,
-    op: char,
+    op: UnaryOp,
     line: usize,
     col: usize,
 ) -> ParseResult<Value> {
@@ -1152,16 +1169,15 @@ fn unary_op_on_value(
     let t = val.get_type();
 
     Ok(match op {
-        '+' => match t {
+        UnaryOp::Plus => match t {
             Int | Frac => val,
             _ => return parse_err(stream.file(), UnaryOperatorError(t, op, line, col)),
         },
-        '-' => match t {
+        UnaryOp::Minus => match t {
             Int => (-val.get_int().unwrap()).into(),
             Frac => (-val.get_frac().unwrap()).into(),
             _ => return parse_err(stream.file(), UnaryOperatorError(t, op, line, col)),
         },
-        _ => return parse_err(stream.file(), UnaryOperatorError(t, op, line, col)),
     })
 }
 
@@ -1170,7 +1186,7 @@ fn binary_op_on_values(
     stream: &CharStream,
     mut val1: Value,
     mut val2: Value,
-    op: char,
+    op: BinaryOp,
     line: usize,
     col: usize,
 ) -> ParseResult<Value> {
@@ -1188,7 +1204,7 @@ fn binary_op_on_values(
     }
 
     Ok(match op {
-        '+' => {
+        BinaryOp::Plus => {
             match type1 {
                 Int if type2 == Int => (val1.get_int().unwrap() + val2.get_int().unwrap()).into(),
                 Frac if type2 == Frac => {
@@ -1239,7 +1255,7 @@ fn binary_op_on_values(
                 }
             }
         }
-        '-' => match type1 {
+        BinaryOp::Minus => match type1 {
             Int if type2 == Int => (val1.get_int().unwrap() - val2.get_int().unwrap()).into(),
             Frac if type2 == Frac => (val1.get_frac().unwrap() - val2.get_frac().unwrap()).into(),
             _ => {
@@ -1249,7 +1265,7 @@ fn binary_op_on_values(
                 );
             }
         },
-        '*' => match type1 {
+        BinaryOp::Mult => match type1 {
             Int if type2 == Int => (val1.get_int().unwrap() * val2.get_int().unwrap()).into(),
             Frac if type2 == Frac => (val1.get_frac().unwrap() * val2.get_frac().unwrap()).into(),
             _ => {
@@ -1259,7 +1275,7 @@ fn binary_op_on_values(
                 );
             }
         },
-        '/' => match type1 {
+        BinaryOp::Div => match type1 {
             Int if type2 == Int => {
                 let (int1, int2) = (val1.get_int().unwrap(), val2.get_int().unwrap());
                 if int2.is_zero() {
@@ -1281,7 +1297,7 @@ fn binary_op_on_values(
                 );
             }
         },
-        '%' => match type1 {
+        BinaryOp::Mod => match type1 {
             Int if type2 == Int => {
                 let int2 = val2.get_int().unwrap();
                 if int2.is_zero() {
@@ -1296,12 +1312,6 @@ fn binary_op_on_values(
                 );
             }
         },
-        _ => {
-            return parse_err(
-                stream.file(),
-                BinaryOperatorError(type1, type2, op, line, col),
-            );
-        }
     })
 }
 

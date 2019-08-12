@@ -57,16 +57,6 @@ impl Format for BigRational {
     }
 }
 
-impl Format for char {
-    fn format(&self, _full: bool, _indent_amt: usize) -> String {
-        if let Some(s) = get_char_map(*self) {
-            format!("\'{}\'", s)
-        } else {
-            format!("\'{}\'", *self)
-        }
-    }
-}
-
 impl Format for String {
     fn format(&self, _full: bool, _indent_amt: usize) -> String {
         format!("\"{}\"", replace_all(self))

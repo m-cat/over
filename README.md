@@ -6,9 +6,9 @@
 [![Documentation](https://docs.rs/over/badge.svg)](https://docs.rs/over)
 [![Issues](https://img.shields.io/github/issues-raw/m-cat/over.svg)](https://github.com/m-cat/over/issues)
 [![LoC](https://tokei.rs/b1/github/m-cat/over)](https://github.com/m-cat/over)
+[![Coverage Status](https://coveralls.io/repos/github/m-cat/over/badge.svg?branch=master)](https://coveralls.io/github/m-cat/over?branch=master)
+<!-- [![Coverage Status](https://codecov.io/gh/m-cat/over/branch/master/graph/badge.svg)](https://codecov.io/gh/m-cat/over) -->
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-<!-- [![Coverage Status](https://coveralls.io/repos/github/m-cat/over/badge.svg?branch=master)](https://coveralls.io/github/m-cat/over?branch=master) -->
-[![Coverage Status](https://codecov.io/gh/m-cat/over/branch/master/graph/badge.svg)](https://codecov.io/gh/m-cat/over)
 
 OVER: the best data format.
 
