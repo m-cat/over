@@ -4,7 +4,10 @@ use super::BinaryOp;
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{pow, FromPrimitive};
-use std::{fs::File, io, io::Read};
+use std::{
+    fs::File,
+    io::{self, Read},
+};
 
 /// If `ch` preceded by a backslash together form an escape character, then return this char.
 /// Otherwise, return None.
@@ -49,7 +52,7 @@ pub fn is_numeric_char(ch: char) -> bool {
 /// Returns true if `ch` is an ASCII decimal digit.
 pub fn is_digit(ch: char) -> bool {
     match ch {
-        '0'...'9' => true,
+        '0'..='9' => true,
         _ => false,
     }
 }
@@ -68,7 +71,7 @@ pub fn frac_from_whole_and_dec(whole: BigInt, decimal: BigInt, dec_len: usize) -
 
 /// Reads a file and returns its contents in a string.
 pub fn read_file_str(fname: &str) -> io::Result<String> {
-    // Open a file in read-only mode
+    // Open a file in read-only mode.
     let mut file = File::open(fname)?;
 
     let mut contents = String::new();

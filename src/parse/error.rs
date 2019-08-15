@@ -102,14 +102,14 @@ impl fmt::Display for ParseError {
             ),
             InvalidDot(ref t, ref line, ref col) => write!(
                 f,
-                "Invalid use of dot notation on value of type {} at line {}, column {}; \
-                 value must be an Obj, Arr, or Tup.",
+                "Invalid use of dot notation on value of type {} at line {}, column {}; value \
+                 must be an Obj, Arr, or Tup.",
                 t, line, col
             ),
             InvalidEscapeChar(ref ch, ref line, ref col) => write!(
                 f,
-                "Invalid escape character {:?} following backslash at line {}, column {}. \
-                 If you meant to write a backslash, use '\\\\'",
+                "Invalid escape character {:?} following backslash at line {}, column {}. If you \
+                 meant to write a backslash, use '\\\\'",
                 ch, line, col
             ),
             InvalidFieldChar(ref ch, ref line, ref col) => write!(
@@ -129,9 +129,8 @@ impl fmt::Display for ParseError {
             ),
             InvalidIncludeToken(ref t, ref line, ref col) => write!(
                 f,
-                "Invalid value of type \"{}\" at line {}, column {}; \
-                 must be either a Str value or one of the tokens \
-                 \"Obj\", \"Arr\", \"Tup\", or \"Str\"",
+                "Invalid value of type \"{}\" at line {}, column {}; must be either a Str value \
+                 or one of the tokens \"Obj\", \"Arr\", \"Tup\", or \"Str\"",
                 t, line, col
             ),
             InvalidIndex(ref index, ref line, ref col) => write!(

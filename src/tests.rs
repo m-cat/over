@@ -2,10 +2,7 @@
 
 //! Tests.
 
-use crate::error::OverError;
-use crate::types::Type;
-use crate::value::Value;
-use crate::{OverResult, ReferenceType};
+use crate::{error::OverError, types::Type, value::Value, OverResult, ReferenceType};
 #[cfg(test)]
 use pretty_assertions::{assert_eq, assert_ne};
 use std::convert::TryInto;

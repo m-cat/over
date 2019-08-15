@@ -26,8 +26,7 @@ mod parse;
 #[cfg(test)]
 mod tests;
 
-pub use crate::error::OverError;
-pub use crate::obj::Obj;
+pub use crate::{error::OverError, obj::Obj};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 

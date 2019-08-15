@@ -1,13 +1,10 @@
 //! An array container which can hold an arbitrary number of elements of a single type.
 
-use crate::parse::format::Format;
-use crate::types::Type;
-use crate::value::Value;
-use crate::{OverError, OverResult, ReferenceType, INDENT_STEP};
-use std::convert::TryFrom;
-use std::fmt;
-use std::slice::Iter;
-use std::sync::Arc;
+use crate::{
+    parse::format::Format, types::Type, value::Value, OverError, OverResult, ReferenceType,
+    INDENT_STEP,
+};
+use std::{convert::TryFrom, fmt, slice::Iter, sync::Arc};
 
 #[derive(Clone, Debug)]
 struct ArrInner {

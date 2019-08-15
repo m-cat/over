@@ -1,13 +1,14 @@
 //! Character stream used for parsing.
 
-use std::cell::RefCell;
-use std::fs::File;
-use std::io;
-use std::io::Read;
-use std::iter::Peekable;
-use std::mem;
-use std::rc::Rc;
-use std::str::Chars;
+use std::{
+    cell::RefCell,
+    fs::File,
+    io::{self, Read},
+    iter::Peekable,
+    mem,
+    rc::Rc,
+    str::Chars,
+};
 
 #[derive(Clone, Debug)]
 struct Inner {

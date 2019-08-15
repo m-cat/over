@@ -1,12 +1,10 @@
 //! A tuple container which can hold elements of different types.
 
-use crate::parse::format::Format;
-use crate::types::Type;
-use crate::value::Value;
-use crate::{OverError, OverResult, ReferenceType, INDENT_STEP};
-use std::fmt;
-use std::slice::Iter;
-use std::sync::Arc;
+use crate::{
+    parse::format::Format, types::Type, value::Value, OverError, OverResult, ReferenceType,
+    INDENT_STEP,
+};
+use std::{fmt, slice::Iter, sync::Arc};
 
 #[derive(Clone, Debug)]
 struct TupInner {

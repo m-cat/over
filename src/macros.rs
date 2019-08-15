@@ -125,10 +125,12 @@ macro_rules! try_obj {
 
 #[cfg(test)]
 mod tests {
-    use crate::obj::{Obj, Pair};
-    use crate::types::Type::*;
-    use crate::value::Value;
-    use crate::OverError;
+    use crate::{
+        obj::{Obj, Pair},
+        types::Type::*,
+        value::Value,
+        OverError,
+    };
 
     #[test]
     fn arr_basic() {

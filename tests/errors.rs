@@ -1,7 +1,6 @@
 extern crate over;
 
-use over::obj::Obj;
-use over::OverError;
+use over::{obj::Obj, OverError};
 
 // Test that parsing malformed .over files results in correct errors being returned.
 #[allow(clippy::cognitive_complexity)]
@@ -51,18 +50,18 @@ fn errors() {
 
     error_helper!(
         "any1.over",
-        "Could not apply operator \'+\' on types Arr(Arr(Arr(Int))) and \
-         Arr(Arr(Arr(Str))) at line 1, column 26"
+        "Could not apply operator \'+\' on types Arr(Arr(Arr(Int))) and Arr(Arr(Arr(Str))) at \
+         line 1, column 26"
     );
     error_helper!(
         "any2.over",
-        "Expected Tup(Arr(Arr(Int)), Arr(Arr(Int))) at line 4, column 5; \
-         found Tup(Arr(Arr(Str)), Arr(Arr(Str)))"
+        "Expected Tup(Arr(Arr(Int)), Arr(Arr(Int))) at line 4, column 5; found Tup(Arr(Arr(Str)), \
+         Arr(Arr(Str)))"
     );
     error_helper!(
         "any3.over",
-        "Could not apply operator \'+\' on types Arr(Tup(Arr(Arr(Int)), Arr(Arr(Int)))) \
-         and Arr(Tup(Arr(Arr(Str)), Arr(Arr(Str)))) at line 5, column 16"
+        "Could not apply operator \'+\' on types Arr(Tup(Arr(Arr(Int)), Arr(Arr(Int)))) and \
+         Arr(Tup(Arr(Arr(Str)), Arr(Arr(Str)))) at line 5, column 16"
     );
     error_helper!(
         "arr_types.over",
@@ -83,8 +82,8 @@ fn errors() {
     );
     error_helper!(
         "dot1.over",
-        "Invalid use of dot notation on value of type Bool at line 1, \
-         column 6; value must be an Obj, Arr, or Tup."
+        "Invalid use of dot notation on value of type Bool at line 1, column 6; value must be an \
+         Obj, Arr, or Tup."
     );
     error_helper!(
         "dot2.over",
@@ -191,8 +190,8 @@ fn errors() {
     );
     error_helper!(
         "fuzz14.over",
-        "Could not apply operator \'+\' on types Arr(Arr(Int)) and Arr(Arr(Arr(Int))) \
-         at line 8, column 5"
+        "Could not apply operator \'+\' on types Arr(Arr(Int)) and Arr(Arr(Arr(Int))) at line 8, \
+         column 5"
     );
     error_helper!(
         "include1.over",
@@ -220,8 +219,8 @@ fn errors() {
     );
     error_helper!(
         "include7.over",
-        "Invalid value of type \"Bool\" at line 1, column 11; must be either a Str value or one of \
-         the tokens \"Obj\", \"Arr\", \"Tup\", or \"Str\""
+        "Invalid value of type \"Bool\" at line 1, column 11; must be either a Str value or one \
+         of the tokens \"Obj\", \"Arr\", \"Tup\", or \"Str\""
     );
     error_helper!(
         "include_self.over",

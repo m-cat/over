@@ -9,10 +9,12 @@ extern crate over;
 mod errors;
 
 use num_traits::ToPrimitive;
-use over::obj::{Obj, Pair};
-use over::types::Type;
-use over::value::Value;
-use over::{OverResult, ReferenceType};
+use over::{
+    obj::{Obj, Pair},
+    types::Type,
+    value::Value,
+    OverResult, ReferenceType,
+};
 #[cfg(test)]
 use pretty_assertions::assert_eq;
 
@@ -121,8 +123,8 @@ fn example() {
 
     assert_eq!(
         obj.get("specialDelivery").unwrap(),
-        "Follow the Yellow Brick Road to the Emerald City. \
-         Pay no attention to the man behind the curtain."
+        "Follow the Yellow Brick Road to the Emerald City. Pay no attention to the man behind the \
+         curtain."
     );
 }
 
@@ -300,10 +302,10 @@ fn includes() -> OverResult<()> {
     let obj = Obj::from_file("tests/test_files/includes.over").unwrap();
 
     // Test both \n and \r\n line endings.
-    let s1 = "Multi-line string\nwhich should be included verbatim\n\
-              in another file. \"Quotes\" and $$$\ndon't need to be escaped.\n";
-    let s2 = "Multi-line string\r\nwhich should be included verbatim\r\n\
-              in another file. \"Quotes\" and $$$\r\ndon't need to be escaped.\r\n";
+    let s1 = "Multi-line string\nwhich should be included verbatim\nin another file. \"Quotes\" \
+              and $$$\ndon't need to be escaped.\n";
+    let s2 = "Multi-line string\r\nwhich should be included verbatim\r\nin another file. \
+              \"Quotes\" and $$$\r\ndon't need to be escaped.\r\n";
 
     let include = obj.get("include").unwrap();
     assert!(include == s1 || include == s2);

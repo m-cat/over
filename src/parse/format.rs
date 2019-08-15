@@ -1,10 +1,6 @@
 //! Module containing functions for formatting output of objects.
 
-use crate::arr::Arr;
-use crate::obj::Obj;
-use crate::tup::Tup;
-use crate::value::Value;
-use crate::INDENT_STEP;
+use crate::{arr::Arr, obj::Obj, tup::Tup, value::Value, INDENT_STEP};
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::One;

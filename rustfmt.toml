@@ -1,1 +1,10 @@
-use_try_shorthand = true
+comment_width = 100
+normalize_comments = true
+wrap_comments = true
+
+condense_wildcard_suffixes = true
+format_strings = true
+# license_template_path = "license_template"
+merge_imports = true
+reorder_impl_items = true
+use_field_init_shorthand = true

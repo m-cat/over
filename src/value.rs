@@ -1,12 +1,8 @@
 //! Values.
 
-use crate::arr;
-use crate::error::OverError;
-use crate::obj;
-use crate::parse::format::Format;
-use crate::tup;
-use crate::types::Type;
-use crate::{OverResult, INDENT_STEP};
+use crate::{
+    arr, error::OverError, obj, parse::format::Format, tup, types::Type, OverResult, INDENT_STEP,
+};
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::ToPrimitive;
@@ -51,6 +47,38 @@ macro_rules! get_fn {
 }
 
 impl Value {
+    get_fn!(
+        "Returns the `bool` contained in this `Value`. Returns an error if this `Value` is not \
+         `Bool`.",
+        get_bool,
+        bool,
+        Bool
+    );
+
+    get_fn!(
+        "Returns the `BigInt` contained in this `Value`. Returns an error if this `Value` is not \
+         `Int`.",
+        get_int,
+        BigInt,
+        Int
+    );
+
+    get_fn!(
+        "Returns the `String` contained in this `Value`. Returns an error if this `Value` is not \
+         `Str`.",
+        get_str,
+        String,
+        Str
+    );
+
+    get_fn!(
+        "Returns the `Obj` contained in this `Value`. Returns an error if this `Value` is not \
+         `Obj`.",
+        get_obj,
+        obj::Obj,
+        Obj
+    );
+
     /// Returns true if this `Value` is null.
     pub fn is_null(&self) -> bool {
         if let Value::Null = *self {
@@ -76,22 +104,6 @@ impl Value {
         }
     }
 
-    get_fn!(
-        "Returns the `bool` contained in this `Value`. \
-         Returns an error if this `Value` is not `Bool`.",
-        get_bool,
-        bool,
-        Bool
-    );
-
-    get_fn!(
-        "Returns the `BigInt` contained in this `Value`. \
-         Returns an error if this `Value` is not `Int`.",
-        get_int,
-        BigInt,
-        Int
-    );
-
     /// Returns the `BigRational` contained in this `Value`.
     /// Returns an error if this `Value` is not `Frac`.
     pub fn get_frac(&self) -> OverResult<BigRational> {
@@ -101,14 +113,6 @@ impl Value {
             _ => Err(OverError::TypeMismatch(Type::Frac, self.get_type())),
         }
     }
-
-    get_fn!(
-        "Returns the `String` contained in this `Value`. \
-         Returns an error if this `Value` is not `Str`.",
-        get_str,
-        String,
-        Str
-    );
 
     /// Returns the `Arr` contained in this `Value`.
     /// Returns an error if this `Value` is not `Arr`.
@@ -132,14 +136,6 @@ impl Value {
             Err(OverError::TypeMismatch(Type::Tup(vec![]), self.get_type()))
         }
     }
-
-    get_fn!(
-        "Returns the `Obj` contained in this `Value`. \
-         Returns an error if this `Value` is not `Obj`.",
-        get_obj,
-        obj::Obj,
-        Obj
-    );
 }
 
 impl fmt::Display for Value {

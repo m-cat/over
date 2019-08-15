@@ -1,19 +1,17 @@
 //! A map of keys to values, where values can be any type, including other objects.
 
-use crate::arr::Arr;
-use crate::error::OverError;
-use crate::parse;
-use crate::parse::format::Format;
-use crate::tup::Tup;
-use crate::util;
-use crate::value::Value;
-use crate::{OverResult, ReferenceType, INDENT_STEP};
+use crate::{
+    arr::Arr,
+    error::OverError,
+    parse::{self, format::Format},
+    tup::Tup,
+    util,
+    value::Value,
+    OverResult, ReferenceType, INDENT_STEP,
+};
 use num_bigint::BigInt;
 use num_rational::BigRational;
-use std::fmt;
-use std::slice::Iter;
-use std::str::FromStr;
-use std::sync::Arc;
+use std::{fmt, slice::Iter, str::FromStr, sync::Arc};
 
 /// Field-value pair.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -55,6 +53,55 @@ macro_rules! get_fn {
 }
 
 impl Obj {
+    get_fn!(
+        "Returns the `bool` found at `field`. Returns an error if the field was not found or if \
+         the `Value` at `field` is not `Bool`.",
+        get_bool,
+        bool
+    );
+
+    get_fn!(
+        "Returns the `BigInt` found at `field`. Returns an error if the field was not found or if \
+         the `Value` at `field` is not `Int`.",
+        get_int,
+        BigInt
+    );
+
+    get_fn!(
+        "Returns the `BigRational` found at `field`. Returns an error if the field was not found \
+         or if the `Value` at `field` is not `Frac`.",
+        get_frac,
+        BigRational
+    );
+
+    get_fn!(
+        "Returns the `String` found at `field`. Returns an error if the field was not found or if \
+         the `Value` at `field` is not `Str`.",
+        get_str,
+        String
+    );
+
+    get_fn!(
+        "Returns the `Arr` found at `field`. Returns an error if the field was not found or if \
+         the `Value` at `field` is not `Arr`.",
+        get_arr,
+        Arr
+    );
+
+    get_fn!(
+        "Returns the `Tup` found at `field`. Returns an error if the field was not found or if \
+         the `Value` at `field` is not `Tup`.",
+        get_tup,
+        Tup
+    );
+
+    get_fn!(
+        "Returns the `Obj` found at `field`. Returns an error if the field was not found or if \
+         the `Value` at `field` is not `Obj`.",
+        get_obj,
+        Obj
+    );
+
     /// Creates an empty `Obj`.
     pub fn empty() -> Self {
         Self::from_pairs_unchecked(vec![], None)
@@ -192,56 +239,6 @@ impl Obj {
         }
     }
 
-    get_fn!(
-        "Returns the `bool` found at `field`. \
-         Returns an error if the field was not found \
-         or if the `Value` at `field` is not `Bool`.",
-        get_bool,
-        bool
-    );
-    get_fn!(
-        "Returns the `BigInt` found at `field`. \
-         Returns an error if the field was not found \
-         or if the `Value` at `field` is not `Int`.",
-        get_int,
-        BigInt
-    );
-    get_fn!(
-        "Returns the `BigRational` found at `field`. \
-         Returns an error if the field was not found \
-         or if the `Value` at `field` is not `Frac`.",
-        get_frac,
-        BigRational
-    );
-    get_fn!(
-        "Returns the `String` found at `field`. \
-         Returns an error if the field was not found \
-         or if the `Value` at `field` is not `Str`.",
-        get_str,
-        String
-    );
-    get_fn!(
-        "Returns the `Arr` found at `field`. \
-         Returns an error if the field was not found \
-         or if the `Value` at `field` is not `Arr`.",
-        get_arr,
-        Arr
-    );
-    get_fn!(
-        "Returns the `Tup` found at `field`. \
-         Returns an error if the field was not found \
-         or if the `Value` at `field` is not `Tup`.",
-        get_tup,
-        Tup
-    );
-    get_fn!(
-        "Returns the `Obj` found at `field`. \
-         Returns an error if the field was not found \
-         or if the `Value` at `field` is not `Obj`.",
-        get_obj,
-        Obj
-    );
-
     /// Returns whether this `Obj` has a parent.
     pub fn has_parent(&self) -> bool {
         self.inner.parent.is_some()
@@ -288,7 +285,7 @@ impl Obj {
     pub fn is_valid_field_char(ch: char, first: bool) -> bool {
         match ch {
             ch if ch.is_alphabetic() => true,
-            ch if util::is_digit(ch) => !first,
+            ch if parse::util::is_digit(ch) => !first,
             '_' => true,
             '^' => first,
             _ => false,

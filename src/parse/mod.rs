@@ -2,10 +2,10 @@
 
 pub mod error;
 pub mod format;
+pub mod util;
 
 mod char_stream;
 mod parser;
-mod util;
 
 use self::error::ParseError;
 use crate::Obj;

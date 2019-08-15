@@ -4,10 +4,9 @@
 
 use super::{
     char_stream::CharStream,
-    error::ParseErrorKind::*,
-    error::{parse_err, ParseError},
+    error::{parse_err, ParseError, ParseErrorKind::*},
     util::*,
-    {BinaryOp, ParseResult, UnaryOp, MAX_DEPTH},
+    BinaryOp, ParseResult, UnaryOp, MAX_DEPTH,
 };
 use crate::{
     arr::{self, Arr},
@@ -630,7 +629,7 @@ fn parse_value(
         // Check for valid characters after the value.
         check_value_end(stream, cur_brace)?;
 
-        let (mut val1, _, _) = val_deque.pop_front().unwrap();
+        let (mut val1, ..) = val_deque.pop_front().unwrap();
         while !op_deque.is_empty() {
             let (val2, line2, col2) = val_deque.pop_front().unwrap();
             val1 = binary_op_on_values(
