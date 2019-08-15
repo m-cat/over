@@ -62,9 +62,9 @@ impl Format for String {
 impl Format for Value {
     fn format(&self, _full: bool, indent_amt: usize) -> String {
         match *self {
-            Value::Null => String::from("null"),
+            Self::Null => String::from("null"),
 
-            Value::Bool(ref inner) => {
+            Self::Bool(ref inner) => {
                 if *inner {
                     String::from("true")
                 } else {
@@ -72,13 +72,13 @@ impl Format for Value {
                 }
             }
 
-            Value::Int(ref inner) => format!("{}", inner),
+            Self::Int(ref inner) => format!("{}", inner),
 
-            Value::Frac(ref inner) => inner.format(true, indent_amt),
-            Value::Str(ref inner) => inner.format(true, indent_amt),
-            Value::Arr(ref inner) => inner.format(true, indent_amt),
-            Value::Tup(ref inner) => inner.format(true, indent_amt),
-            Value::Obj(ref inner) => inner.format(true, indent_amt),
+            Self::Frac(ref inner) => inner.format(true, indent_amt),
+            Self::Str(ref inner) => inner.format(true, indent_amt),
+            Self::Arr(ref inner) => inner.format(true, indent_amt),
+            Self::Tup(ref inner) => inner.format(true, indent_amt),
+            Self::Obj(ref inner) => inner.format(true, indent_amt),
         }
     }
 }

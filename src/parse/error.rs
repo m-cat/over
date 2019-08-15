@@ -180,7 +180,7 @@ impl Error for ParseError {}
 impl ParseError {
     /// Convert an `OverError` to a `ParseError` given line and column numbers.
     pub fn from_over(e: &OverError, file: Option<String>, line: usize, col: usize) -> Self {
-        ParseError {
+        Self {
             file,
             kind: ParseErrorKind::OverError(format!("{} at line {}, col {}", e, line, col)),
         }
@@ -189,7 +189,7 @@ impl ParseError {
 
 impl From<io::Error> for ParseError {
     fn from(e: io::Error) -> Self {
-        ParseError {
+        Self {
             file: None,
             kind: ParseErrorKind::IoError(format!("{}", e)),
         }
@@ -198,7 +198,7 @@ impl From<io::Error> for ParseError {
 
 impl From<ParseIntError> for ParseError {
     fn from(e: ParseIntError) -> Self {
-        ParseError {
+        Self {
             file: None,
             kind: ParseErrorKind::ParseIntError(format!("{}", e)),
         }
@@ -207,7 +207,7 @@ impl From<ParseIntError> for ParseError {
 
 impl From<ParseBigIntError> for ParseError {
     fn from(e: ParseBigIntError) -> Self {
-        ParseError {
+        Self {
             file: None,
             kind: ParseErrorKind::ParseIntError(format!("{}", e)),
         }

@@ -37,7 +37,7 @@ macro_rules! get_fn {
     ( $doc:expr, $name:tt, $type:ty, $variant:ident ) => {
         #[doc=$doc]
         pub fn $name(&self) -> OverResult<$type> {
-            if let Value::$variant(ref inner) = *self {
+            if let Self::$variant(ref inner) = *self {
                 Ok(inner.clone())
             } else {
                 Err(OverError::TypeMismatch(Type::$variant, self.get_type()))
@@ -81,7 +81,7 @@ impl Value {
 
     /// Returns true if this `Value` is null.
     pub fn is_null(&self) -> bool {
-        if let Value::Null = *self {
+        if let Self::Null = *self {
             true
         } else {
             false
@@ -108,8 +108,8 @@ impl Value {
     /// Returns an error if this `Value` is not `Frac`.
     pub fn get_frac(&self) -> OverResult<BigRational> {
         match *self {
-            Value::Frac(ref inner) => Ok(inner.clone()),
-            Value::Int(ref inner) => Ok(frac!(inner.clone(), 1)),
+            Self::Frac(ref inner) => Ok(inner.clone()),
+            Self::Int(ref inner) => Ok(frac!(inner.clone(), 1)),
             _ => Err(OverError::TypeMismatch(Type::Frac, self.get_type())),
         }
     }
@@ -117,7 +117,7 @@ impl Value {
     /// Returns the `Arr` contained in this `Value`.
     /// Returns an error if this `Value` is not `Arr`.
     pub fn get_arr(&self) -> OverResult<arr::Arr> {
-        if let Value::Arr(ref inner) = *self {
+        if let Self::Arr(ref inner) = *self {
             Ok(inner.clone())
         } else {
             Err(OverError::TypeMismatch(
@@ -130,7 +130,7 @@ impl Value {
     /// Returns the `Tup` contained in this `Value`.
     /// Returns an error if this `Value` is not `Tup`.
     pub fn get_tup(&self) -> OverResult<tup::Tup> {
-        if let Value::Tup(ref inner) = *self {
+        if let Self::Tup(ref inner) = *self {
             Ok(inner.clone())
         } else {
             Err(OverError::TypeMismatch(Type::Tup(vec![]), self.get_type()))
@@ -151,7 +151,7 @@ macro_rules! impl_eq {
         impl PartialEq<$type> for Value {
             fn eq(&self, other: &$type) -> bool {
                 match *self {
-                    Value::$valtype(ref value) => value == other,
+                    Self::$valtype(ref value) => value == other,
                     _ => false,
                 }
             }
@@ -179,7 +179,7 @@ impl_eq!(Obj, obj::Obj);
 impl<'a> PartialEq<&'a str> for Value {
     fn eq(&self, other: &&str) -> bool {
         match *self {
-            Value::Str(ref value) => value == other,
+            Self::Str(ref value) => value == other,
             _ => false,
         }
     }
@@ -201,7 +201,7 @@ macro_rules! impl_eq_int {
         impl PartialEq<$type> for Value {
             fn eq(&self, other: &$type) -> bool {
                 match *self {
-                    Value::Int(ref value) => match value.$fn() {
+                    Self::Int(ref value) => match value.$fn() {
                         Some(value) => value == *other,
                         None => false,
                     },
@@ -240,7 +240,7 @@ macro_rules! impl_from {
     ($type:ty, $fn:tt) => {
         impl From<$type> for Value {
             fn from(inner: $type) -> Self {
-                Value::$fn(inner.into())
+                Self::$fn(inner.into())
             }
         }
     };
@@ -276,7 +276,7 @@ impl_from!(BigRational, Frac);
 impl_from!(String, Str);
 impl<'a> From<&'a str> for Value {
     fn from(inner: &str) -> Self {
-        Value::Str(inner.into())
+        Self::Str(inner.into())
     }
 }
 

@@ -54,12 +54,12 @@ impl Error for OverError {}
 
 impl From<io::Error> for OverError {
     fn from(e: io::Error) -> Self {
-        OverError::IoError(format!("{}", e))
+        Self::IoError(format!("{}", e))
     }
 }
 
 impl From<ParseError> for OverError {
     fn from(e: ParseError) -> Self {
-        OverError::ParseError(format!("{}", e))
+        Self::ParseError(format!("{}", e))
     }
 }

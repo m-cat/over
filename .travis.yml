@@ -40,7 +40,4 @@ after_success: |
   if [ "${TRAVIS_OS_NAME}" == linux ] && [ "${TRAVIS_RUST_VERSION}" == stable ]; then
     # Coveralls
     cargo tarpaulin --ciserver travis-ci --coveralls $TRAVIS_JOB_ID
-    # Codecov
-    # cargo tarpaulin --out Xml
-    # bash <(curl -s https://codecov.io/bash)
   fi

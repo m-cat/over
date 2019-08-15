@@ -109,9 +109,9 @@ impl Type {
     /// Returns true if this `Type` contains `Any`.
     pub fn has_any(&self) -> bool {
         match *self {
-            Type::Any => true,
-            Type::Arr(ref t) => Self::has_any(t),
-            Type::Tup(ref tvec) => tvec.iter().any(|t| Self::has_any(t)),
+            Self::Any => true,
+            Self::Arr(ref t) => Self::has_any(t),
+            Self::Tup(ref tvec) => tvec.iter().any(|t| Self::has_any(t)),
             _ => false,
         }
     }

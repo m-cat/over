@@ -37,8 +37,8 @@ impl fmt::Display for UnaryOp {
             f,
             "'{}'",
             match *self {
-                UnaryOp::Plus => '+',
-                UnaryOp::Minus => '-',
+                Self::Plus => '+',
+                Self::Minus => '-',
             }
         )
     }
@@ -56,7 +56,7 @@ pub enum BinaryOp {
 impl BinaryOp {
     pub fn is_priority(&self) -> bool {
         match *self {
-            BinaryOp::Mult | BinaryOp::Div | BinaryOp::Mod => true,
+            Self::Mult | Self::Div | Self::Mod => true,
             _ => false,
         }
     }
@@ -71,11 +71,11 @@ impl BinaryOp {
 
     pub fn get_op(ch: char) -> Option<Self> {
         Some(match ch {
-            '+' => BinaryOp::Plus,
-            '-' => BinaryOp::Minus,
-            '*' => BinaryOp::Mult,
-            '/' => BinaryOp::Div,
-            '%' => BinaryOp::Mod,
+            '+' => Self::Plus,
+            '-' => Self::Minus,
+            '*' => Self::Mult,
+            '/' => Self::Div,
+            '%' => Self::Mod,
             _ => return None,
         })
     }
@@ -87,11 +87,11 @@ impl fmt::Display for BinaryOp {
             f,
             "'{}'",
             match *self {
-                BinaryOp::Plus => '+',
-                BinaryOp::Minus => '-',
-                BinaryOp::Mult => '*',
-                BinaryOp::Div => '/',
-                BinaryOp::Mod => '%',
+                Self::Plus => '+',
+                Self::Minus => '-',
+                Self::Mult => '*',
+                Self::Div => '/',
+                Self::Mod => '%',
             }
         )
     }
