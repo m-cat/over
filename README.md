@@ -9,7 +9,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/m-cat/over/badge.svg?branch=master)](https://coveralls.io/github/m-cat/over?branch=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-OVER: the best data format.
+OVER: a data format similar to JSON with features such as variables, includes, and type safety.
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
